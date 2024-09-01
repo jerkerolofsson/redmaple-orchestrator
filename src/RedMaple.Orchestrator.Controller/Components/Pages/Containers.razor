@@ -1,0 +1,128 @@
+﻿@page "/containers"
+@using MudBlazor
+@using RedMaple.Orchestrator.Containers
+@using RedMaple.Orchestrator.Contracts
+@using RedMaple.Orchestrator.Controller.Domain
+@rendermode InteractiveServer
+@inject INodeManager nodeManager
+
+<h1>Containers</h1>
+
+@if(_nodes.Count == 0)
+{
+    <div>No nodes are connected</div>   
+}
+else
+{
+
+    <MudSelect 
+        T="NodeInfo"
+        ToStringFunc="@converter"
+        Label="Select Node" 
+        ValueChanged="async (x) => await OnSelectedNodeChangedAsync(x)">
+    
+        @foreach(var node in _nodes) 
+        {
+            <MudSelectItem Value="@node"/>
+        }
+    </MudSelect>
+}
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>State</th>
+            <th>Status</th>
+            <th>Ports</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+
+        @foreach (var container in _containers)
+        {
+            <tr>
+                <td>@container.Name</td>
+                <td>@container.State</td>
+                <td>@container.Status</td>
+                <td>
+                    @if(container.Ports is not null)
+                    {
+                        foreach(var port in container.Ports.Where(x => x.PublicPort > 0))
+                        {
+                            <div>@port.PublicPort (@port.Type)</div>
+                        }
+                    }
+
+                </td>
+                <td>
+                    <a class="link" @onclick="async () => await StopContainerAsync(container.Id)">STOP</a>
+                    <a class="link" @onclick="async () => await StartContainerAsync(container.Id)">START</a>
+                    <a class="link" @onclick="async () => await RestartContainerAsync(container.Id)">RESTART</a>
+                </td>
+            </tr>
+        }
+
+    </tbody>
+</table>
+
+@code {
+    private NodeInfo? _nodeInfo;
+    private List<Container> _containers = new();
+    private List<NodeInfo> _nodes = new();
+    readonly Func<NodeInfo, string> converter = p => (p?.IpAddress??"Select a node");
+
+    private async Task StartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient($"https://{_nodeInfo.IpAddress}:7288");
+            await client.StartAsync(id);
+        }
+    }
+    private async Task StopContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient($"https://{_nodeInfo.IpAddress}:7288");
+            await client.StopAsync(id);
+        }
+    }
+    private async Task RestartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient($"https://{_nodeInfo.IpAddress}:7288");
+            await client.RestartAsync(id);
+        }
+    }
+
+    private async Task OnSelectedNodeChangedAsync(NodeInfo? nodeInfo)
+    {
+    _nodeInfo = nodeInfo;
+        if(nodeInfo is null)
+        {
+            _containers.Clear();
+        }
+        else
+        {
+            using var client = new NodeContainersClient($"https://{nodeInfo.IpAddress}:7288");
+            _containers = await client.GetContainersAsync();
+        }
+        this.StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _nodes = await nodeManager.GetNodesAsync();
+    }
+}

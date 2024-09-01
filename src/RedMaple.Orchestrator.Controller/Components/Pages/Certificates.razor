@@ -1,0 +1,34 @@
+﻿@page "/certificates"
+@using MudBlazor
+@using RedMaple.Orchestrator.Security
+@using RedMaple.Orchestrator.Security.Models
+@using RedMaple.Orchestrator.Security.Services
+@using System.Security.Cryptography.X509Certificates
+@rendermode InteractiveServer
+@inject CertificateAuthority certificateAuthority
+
+<h1>Root Certificate</h1>
+@rootCert?.GetSerialNumberString();
+
+<h1>CA Certificate</h1>
+@caCert?.GetSerialNumberString();
+
+@* Required *@
+<MudThemeProvider />
+<MudPopoverProvider />
+
+@* Needed for dialogs *@
+<MudDialogProvider />
+
+@* Needed for snackbars *@
+<MudSnackbarProvider />
+@code {
+    private X509Certificate? rootCert;
+    private X509Certificate? caCert;
+
+    protected override async Task OnInitializedAsync()
+    {
+        rootCert = await certificateAuthority.GetRootCertificateAsync();
+        caCert = await certificateAuthority.GetCaCertificateAsync();
+    }
+}

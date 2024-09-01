@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsAspireHost>true</IsAspireHost>
+    <UserSecretsId>704594f7-75bc-41c7-a485-19fadccea5a1</UserSecretsId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RedMaple.Orchestrator.Controller\RedMaple.Orchestrator.Controller.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Node\RedMaple.Orchestrator.Node.csproj" />
+  </ItemGroup>
+
+</Project>
