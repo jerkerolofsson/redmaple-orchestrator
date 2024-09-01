@@ -1,0 +1,120 @@
+﻿@page "/create-simple-container"
+@using Docker.DotNet.Models
+@rendermode InteractiveServer
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+
+<h1>Create new container</h1>
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Name"
+                                  @bind-Value="model.ContainerName" For="@(() => model.ContainerName)" />
+
+                    <MudTextField Label="Docker Image" Class="mt-5"
+                                  @bind-Value="model.ImageName" For="@(() => model.ImageName)" />
+
+                    <MudTextField Label="Node IP Address" Class="mt-5"
+                                  HelperText="Node where the container should be created"
+                                  @bind-Value="model.NodeIpAddress" For="@(() => model.NodeIpAddress)" />
+
+                    <MudTextField Label="Host Port" Class="mt-5"
+                                  HelperText="Port on the host"
+                                  @bind-Value="model.HostPort" For="@(() => model.HostPort)" />
+
+                    <MudTextField Label="Container Port" Class="mt-5"
+                                  HelperText="Port in the container"
+                                  @bind-Value="model.ContainerPort" For="@(() => model.ContainerPort)" />
+
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton 
+                        ButtonType="ButtonType.Submit" 
+                        Variant="Variant.Filled" 
+                        Color="Color.Primary" >Create</MudButton>
+                </MudCardActions>
+
+                @if (_errorMessage is not null)
+                {
+                    <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Error">
+                        @_errorMessage
+                    </MudAlert>
+                }
+                else
+                {
+                    <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Normal">
+                        Create a new container which will be started on a remote node
+                    </MudAlert>
+                }
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+@code {
+    private CreateContainerModel model = new CreateContainerModel();
+    private string? _errorMessage = null;
+
+    public class CreateContainerModel
+    {
+        [Required]
+        public string ContainerName { get; set; } = "nginx-test";
+
+        [Required]
+        public string ImageName { get; set; } = "nginx:latest";
+
+        [Required]
+        public string NodeIpAddress { get; set; } = "localhost";
+
+        [Required]
+        [Range(1, 65535)]
+        public int HostPort { get; set; } = 7040;
+
+        [Required]
+        [Range(1, 65535)]
+        public int ContainerPort { get; set; } = 80;
+    }
+
+    private async Task OnValidSubmit(EditContext context)
+    {
+        _errorMessage = null;
+        var nodes = await nodeManager.GetNodesAsync();
+        var node = nodes.Where(x=>x.IpAddress == model.NodeIpAddress).FirstOrDefault();
+        if(node?.IpAddress is null)
+        {
+            _errorMessage = "Node with the specified IP is not enrolled";
+            StateHasChanged();
+            return;
+        }
+
+        using var client = new NodeContainersClient($"https://{node.IpAddress}:7288");
+        await client.CreateContainerAsync(CreateFromModel());
+
+        navigationManager.NavigateTo("/containers");
+    }
+
+    private CreateContainerParameters CreateFromModel()
+    {
+        return new CreateContainerParameters
+            {
+                Name = model.ContainerName,
+                Image = model.ImageName,
+                ExposedPorts = new Dictionary<string, EmptyStruct>
+                {
+                    { model.ContainerPort + "/tcp", new EmptyStruct() },
+                },
+                HostConfig = new HostConfig
+                {
+                    PortBindings = new Dictionary<string, IList<PortBinding>>
+                    {
+                        { model.ContainerPort + "/tcp", new List<PortBinding>() { new PortBinding() { HostPort = model.HostPort.ToString() } } },
+                    }
+                }
+            };
+    }
+}

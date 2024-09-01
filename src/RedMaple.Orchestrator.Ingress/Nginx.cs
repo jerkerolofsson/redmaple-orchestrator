@@ -97,7 +97,6 @@ namespace RedMaple.Orchestrator.Ingress
             if (!result)
             {
                 var configFile = GetLocalConfigPath();
-                
 
                 await _localContainersClient.CreateContainerAsync(new CreateContainerParameters
                 {

@@ -5,12 +5,24 @@
 @using RedMaple.Orchestrator.Controller.Domain
 @rendermode InteractiveServer
 @inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
 
 <h1>Containers</h1>
 
+<div class="buttons">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               @onclick="OnCreateContainer">Create Container</MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               @onclick="OnCreateContainer">Import Docker Compose</MudButton>
+</div>
+
 @if(_nodes.Count == 0)
 {
-    <div>No nodes are connected</div>   
+    <MudAlert Severity="Severity.Warning">No nodes are connected</MudAlert>
 }
 else
 {
@@ -27,15 +39,7 @@ else
         }
     </MudSelect>
 }
-@* Required *@
-<MudThemeProvider />
-<MudPopoverProvider />
 
-@* Needed for dialogs *@
-<MudDialogProvider />
-
-@* Needed for snackbars *@
-<MudSnackbarProvider />
 <table>
     <thead>
         <tr>
@@ -80,7 +84,10 @@ else
     private List<Container> _containers = new();
     private List<NodeInfo> _nodes = new();
     readonly Func<NodeInfo, string> converter = p => (p?.IpAddress??"Select a node");
-
+    private void OnCreateContainer()
+    {
+        navigationManager.NavigateTo("/create-simple-container");
+    }
     private async Task StartContainerAsync(string id)
     {
         if (_nodeInfo is not null)

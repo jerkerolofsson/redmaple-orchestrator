@@ -12,5 +12,7 @@ namespace RedMaple.Orchestrator.Contracts
     public class EnrollmentRequest
     {
         public required string Id { get; set; }
+        public int Port { get; set; } = 7288;
+        public required List<string> HostAddresses { get; set; }
     }
 }

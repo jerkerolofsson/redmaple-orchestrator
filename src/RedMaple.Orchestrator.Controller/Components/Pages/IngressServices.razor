@@ -4,51 +4,59 @@
 @using RedMaple.Orchestrator.Controller.Domain
 @rendermode InteractiveServer
 @inject IIngressManager ingressManager
+@inject NavigationManager navigationManager
 
 <h1>Reverse Proxy</h1>
 
-@* Required *@
-<MudThemeProvider />
-<MudPopoverProvider />
+<div class="buttons">
+    <MudButton 
+        Variant="Variant.Filled" 
+        Color="Color.Primary" 
+        @onclick="OnCreate">Create</MudButton>
+</div>
 
-@* Needed for dialogs *@
-<MudDialogProvider />
-
-@* Needed for snackbars *@
-<MudSnackbarProvider />
-
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Ingress Port</th>
-            <th>Schema</th>
-            <th>Destination IP</th>
-            <th>Destination Port</th>
-        </tr>
-    </thead>
-    <tbody>
-
-        @foreach (var service in _services)
-        {
+@if(_services.Count == 0)
+{
+    <MudAlert Severity="Severity.Warning">No ingress services created</MudAlert>
+}
+else
+{
+    <table>
+        <thead>
             <tr>
-                <td><a href="@(service.Schema)://@(service.DomainName):@(service.IngressPort)">@service.DomainName</a></td>
-                <td>@service.IngressPort</td>
-                <td>@service.Schema</td>
-                <td>@service.DestinationIp</td>
-                <td>@service.DestinationPort</td>
-                <td>
-                </td>
+                <th>Name</th>
+                <th>Ingress Port</th>
+                <th>Schema</th>
+                <th>Destination IP</th>
+                <th>Destination Port</th>
             </tr>
-        }
+        </thead>
+        <tbody>
 
-    </tbody>
-</table>
+            @foreach (var service in _services)
+            {
+                <tr>
+                    <td><a href="@(service.Schema)://@(service.DomainName):@(service.IngressPort)">@service.DomainName</a></td>
+                    <td>@service.IngressPort</td>
+                    <td>@service.Schema</td>
+                    <td>@service.DestinationIp</td>
+                    <td>@service.DestinationPort</td>
+                    <td>
+                    </td>
+                </tr>
+            }
 
+        </tbody>
+    </table>
+}
 
 @code {
     private List<IngressServiceDescription> _services = new();
 
+    private void OnCreate()
+    {
+        navigationManager.NavigateTo("/create-ingress");
+    }
     protected override async Task OnInitializedAsync()
     {
         // Add a services

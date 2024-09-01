@@ -1,0 +1,71 @@
+﻿@page "/create-ingress"
+@rendermode InteractiveServer
+@using System.ComponentModel.DataAnnotations
+
+<h1>Create new ingress service</h1>
+<MudPopoverProvider />
+
+<EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Domain Name"
+                                  @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                  
+                    <MudTextField Label="Schema" Class="mt-5"
+                                  HelperText="http/https"
+                                  @bind-Value="model.Schema" For="@(() => model.Schema)" />
+
+                    <MudTextField Label="IP Address" Class="mt-5"
+                                  HelperText="Destination IP where the app/service is running"
+                                  @bind-Value="model.IpAddress" For="@(() => model.IpAddress)" />
+
+                    <MudTextField Label="Port" Class="mt-5"
+                                  HelperText="Destination port where the app/service is running"
+                                  @bind-Value="model.Port" For="@(() => model.Port)" />
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton 
+                        ButtonType="ButtonType.Submit" 
+                        Variant="Variant.Filled" 
+                        Color="Color.Primary" >Create</MudButton>
+                </MudCardActions>
+
+                <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Normal">
+                    Creating an ingress service will create a DNS entry, setup a reverse proxy and generate https certificates for the service
+                </MudAlert>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
+
+
+@code {
+    CreateIngressServiceModel model = new CreateIngressServiceModel();
+    bool success;
+
+    public class CreateIngressServiceModel
+    {
+        [Required]
+        public string DomainName { get; set; } = "service.lan";
+
+        [Required]
+        public string IpAddress { get; set; } = "192.168.0.100";
+
+        [Required]
+        public string Schema { get; set; } = "https";
+
+        [Required]
+        [Range(1, 65535)]
+        public int Port { get; set; } = 443;
+    }
+
+    private void OnValidSubmit(EditContext context)
+    {
+        success = true;
+        StateHasChanged();
+    }
+
+}

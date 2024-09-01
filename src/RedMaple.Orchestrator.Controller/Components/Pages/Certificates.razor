@@ -6,6 +6,7 @@
 @using System.Security.Cryptography.X509Certificates
 @rendermode InteractiveServer
 @inject CertificateAuthority certificateAuthority
+<MudPopoverProvider />
 
 <h1>Root Certificate</h1>
 @rootCert?.GetSerialNumberString();
@@ -13,15 +14,6 @@
 <h1>CA Certificate</h1>
 @caCert?.GetSerialNumberString();
 
-@* Required *@
-<MudThemeProvider />
-<MudPopoverProvider />
-
-@* Needed for dialogs *@
-<MudDialogProvider />
-
-@* Needed for snackbars *@
-<MudSnackbarProvider />
 @code {
     private X509Certificate? rootCert;
     private X509Certificate? caCert;
