@@ -7,6 +7,7 @@ namespace RedMaple.Orchestrator.Contracts.Node
     /// </summary>
     public class NodeSettings
     {
+        public string? Id { get; set; }
         public bool EnableDns { get; set; }
     }
 }

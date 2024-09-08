@@ -17,6 +17,14 @@ namespace RedMaple.Orchestrator.Contracts.Node
 
         public string BaseUrl => $"{Schema}://{IpAddress}:{Port}";
 
+        /// <summary>
+        /// Ingress https port (read from INGRESS_HTTPS_PORT)
+        /// </summary>
+        public int IngressHttpsPort { get; set; } = 443;
+
+        /// <summary>
+        /// API port of the node
+        /// </summary>
         public int Port { get; set; } = 1889;
 
         /// <summary>

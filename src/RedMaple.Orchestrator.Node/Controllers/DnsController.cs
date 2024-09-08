@@ -27,6 +27,8 @@ namespace RedMaple.Orchestrator.Node.Controllers
         public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries)
         {
             await _dns.SetDnsEntriesAsync(entries);
+            await _dns.StopAsync();
+            await _dns.StartAsync();
         }
 
         [HttpPost("/api/dns/entries")]

@@ -17,7 +17,7 @@ namespace RedMaple.Orchestrator.Node.Settings
 
         private string GetLocalConfigDir()
         {
-            string path = "/etc/redmaple/node";
+            string path = "/data/redmaple/node";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {

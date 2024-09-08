@@ -15,7 +15,7 @@ namespace RedMaple.Orchestrator.Security.Storage
             {
                 return @"c:\temp\certs";
             }
-            return "/data/certs";
+            return "/data/redmaple/controller/certs";
         }
     }
 }

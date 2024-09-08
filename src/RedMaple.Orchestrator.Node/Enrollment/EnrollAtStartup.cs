@@ -14,27 +14,42 @@ namespace RedMaple.Orchestrator.Node.Enrollment
         private readonly IServer _server;
         private readonly HttpClient _httpClient;
         private ILogger<EnrollAtStartup> _logger;
+        private INodeSettingsProvider _settingsProvider;
 
-        public EnrollAtStartup(IServer server, HttpClient httpClient, ILogger<EnrollAtStartup> logger)
+        public EnrollAtStartup(IServer server, HttpClient httpClient, ILogger<EnrollAtStartup> logger, INodeSettingsProvider settingsProvider)
         {
             _server = server;
             _httpClient = httpClient;
             _logger = logger;
+            _settingsProvider = settingsProvider;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogError("ENROLLING...");
+            var settings = await _settingsProvider.GetSettingsAsync();
+            if(string.IsNullOrWhiteSpace(settings.Id))
+            {
+                settings.Id = Guid.NewGuid().ToString();
+            }
+            if (!int.TryParse(Environment.GetEnvironmentVariable("NODE_PORT"), out int port))
+            {
+                port = 1889;
+            }
+
+            if (!int.TryParse(Environment.GetEnvironmentVariable("INGRESS_HTTPS_PORT"), out int ingressHttpsPort))
+            {
+                port = 443;
+            }
+
+            _logger.LogError("ENROLLING node with id={NodeId}, API Port={port}, Ingress Port={ingressHttpsPort}", settings.Id, port, ingressHttpsPort);
+
+            await _settingsProvider.ApplySettingsAsync(settings);
+
             await Task.Delay(TimeSpan.FromSeconds(2));
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 string schema = "http";
-                if(!int.TryParse(Environment.GetEnvironmentVariable("NODE_PORT"), out int port))
-                {
-                    port = 1889;
-                }
-
                 // Connect to controller
                 try
                 {
@@ -51,10 +66,11 @@ namespace RedMaple.Orchestrator.Node.Enrollment
 
                     var nodeInfo = new EnrollmentRequest()
                     {
-                        Id = Guid.NewGuid().ToString(),
+                        Id = settings.Id,
                         Schema = schema,
                         HostAddresses = hostAddresses, 
-                        Port = port
+                        Port = port,
+                        IngressHttpsPort = ingressHttpsPort
                     };
 
                     using var response = await _httpClient.PostAsJsonAsync("http://controller/api/nodes", nodeInfo);

@@ -1,7 +1,6 @@
 #See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-#USER app
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
@@ -12,11 +11,9 @@ WORKDIR /src
 COPY ["RedMaple.Orchestrator.Node/RedMaple.Orchestrator.Node.csproj", "RedMaple.Orchestrator.Node/"]
 COPY ["RedMaple.Orchestrator.Containers/RedMaple.Orchestrator.Containers.csproj", "RedMaple.Orchestrator.Containers/"]
 COPY ["RedMaple.Orchestrator.Contracts/RedMaple.Orchestrator.Contracts.csproj", "RedMaple.Orchestrator.Contracts/"]
+COPY ["RedMaple.Orchestrator.Dns/RedMaple.Orchestrator.Dns.csproj", "RedMaple.Orchestrator.Dns/"]
+COPY ["RedMaple.Orchestrator.Ingress/RedMaple.Orchestrator.Ingress.csproj", "RedMaple.Orchestrator.Ingress/"]
 COPY ["RedMaple.Orchestrator.ServiceDefaults/RedMaple.Orchestrator.ServiceDefaults.csproj", "RedMaple.Orchestrator.ServiceDefaults/"]
-
-ARG http_proxy=192.168.89.122:10809
-ARG https_proxy=192.168.89.122:10809
-
 RUN dotnet restore "./RedMaple.Orchestrator.Node/RedMaple.Orchestrator.Node.csproj"
 COPY . .
 WORKDIR "/src/RedMaple.Orchestrator.Node"
@@ -29,4 +26,5 @@ RUN dotnet publish "./RedMaple.Orchestrator.Node.csproj" -c $BUILD_CONFIGURATION
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
+RUN mkdir -p /data/redmaple/node
 ENTRYPOINT ["dotnet", "RedMaple.Orchestrator.Node.dll"]

@@ -15,5 +15,6 @@ namespace RedMaple.Orchestrator.Contracts.Node
         public int Port { get; set; } = 1889;
         public required List<string> HostAddresses { get; set; }
         public string Schema { get; set; } = "http";
+        public int IngressHttpsPort { get; set; }
     }
 }

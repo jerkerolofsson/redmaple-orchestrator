@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet.Models;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Dns;
@@ -13,10 +14,14 @@ namespace RedMaple.Orchestrator.Dns
 {
     internal class DnsMasq : IDns
     {
+        private readonly ILogger<DnsMasq> _logger;
         private readonly ILocalContainersClient mLocalContainersClient;
 
-        public DnsMasq(ILocalContainersClient localContainersClient)
+        public DnsMasq(
+            ILogger<DnsMasq> logger,
+            ILocalContainersClient localContainersClient)
         {
+            _logger = logger;
             mLocalContainersClient = localContainersClient;
         }
 
@@ -45,7 +50,7 @@ namespace RedMaple.Orchestrator.Dns
 
         private string GetLocalConfigDir()
         {
-            string path = "/data/dnsmasq";
+            string path = "/data/redmaple/node/dns";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
@@ -53,7 +58,12 @@ namespace RedMaple.Orchestrator.Dns
             }
             if (!Directory.Exists(path))
             {
+                _logger.LogInformation("Creating dnsmasq configuration root dir: {path}", path);
                 Directory.CreateDirectory(path);
+            }
+            else
+            {
+                _logger.LogDebug("dnsmasq configuration root dir: {path} exists", path);
             }
             return path;
         }
@@ -65,15 +75,17 @@ namespace RedMaple.Orchestrator.Dns
             var configD = Path.Combine(path, "dnsmasq.d");
             if (!Directory.Exists(configD))
             {
+                _logger.LogDebug("Creating dnsmasq.d configuration dir: {path} exists", path);
                 Directory.CreateDirectory(configD);
+            }
+            else 
+            {
+                _logger.LogDebug("dnsmasq.d configuration dir: {path} exists", path);
             }
             return configD;
         }
 
-        private void CreateManagedConfIfItDoesntExist()
-        {
-            var _ = GetManagedConfigFilePath();
-        }
+        private string CreateManagedConfIfItDoesntExist() => GetManagedConfigFilePath();
 
         /// <summary>
         /// Returns the path to the file where managed (through API) addresses
@@ -86,8 +98,19 @@ namespace RedMaple.Orchestrator.Dns
             var filePath = Path.Combine(path, "dnsmasq.conf");
             if (!File.Exists(filePath))
             {
-                using var file = File.CreateText(filePath);
-                file.WriteLine("conf-file=/etc/dnsmasq.d/managed.conf");
+                _logger.LogDebug("Creating default {path}", filePath);
+
+                using var writer = File.CreateText(filePath);
+                writer.WriteLine("""
+                    no-resolv
+
+                    #use google as default nameservers
+                    server=8.8.4.4
+                    server=8.8.8.8
+
+                    conf-file=/etc/dnsmasq.d/managed.conf
+                    """);
+
             }
             return filePath;
         }
@@ -104,15 +127,11 @@ namespace RedMaple.Orchestrator.Dns
 
             if (!File.Exists(filePath))
             {
+                _logger.LogDebug("Creating default {path}", filePath);
+
                 using var writer = File.CreateText(filePath);
                 writer.WriteLine("""
-                    no-resolv
-
-                    #use google as default nameservers
-                    server=8.8.4.4
-                    server=8.8.8.8
-
-                    conf-file=/etc/dnsmasq.d/managed.conf
+                    # Default
                     """);
             }
             return filePath;
@@ -126,8 +145,10 @@ namespace RedMaple.Orchestrator.Dns
             if (!result)
             {
                 string dnsmasqD = GetLocalDnsmasqDDir();
-                CreateManagedConfIfItDoesntExist();
+                var managedConf = CreateManagedConfIfItDoesntExist();
                 var dnsmasqDotConf = CreateDnsmasqConfIfItDoesntExist();
+
+                _logger.LogInformation("Creating DNS container, dnsmasq.conf={DnsMasqConf}, dnsmasq.d={DnsMasqD}, managed.conf={ManagedConf}", dnsmasqDotConf, dnsmasqD, managedConf);
 
                 await mLocalContainersClient.CreateContainerAsync(new CreateContainerParameters
                 {
@@ -141,8 +162,8 @@ namespace RedMaple.Orchestrator.Dns
                     {
                         Binds = new List<string> 
                         { 
-                            $"{dnsmasqDotConf}:/etc/dnsmasq.conf",
-                            $"{dnsmasqD}:/etc/dnsmasq.d" 
+                            $"{dnsmasqDotConf}:/etc/dnsmasq.conf:z",
+                            $"{dnsmasqD}:/etc/dnsmasq.d:z" 
                         },
                         PortBindings = new Dictionary<string, IList<PortBinding>>
                         {

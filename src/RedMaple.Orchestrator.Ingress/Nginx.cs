@@ -57,7 +57,7 @@ namespace RedMaple.Orchestrator.Ingress
 
         private string GetLocalConfigDir()
         {
-            string path = "/data/nginx";
+            string path = "/data/redmaple/node/nginx";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
@@ -89,22 +89,25 @@ namespace RedMaple.Orchestrator.Ingress
             {
                 var configFile = GetLocalConfigPath();
 
+                string httpPort = Environment.GetEnvironmentVariable("NGINX_HTTP_PORT") ?? "80";
+                string httpsPort = Environment.GetEnvironmentVariable("NGINX_HTTPS_PORT") ?? "443";
+
                 await _localContainersClient.CreateContainerAsync(new CreateContainerParameters
                 {
                     Name = "redmaple-ingress",
                     Image = "nginx:latest",
                     ExposedPorts = new Dictionary<string, EmptyStruct>
                     {
-                        { "8080/tcp", new EmptyStruct() },
-                        { "8443/tcp", new EmptyStruct() }
+                        { "80/tcp", new EmptyStruct() },
+                        { "443/tcp", new EmptyStruct() }
                     },
                     HostConfig = new HostConfig
                     {
                         Binds = new List<string> { $"{GetLocalConfigDir()}:/etc/nginx/conf.d/" },
                         PortBindings = new Dictionary<string, IList<PortBinding>>
                         {
-                            { "8080/tcp", new List<PortBinding>() { new PortBinding() { HostPort = "8080" } } },
-                            { "8443/tcp", new List<PortBinding>() { new PortBinding() { HostPort = "8443" } } }
+                            { "80/tcp", new List<PortBinding>() { new PortBinding() { HostPort = httpPort } } },
+                            { "443/tcp", new List<PortBinding>() { new PortBinding() { HostPort = httpsPort } } }
                         }
                     }
                 });

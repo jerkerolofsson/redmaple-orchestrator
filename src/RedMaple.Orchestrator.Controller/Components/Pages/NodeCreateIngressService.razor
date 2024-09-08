@@ -47,7 +47,6 @@
 
         [Required]
         public string Destination { get; set; } = "http://192.168.89.122:9088";
-
     }
 
     [Parameter] public string Id { get; set; } = null!;
@@ -71,7 +70,7 @@
                     DestinationPort = dest.Port,
                     Id = Guid.NewGuid().ToString(),
                     IngressIp = node.IpAddress,
-                    IngressPort = 8443
+                    IngressPort = node.IngressHttpsPort
                 });
         }
     }

@@ -13,7 +13,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
     {
         private string GetLocalConfigDir()
         {
-            string path = "/etc/redmaple/controller";
+            string path = "/data/redmaple/controller/ingress";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
