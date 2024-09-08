@@ -1,28 +1,51 @@
-﻿<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">Ctrl</a>
-    </div>
-</div>
+﻿@using RedMaple.Orchestrator.Contracts.Node
+@inject INodeManager nodeManager
+@rendermode InteractiveServer
 
-<input type="checkbox" title="Navigation menu" class="navbar-toggler" />
+<MudPaper Width="250px" Class="py-3" Elevation="0">
+    <MudNavMenu>
+        <MudText Typo="Typo.h6" Class="px-4">RedMaple</MudText>
+        <MudText Typo="Typo.body2" Class="px-4 mud-text-secondary">Controller</MudText>
+        <MudDivider Class="my-2" />
+        <MudNavLink Href="/certificates">Certificates</MudNavLink>
 
-<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="certificates">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Certificates
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="containers">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Containers
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="ingress">
-                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Ingress
-            </NavLink>
-        </div>
-    </nav>
-</div>
+        <MudNavGroup Title="Nodes" Expanded="true">
 
+            @foreach (var node in _nodes)
+            {
+                <MudNavGroup Title="@node.IpAddress" Expanded="true">
+                    <MudNavLink Href="@GetNodeIngressLink(node)">Ingress</MudNavLink>
+                    <MudNavLink Href="@GetNodeContainersLink(node)">Containers</MudNavLink>
+                    <MudNavLink Href="@GetNodeDnsLink(node)">DNS</MudNavLink>
+                    <MudNavLink Href="@GetNodeSettingsLink(node)">Settings</MudNavLink>
+                </MudNavGroup>
+            }
+        </MudNavGroup>
+    </MudNavMenu>
+</MudPaper>
+
+@code {
+    private List<NodeInfo> _nodes = new();
+    
+    private string GetNodeIngressLink(NodeInfo node)
+    {
+        return $"/node/{node.Id}/ingress";
+    }
+    private string GetNodeContainersLink(NodeInfo node)
+    {
+        return $"/node/{node.Id}/containers";
+    }
+    private string GetNodeDnsLink(NodeInfo node)
+    {
+        return $"/node/{node.Id}/dns";
+    }
+    private string GetNodeSettingsLink(NodeInfo node)
+    {
+        return $"/node/{node.Id}/settings";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _nodes = await nodeManager.GetNodesAsync();
+    }
+}

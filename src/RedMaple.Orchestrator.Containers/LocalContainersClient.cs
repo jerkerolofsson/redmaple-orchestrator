@@ -1,7 +1,6 @@
 ﻿using Docker.DotNet;
 using Docker.DotNet.Models;
-using RedMaple.Orchestrator.Containers.Mapping;
-using RedMaple.Orchestrator.Contracts;
+using RedMaple.Orchestrator.Contracts.Containers;
 using System.Runtime.InteropServices;
 
 namespace RedMaple.Orchestrator.Containers

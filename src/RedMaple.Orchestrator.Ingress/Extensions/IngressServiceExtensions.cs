@@ -13,6 +13,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddIngress(this IServiceCollection services)
         {
             services.AddTransient<IReverseProxy, Nginx>();
+            services.AddTransient<LocalIngressServiceController>();
             return services;
         }
     }

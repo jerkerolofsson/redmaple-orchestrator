@@ -14,6 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RedMaple.Orchestrator.Controller.Api\RedMaple.Orchestrator.Controller.Api.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Controller\RedMaple.Orchestrator.Controller.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Node\RedMaple.Orchestrator.Node.csproj" />
   </ItemGroup>

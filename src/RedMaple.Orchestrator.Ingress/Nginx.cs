@@ -1,8 +1,7 @@
 ﻿using Docker.DotNet.Models;
-using RedMaple.Orchestrator.Containers;
-using RedMaple.Orchestrator.Contracts;
-using RedMaple.Orchestrator.Security.Provider;
-using RedMaple.Orchestrator.Security.Services;
+using Microsoft.Extensions.Logging;
+using RedMaple.Orchestrator.Contracts.Containers;
+using RedMaple.Orchestrator.Contracts.Ingress;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -10,15 +9,15 @@ namespace RedMaple.Orchestrator.Ingress
 {
     public class Nginx : IReverseProxy
     {
-        private readonly ICertificateProvider _certificateProvider;
+        private readonly ILogger _logger;
         private readonly ILocalContainersClient _localContainersClient;
-        private readonly CertificateAuthority _certificateAuthority;
 
-        public Nginx(ILocalContainersClient localContainersClient, CertificateAuthority certificateAuthority, ICertificateProvider certificateProvider)
+        public Nginx(
+            ILogger<Nginx> logger,
+            ILocalContainersClient localContainersClient)
         {
+            _logger = logger;
             _localContainersClient = localContainersClient;
-            _certificateAuthority = certificateAuthority;
-            _certificateProvider = certificateProvider;
         }
 
         public async Task UpdateConfigurationAsync(List<IngressServiceDescription> services)
@@ -26,35 +25,27 @@ namespace RedMaple.Orchestrator.Ingress
             var conf = new StringBuilder();
             foreach (var service in services)
             {
-                var certificate = await _certificateAuthority.GetOrCreateCertificateAsync(service.DomainName);
-                if (certificate.PemKeyPath is null)
+                if (service.PemKey is null)
                 {
                     throw new Exception("key error");
                 }
-                if (certificate.PemCertPath is null)
+                if (service.PemCert is null)
                 {
                     throw new Exception("certificate error");
                 }
 
                 var pemKeyName = Path.Combine(GetLocalConfigDir(), service.DomainName + ".key");
                 var pemCertName = Path.Combine(GetLocalConfigDir(), service.DomainName + ".crt");
-                File.Copy(certificate.PemKeyPath, pemKeyName, true);
-                File.Copy(certificate.PemCertPath, pemCertName, true);
+                File.WriteAllBytes(pemKeyName, service.PemKey);
+                File.WriteAllBytes(pemCertName, service.PemCert);
 
                 conf.AppendLine("  server {");
-                if (service.Schema == "https")
-                {
-                    conf.AppendLine($"    listen  {service.IngressPort} ssl;");
-                }
-                else
-                {
-                    conf.AppendLine($"    listen  {service.IngressPort};");
-                }
+                conf.AppendLine($"    listen  {service.IngressPort} ssl;");
                 conf.AppendLine($"    server_name " + service.DomainName + ";");
                 conf.AppendLine($"    ssl_certificate /etc/nginx/conf.d/" + service.DomainName + ".crt;");
                 conf.AppendLine($"    ssl_certificate_key /etc/nginx/conf.d/" + service.DomainName + ".key;");
                 conf.AppendLine("    location / {");
-                conf.AppendLine($"       proxy_pass {service.Schema}://{service.DestinationIp}:{service.DestinationPort};");
+                conf.AppendLine($"       proxy_pass {service.Scheme}://{service.DestinationIp}:{service.DestinationPort};");
                 conf.AppendLine("    }");
                 conf.AppendLine("  }");
             }
@@ -66,7 +57,7 @@ namespace RedMaple.Orchestrator.Ingress
 
         private string GetLocalConfigDir()
         {
-            string path = "/var/redmaple/nginx";
+            string path = "/data/nginx";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {

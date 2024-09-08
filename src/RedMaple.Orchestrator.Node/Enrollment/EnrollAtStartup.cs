@@ -3,34 +3,58 @@ using RedMaple.Orchestrator.Contracts;
 using System.Text;
 using System.Net.Http.Json;
 using System.Net;
+using Microsoft.AspNetCore.Hosting.Server;
+using Microsoft.AspNetCore.Hosting.Server.Features;
+using RedMaple.Orchestrator.Contracts.Node;
 
 namespace RedMaple.Orchestrator.Node.Enrollment
 {
     public class EnrollAtStartup : BackgroundService
     {
+        private readonly IServer _server;
         private readonly HttpClient _httpClient;
         private ILogger<EnrollAtStartup> _logger;
 
-        public EnrollAtStartup(HttpClient httpClient, ILogger<EnrollAtStartup> logger)
+        public EnrollAtStartup(IServer server, HttpClient httpClient, ILogger<EnrollAtStartup> logger)
         {
+            _server = server;
             _httpClient = httpClient;
             _logger = logger;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            await Task.Delay(TimeSpan.FromSeconds(5));
+            _logger.LogError("ENROLLING...");
+            await Task.Delay(TimeSpan.FromSeconds(2));
 
             while (!stoppingToken.IsCancellationRequested)
             {
+                string schema = "http";
+                if(!int.TryParse(Environment.GetEnvironmentVariable("NODE_PORT"), out int port))
+                {
+                    port = 1889;
+                }
+
                 // Connect to controller
                 try
                 {
-                    var hostEntries = Dns.GetHostAddresses(Dns.GetHostName());
+                    List<string> hostAddresses = [];
+                    if(!string.IsNullOrEmpty(Environment.GetEnvironmentVariable("NODE_IP")))
+                    {
+                        hostAddresses = [Environment.GetEnvironmentVariable("NODE_IP") ??"", .. hostAddresses];
+                    }
+
+                    if (Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development")
+                    {
+                        hostAddresses = ["127.0.0.1"];
+                    }
+
                     var nodeInfo = new EnrollmentRequest()
                     {
                         Id = Guid.NewGuid().ToString(),
-                        HostAddresses = hostEntries.Select(x=>x.ToString()).ToList(), 
+                        Schema = schema,
+                        HostAddresses = hostAddresses, 
+                        Port = port
                     };
 
                     using var response = await _httpClient.PostAsJsonAsync("http://controller/api/nodes", nodeInfo);

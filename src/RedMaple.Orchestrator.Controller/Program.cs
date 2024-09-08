@@ -6,7 +6,6 @@ builder.AddServiceDefaults();
 
 // Add services to the container.
 builder.Services.AddContainerServices()
-    .AddDns().AddIngress()
     .AddCertificateAuthority()
     .AddControllerDomainServices()
     .AddControllerInfrastructure();
@@ -19,6 +18,7 @@ builder.Services.AddRazorComponents()
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
+app.UseExceptionHandler("/Error", createScopeForErrors: true);
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
@@ -26,7 +26,7 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();

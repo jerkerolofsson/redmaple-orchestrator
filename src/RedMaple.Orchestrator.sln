@@ -27,15 +27,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Node", "Node", "{BF3CA9CF-C
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Shared", "Shared", "{CDA02E31-8892-4ED3-A50B-39C30D43FB1E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Controller.Infrastructure", "RedMaple.Orchestrator.Controller.Infrastructure\RedMaple.Orchestrator.Controller.Infrastructure.csproj", "{39305F23-CBCB-45DF-AB88-D820A304331B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Controller.Infrastructure", "RedMaple.Orchestrator.Controller.Infrastructure\RedMaple.Orchestrator.Controller.Infrastructure.csproj", "{39305F23-CBCB-45DF-AB88-D820A304331B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Controller.Domain", "RedMaple.Orchestrator.Controller.Domain\RedMaple.Orchestrator.Controller.Domain.csproj", "{CFEE6546-7D0F-48CF-846F-49D7A0DDE062}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Controller.Domain", "RedMaple.Orchestrator.Controller.Domain\RedMaple.Orchestrator.Controller.Domain.csproj", "{CFEE6546-7D0F-48CF-846F-49D7A0DDE062}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{C57EA872-83E2-4D31-B848-49E8384344F7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CertificateTests", "..\tests\CertificateTests\CertificateTests.csproj", "{030F2F76-9A99-42D7-805E-45DE4CCE5BEA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CertificateTests", "..\tests\CertificateTests\CertificateTests.csproj", "{030F2F76-9A99-42D7-805E-45DE4CCE5BEA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Dns", "RedMaple.Orchestrator.Dns\RedMaple.Orchestrator.Dns.csproj", "{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Dns", "RedMaple.Orchestrator.Dns\RedMaple.Orchestrator.Dns.csproj", "{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Controller.Api", "RedMaple.Orchestrator.Controller.Api\RedMaple.Orchestrator.Controller.Api.csproj", "{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Sdk", "RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj", "{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +95,14 @@ Global
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -108,6 +120,8 @@ Global
 		{CFEE6546-7D0F-48CF-846F-49D7A0DDE062} = {9D47399A-AF2F-4835-925B-5E54718DF316}
 		{030F2F76-9A99-42D7-805E-45DE4CCE5BEA} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778} = {BF3CA9CF-C40A-4604-8EB9-A06D739D5079}
+		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F} = {9D47399A-AF2F-4835-925B-5E54718DF316}
+		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7} = {BF3CA9CF-C40A-4604-8EB9-A06D739D5079}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0435B4F-ED5B-4352-8B77-B7BF67875B9C}

@@ -1,4 +1,4 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Node;
 using System;
 using System.Collections.Generic;
 using System.Linq;

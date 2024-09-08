@@ -1,0 +1,109 @@
+﻿@page "/node/{id}/dns"
+@using MudBlazor
+@using RedMaple.Orchestrator.Containers
+@using RedMaple.Orchestrator.Contracts
+@using RedMaple.Orchestrator.Contracts.Containers
+@using RedMaple.Orchestrator.Controller.Domain
+@rendermode InteractiveServer
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
+
+@if (_nodeSettings is not null)
+{
+    <h1>Settings</h1>
+    <MudCard Class="pa-5">
+        <MudCardContent>
+            <MudForm Spacing="2" Model="@_nodeSettings">
+                <MudSwitch @bind-Value="_nodeSettings.EnableDns"
+                           Label="Enabled" Color="Color.Primary" />
+            </MudForm>
+        </MudCardContent>
+
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
+                       OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
+
+    <h1>DNS Entries</h1>
+    <MudCard Class="pa-5">
+        
+        
+
+        <MudDataGrid @ref="DataGrid"
+                     ReadOnly="false"
+                     EditMode="DataGridEditMode.Cell"
+                        Items="@_entries" 
+                        SortMode="SortMode.Multiple">
+            <Columns>
+                <PropertyColumn Property="x => x.Hostname" Title="Name"/>
+                <PropertyColumn Property="x => x.IpAddress" Title="IP Address"/>
+            </Columns>
+        </MudDataGrid>
+
+        <MudCardActions>
+
+            <MudButton OnClick="@AddItem" Color="Color.Primary" Class="add-item-btn">Add Item</MudButton>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
+                       OnClick="@(async () => await SaveTableAsync())">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = null!;
+
+    private MudDataGrid<DnsEntry> DataGrid = null!;
+
+    private NodeInfo? _nodeInfo;
+    private RedMaple.Orchestrator.Contracts.Node.NodeSettings? _nodeSettings;
+    private List<DnsEntry> _entries = new();
+
+    void AddItem()
+    {
+        _entries.Add(new DnsEntry { Hostname = "name", IpAddress="192.168.0.202" });
+    }
+
+    private async Task LoadTableAsync()
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeDnsClient(_nodeInfo.BaseUrl);
+            _entries = await client.GetDnsEntriesAsync();
+        }
+
+    }
+    private async Task SaveTableAsync()
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeDnsClient(_nodeInfo.BaseUrl);
+            await client.SetDnsEntriesAsync(_entries);
+        }
+    }
+
+    private async Task SaveSettingsAsync()
+    {
+        if (_nodeInfo is not null && _nodeSettings is not null)
+        {
+            using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
+            await client.ApplySettingsAsync(_nodeSettings);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
+
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
+            _nodeSettings = await client.GetSettingsAsync();
+
+        }
+        await LoadTableAsync();
+    }
+}

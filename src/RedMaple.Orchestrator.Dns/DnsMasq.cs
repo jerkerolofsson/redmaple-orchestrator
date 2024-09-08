@@ -1,6 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Options;
-using RedMaple.Orchestrator.Containers;
+using RedMaple.Orchestrator.Contracts.Containers;
+using RedMaple.Orchestrator.Contracts.Dns;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -19,31 +20,32 @@ namespace RedMaple.Orchestrator.Dns
             mLocalContainersClient = localContainersClient;
         }
 
-        public Task AddEntryAsync(string hostname, string ipAddress)
+        public async Task AddEntryAsync(DnsEntry entry)
         {
-            var hostsFile = GetLocalConfigPath();
-            var lines = File.ReadAllLines(hostsFile);
+            var hostsFile = GetManagedConfigFilePath();
+            var lines = await File.ReadAllLinesAsync(hostsFile);
 
-            var line = $"{ipAddress} {hostname}";
+            var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
             if(!lines.Contains(line))
             {
                 lines = [.. lines, line];
                 File.WriteAllLines(hostsFile, lines);
             }
-            return Task.CompletedTask;
         }
 
-        public Task RemoveEntryAsync(string hostname)
+        /// <inheritdoc/>
+        public async Task RemoveEntryAsync(string hostname)
         {
-            var hostsFile = GetLocalConfigPath();
-            var lines = File.ReadAllLines(hostsFile);
-            File.WriteAllLines(hostsFile, lines.Where(x => !x.Contains(hostname)).ToArray());
-            return Task.CompletedTask;
+            var hostsFile = GetManagedConfigFilePath();
+            var lines = await File.ReadAllLinesAsync(hostsFile);
+
+            var pattern = $"address=/{hostname}";
+            File.WriteAllLines(hostsFile, lines.Where(x => !x.Contains(pattern)).ToArray());
         }
 
         private string GetLocalConfigDir()
         {
-            string path = "/var/redmaple/dnsmasq";
+            string path = "/data/dnsmasq";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
@@ -55,25 +57,77 @@ namespace RedMaple.Orchestrator.Dns
             }
             return path;
         }
-        private string GetLocalConfigPath()
+
+        private string GetLocalDnsmasqDDir()
         {
             string path = GetLocalConfigDir();
-            var filePath = Path.Combine(path, "hosts");
 
-            if(!File.Exists(filePath))
+            var configD = Path.Combine(path, "dnsmasq.d");
+            if (!Directory.Exists(configD))
             {
-                File.Create(filePath).Close();
+                Directory.CreateDirectory(configD);
+            }
+            return configD;
+        }
+
+        private void CreateManagedConfIfItDoesntExist()
+        {
+            var _ = GetManagedConfigFilePath();
+        }
+
+        /// <summary>
+        /// Returns the path to the file where managed (through API) addresses
+        /// are located
+        /// </summary>
+        /// <returns></returns>
+        private string CreateDnsmasqConfIfItDoesntExist()
+        {
+            string path = GetLocalConfigDir();
+            var filePath = Path.Combine(path, "dnsmasq.conf");
+            if (!File.Exists(filePath))
+            {
+                using var file = File.CreateText(filePath);
+                file.WriteLine("conf-file=/etc/dnsmasq.d/managed.conf");
             }
             return filePath;
         }
 
+        /// <summary>
+        /// Returns the path to the file where managed (through API) addresses
+        /// are located
+        /// </summary>
+        /// <returns></returns>
+        private string GetManagedConfigFilePath()
+        {
+            string dir = GetLocalDnsmasqDDir();
+            var filePath = Path.Combine(dir, "managed.conf");
+
+            if (!File.Exists(filePath))
+            {
+                using var writer = File.CreateText(filePath);
+                writer.WriteLine("""
+                    no-resolv
+
+                    #use google as default nameservers
+                    server=8.8.4.4
+                    server=8.8.8.8
+
+                    conf-file=/etc/dnsmasq.d/managed.conf
+                    """);
+            }
+            return filePath;
+        }
+
+        /// <inheritdoc/>
         public async Task StartAsync()
         {
             var name = "redmaple-dns";
             bool result = await mLocalContainersClient.HasContainerByNameAsync(name);
             if (!result)
             {
-                var configFile = GetLocalConfigPath();
+                string dnsmasqD = GetLocalDnsmasqDDir();
+                CreateManagedConfIfItDoesntExist();
+                var dnsmasqDotConf = CreateDnsmasqConfIfItDoesntExist();
 
                 await mLocalContainersClient.CreateContainerAsync(new CreateContainerParameters
                 {
@@ -85,7 +139,11 @@ namespace RedMaple.Orchestrator.Dns
                     },
                     HostConfig = new HostConfig
                     {
-                        Binds = new List<string> { $"{configFile}:/etc/hosts" },
+                        Binds = new List<string> 
+                        { 
+                            $"{dnsmasqDotConf}:/etc/dnsmasq.conf",
+                            $"{dnsmasqD}:/etc/dnsmasq.d" 
+                        },
                         PortBindings = new Dictionary<string, IList<PortBinding>>
                         {
                             { "53/udp", new List<PortBinding>() { new PortBinding() { HostPort = "53" } } }
@@ -106,6 +164,7 @@ namespace RedMaple.Orchestrator.Dns
             }
         }
 
+        /// <inheritdoc/>
         public async Task StopAsync()
         {
             var name = "redmaple-dns";
@@ -117,6 +176,41 @@ namespace RedMaple.Orchestrator.Dns
                     await mLocalContainersClient.StopAsync(container.Id);
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public async Task SetDnsEntriesAsync(List<DnsEntry> entries)
+        {
+            var managedDnsMasqConfFile = GetManagedConfigFilePath();
+            using var writer = File.CreateText(managedDnsMasqConfFile);
+            foreach(var entry in entries)
+            {
+                var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
+                await writer.WriteLineAsync(line);
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<List<DnsEntry>> GetDnsEntriesAsync()
+        {
+            var entries = new List<DnsEntry>();
+
+            var managedDnsMasqConfFile = GetManagedConfigFilePath();
+            var lines = await File.ReadAllLinesAsync(managedDnsMasqConfFile);
+
+            foreach (var line in lines)
+            {
+                if(line.StartsWith("address="))
+                {
+                    var items = line.Split('/');
+                    if(items.Length == 3)
+                    {
+                        entries.Add(new DnsEntry { Hostname = items[1], IpAddress = items[2] });
+                    }
+                }
+            }
+
+            return entries;
         }
     }
 }

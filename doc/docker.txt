@@ -1,0 +1,12 @@
+sudo docker pull 192.168.0.241:5000/redmaple-node
+sudo docker pull 192.168.0.241:5000/redmaple-controller
+
+
+sudo docker run -d -p 1888:8080 --restart always --name ctrl -e INGRESS_IP=192.168.0.202 -v /var/run/docker.sock:/var/run/docker.sock 192.168.0.241:5000/redmaple-controller
+
+sudo docker run -d -p 1889:8080 --restart always --name node -e INGRESS_IP=192.168.0.202 -e INGRESS_PORT=1889 -e "services__controller__http__0=http://192.168.0.202:1888" -v /var/run/docker.sock:/var/run/docker.sock 192.168.0.241:5000/redmaple-node
+
+
+
+/var/snap/docker/current/config/daemon.json
+sudo snap restart docker

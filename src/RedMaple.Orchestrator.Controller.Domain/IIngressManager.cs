@@ -1,10 +1,13 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Ingress;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Domain
 {
-    public interface IIngressManager
+    public interface IIngressManager: IIngressServiceController
     {
-        Task<List<IngressServiceDescription>> GetServicesAsync();
-        Task AddIngressServiceAsync(IngressServiceDescription service);
     }
 }

@@ -1,0 +1,105 @@
+﻿@page "/node/{id}/containers"
+@rendermode InteractiveServer
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
+
+<h1>Containers</h1>
+
+<div class="buttons">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               @onclick="OnCreateContainer">Create Container</MudButton>
+
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               @onclick="OnCreateContainer">Import Docker Compose</MudButton>
+</div>
+
+<MudPaper Class="pa-5">
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>State</th>
+                <th>Status</th>
+                <th>Ports</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach (var container in _containers)
+            {
+                <tr>
+                    <td>@container.Name</td>
+                    <td>@container.State</td>
+                    <td>@container.Status</td>
+                    <td>
+                        @if(container.Ports is not null)
+                        {
+                            foreach(var port in container.Ports.Where(x => x.PublicPort > 0))
+                            {
+                                <div>@port.PublicPort (@port.Type)</div>
+                            }
+                        }
+
+                    </td>
+                    <td>
+                        <a class="link" @onclick="async () => await StopContainerAsync(container.Id)">STOP</a>
+                        <a class="link" @onclick="async () => await StartContainerAsync(container.Id)">START</a>
+                        <a class="link" @onclick="async () => await RestartContainerAsync(container.Id)">RESTART</a>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+</MudPaper>
+
+@code {
+    [Parameter] public string Id { get; set; } = null!;
+
+    private NodeInfo? _nodeInfo;
+    private List<Container> _containers = new();
+    private void OnCreateContainer()
+    {
+        navigationManager.NavigateTo($"/node/{Id}/create-simple-container");
+    }
+    private async Task StartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.StartAsync(id);
+        }
+    }
+    private async Task StopContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.StopAsync(id);
+        }
+    }
+    private async Task RestartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.RestartAsync(id);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
+ 
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            _containers = await client.GetContainersAsync();
+        }
+    }
+}

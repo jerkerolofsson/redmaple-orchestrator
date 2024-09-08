@@ -1,4 +1,4 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Node;
 
 namespace RedMaple.Orchestrator.Controller.Domain
 {
@@ -14,6 +14,29 @@ namespace RedMaple.Orchestrator.Controller.Domain
         public async Task EnrollNodeAsync(NodeInfo nodeInfo)
         {
             await _nodeRepository.AddNodeAsync(nodeInfo);
+        }
+
+        public async Task<NodeInfo?> GetNodeByIpAddressAsync(string ingressIp)
+        {
+            var nodes = await GetNodesAsync();
+            foreach (var node in nodes)
+            {
+                if (node.IpAddress == ingressIp)
+                {
+                    return node;
+                }
+                if (node.HostAddresses is not null)
+                {
+                    foreach (var hostAddress in node.HostAddresses)
+                    {
+                        if (hostAddress == ingressIp)
+                        {
+                            return node;
+                        }
+                    }
+                }
+            }
+            return null;
         }
 
         public Task<List<NodeInfo>> GetNodesAsync()

@@ -1,4 +1,5 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Ingress;
+using RedMaple.Orchestrator.Contracts.Node;
 using RedMaple.Orchestrator.Controller.Infrastructure.Database;
 using System;
 using System.Collections.Generic;
@@ -13,7 +14,7 @@ namespace Microsoft.Extensions.DependencyInjection
         public static IServiceCollection AddControllerInfrastructure(this IServiceCollection services)
         {
             services.AddSingleton<INodeRepository, InMemoryNodeRepository>();
-            services.AddSingleton<IIngressRepository, InMemoryIngressRepository>();
+            services.AddSingleton<IIngressRepository, FileSystemIngressRepository>();
             return services;
         }
     }

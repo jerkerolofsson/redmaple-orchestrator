@@ -1,5 +1,4 @@
-﻿
-using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Ingress;
 
 namespace RedMaple.Orchestrator.Ingress
 {

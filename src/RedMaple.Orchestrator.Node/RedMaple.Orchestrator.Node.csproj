@@ -6,9 +6,11 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>ac0ad6ad-1a4d-435f-88a6-e80185f170f8</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileTag>redmaple-node</DockerfileTag>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.4.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.20.1" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
   </ItemGroup>
@@ -16,6 +18,8 @@
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Containers\RedMaple.Orchestrator.Containers.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Contracts\RedMaple.Orchestrator.Contracts.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Dns\RedMaple.Orchestrator.Dns.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Ingress\RedMaple.Orchestrator.Ingress.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.ServiceDefaults\RedMaple.Orchestrator.ServiceDefaults.csproj" />
   </ItemGroup>
 

@@ -1,4 +1,5 @@
 ﻿using RedMaple.Orchestrator.Contracts;
+using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Controller.Domain;
 using System;
 using System.Collections.Generic;

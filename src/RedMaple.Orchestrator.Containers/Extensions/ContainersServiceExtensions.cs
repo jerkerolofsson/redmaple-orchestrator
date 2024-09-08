@@ -1,4 +1,5 @@
 ﻿using RedMaple.Orchestrator.Containers;
+using RedMaple.Orchestrator.Contracts.Containers;
 using System;
 using System.Collections.Generic;
 using System.Linq;

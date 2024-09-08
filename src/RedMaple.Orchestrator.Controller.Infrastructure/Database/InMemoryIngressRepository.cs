@@ -1,4 +1,4 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Ingress;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,11 +11,31 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
     {
         private List<IngressServiceDescription> _services = new();
 
+        public InMemoryIngressRepository()
+        {
+        }
+
         public IQueryable<IngressServiceDescription> Services => _services.AsQueryable();
 
-        public Task AddIngressServiceAsync(IngressServiceDescription nodeInfo)
+        public Task AddIngressServiceAsync(IngressServiceDescription service)
         {
-            _services.Add(nodeInfo);
+            if(string.IsNullOrWhiteSpace(service.Id))
+            {
+                service.Id = Guid.NewGuid().ToString(); 
+            }
+            _services.Add(service);
+            return Task.CompletedTask;
+        }
+
+        public Task<List<IngressServiceDescription>> GetServicesAsync()
+        {
+            List<IngressServiceDescription> services = _services.ToList();
+            return Task.FromResult(services);
+        }
+
+        public Task DeleteIngressServiceAsync(string id)
+        {
+            _services.RemoveAll(x => x.Id == id);
             return Task.CompletedTask;
         }
     }

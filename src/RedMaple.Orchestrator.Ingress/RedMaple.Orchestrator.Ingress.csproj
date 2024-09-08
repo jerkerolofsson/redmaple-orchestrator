@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Containers\RedMaple.Orchestrator.Containers.csproj" />
-    <ProjectReference Include="..\RedMaple.Orchestrator.Security\RedMaple.Orchestrator.Security.csproj" />
   </ItemGroup>
 
 </Project>

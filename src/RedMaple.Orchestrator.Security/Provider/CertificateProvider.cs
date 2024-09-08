@@ -20,6 +20,10 @@ namespace RedMaple.Orchestrator.Security.Provider
         {
             mLogger = logger;
             mCaRootDir = fileStorage.GetRootDirectory();
+            if(!Directory.Exists(mCaRootDir))
+            { 
+                Directory.CreateDirectory(mCaRootDir); 
+            }
         }
 
         public Task SaveCertificateAsync(string name, X509Certificate2 certificate, List<X509Certificate2> chain)

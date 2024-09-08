@@ -1,7 +1,5 @@
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Mvc;
-using RedMaple.Orchestrator.Containers;
-using RedMaple.Orchestrator.Contracts;
 
 namespace RedMaple.Orchestrator.Node.Controllers
 {

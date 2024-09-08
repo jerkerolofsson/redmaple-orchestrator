@@ -1,0 +1,76 @@
+﻿@page "/node/{id}/ingress"
+@using MudBlazor
+@using RedMaple.Orchestrator.Contracts.Ingress
+@using RedMaple.Orchestrator.Controller.Domain
+@rendermode InteractiveServer
+@inject IIngressManager ingressManager
+@inject NavigationManager navigationManager
+@inject INodeManager nodeManager
+
+<h1>Reverse Proxy</h1>
+
+<div class="buttons">
+    <MudButton 
+        Variant="Variant.Filled" 
+        Color="Color.Primary" 
+        @onclick="OnCreate">Create</MudButton>
+</div>
+
+@if(_services.Count == 0)
+{
+    <MudAlert Severity="Severity.Warning">No ingress services created</MudAlert>
+}
+else
+{
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Ingress Port</th>
+                <th>Schema</th>
+                <th>Destination IP</th>
+                <th>Destination Port</th>
+            </tr>
+        </thead>
+        <tbody>
+
+            @foreach (var service in _services)
+            {
+                <tr>
+                    <td><a href="@(service.Scheme)://@(service.DomainName):@(service.IngressPort)">@service.DomainName</a></td>
+                    <td>@service.IngressPort</td>
+                    <td>@service.Scheme</td>
+                    <td>@service.DestinationIp</td>
+                    <td>@service.DestinationPort</td>
+                    <td>
+                    </td>
+                </tr>
+            }
+
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<IngressServiceDescription> _services = new();
+
+    [Parameter] public string Id { get; set; } = null!;
+
+    private void OnCreate()
+    {
+        navigationManager.NavigateTo($"/node/{Id}/create-ingress");
+    }
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        var node = nodes.Where(x => x.Id == Id).FirstOrDefault();
+        if(node is null)
+        {
+            throw new ArgumentException("Node not found");
+        }
+
+        // Add a services
+        var services = await ingressManager.GetServicesAsync();
+        _services = services.Where(x => x.IngressIp == node.IpAddress).ToList();
+    }
+}

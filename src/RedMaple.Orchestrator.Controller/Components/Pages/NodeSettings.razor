@@ -1,0 +1,57 @@
+﻿@page "/node/{id}/settings"
+@using MudBlazor
+@using RedMaple.Orchestrator.Containers
+@using RedMaple.Orchestrator.Contracts
+@using RedMaple.Orchestrator.Contracts.Containers
+@using RedMaple.Orchestrator.Controller.Domain
+@rendermode InteractiveServer
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
+
+<h1>Settings</h1>
+
+@if (_nodeSettings is not null)
+{
+    <MudCard Class="pa-5">
+        <MudCardContent>
+            <MudForm Spacing="2" Model="@_nodeSettings">
+                <MudSwitch @bind-Value="_nodeSettings.EnableDns"
+                           Label="DNS Server" Color="Color.Primary" />
+            </MudForm>
+        </MudCardContent>
+
+        <MudCardActions>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" 
+            OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = null!;
+
+    private NodeInfo? _nodeInfo;
+    private RedMaple.Orchestrator.Contracts.Node.NodeSettings? _nodeSettings;
+
+    private async Task SaveSettingsAsync()
+    {
+        if (_nodeInfo is not null && _nodeSettings is not null)
+        {
+            using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
+            await client.ApplySettingsAsync(_nodeSettings);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
+
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
+            _nodeSettings = await client.GetSettingsAsync();
+        }
+    }
+}

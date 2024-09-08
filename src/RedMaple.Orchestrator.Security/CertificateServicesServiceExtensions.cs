@@ -15,7 +15,7 @@ namespace Microsoft.Extensions.DependencyInjection
         {
             services.AddTransient< ICertificateFileStorage, CertificateFileStorage > ();
             services.AddTransient<ICertificateProvider, CertificateProvider>();
-            services.AddTransient<CertificateAuthority>();
+            services.AddTransient<ICertificateAuthority,CertificateAuthority>();
 
             return services;
         }

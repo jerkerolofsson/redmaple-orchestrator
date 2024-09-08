@@ -1,4 +1,4 @@
-﻿using RedMaple.Orchestrator.Contracts;
+﻿using RedMaple.Orchestrator.Contracts.Node;
 
 namespace RedMaple.Orchestrator.Controller.Domain
 {
@@ -6,5 +6,6 @@ namespace RedMaple.Orchestrator.Controller.Domain
     {
         Task<List<NodeInfo>> GetNodesAsync();
         Task EnrollNodeAsync(NodeInfo nodeInfo);
+        Task<NodeInfo?> GetNodeByIpAddressAsync(string ingressIp);
     }
 }

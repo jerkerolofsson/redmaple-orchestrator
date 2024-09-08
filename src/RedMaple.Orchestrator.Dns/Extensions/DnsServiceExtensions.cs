@@ -1,4 +1,5 @@
 ﻿using RedMaple.Orchestrator.Containers;
+using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Dns;
 using System;
 using System.Collections.Generic;

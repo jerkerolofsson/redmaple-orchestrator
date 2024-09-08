@@ -1,7 +1,7 @@
 #See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS base
-USER app
+#USER app
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
@@ -13,6 +13,10 @@ COPY ["RedMaple.Orchestrator.Node/RedMaple.Orchestrator.Node.csproj", "RedMaple.
 COPY ["RedMaple.Orchestrator.Containers/RedMaple.Orchestrator.Containers.csproj", "RedMaple.Orchestrator.Containers/"]
 COPY ["RedMaple.Orchestrator.Contracts/RedMaple.Orchestrator.Contracts.csproj", "RedMaple.Orchestrator.Contracts/"]
 COPY ["RedMaple.Orchestrator.ServiceDefaults/RedMaple.Orchestrator.ServiceDefaults.csproj", "RedMaple.Orchestrator.ServiceDefaults/"]
+
+ARG http_proxy=192.168.89.122:10809
+ARG https_proxy=192.168.89.122:10809
+
 RUN dotnet restore "./RedMaple.Orchestrator.Node/RedMaple.Orchestrator.Node.csproj"
 COPY . .
 WORKDIR "/src/RedMaple.Orchestrator.Node"

@@ -19,9 +19,9 @@ namespace RedMaple.Orchestrator.Security.Services
     /// 
     /// Note that either of these certificates can be changed, so it is not guaranteede that the ca certificate is signed by the local root-ca
     /// </summary>
-    public class CertificateAuthority
+    public class CertificateAuthority : ICertificateAuthority
     {
-        public const string CA_PASSWORD = "123456";
+        //public const string CA_PASSWORD = "123456";
         private readonly ILogger mLogger;
         private readonly ICertificateProvider mProvider;
 
@@ -54,12 +54,12 @@ namespace RedMaple.Orchestrator.Security.Services
         public async Task<X509Certificate2> GetRootCertificateAsync()
         {
             var certificate = await mProvider.FindCertificateByNameAsync("root");
-            if(certificate is null)
+            if (certificate is null)
             {
                 var x509Certificate = await GenerateRootCertificateAsync();
                 certificate = await mProvider.FindCertificateByNameAsync("root");
             }
-            if(certificate?.Certificate is null)
+            if (certificate?.Certificate is null)
             {
                 throw new Exception("Failed to generate certificates");
             }
@@ -108,23 +108,23 @@ namespace RedMaple.Orchestrator.Security.Services
         public async Task<IndexedCertificate> GetOrCreateCertificateAsync(string domainName)
         {
             var cert = await mProvider.FindCertificateByNameAsync(domainName);
-            if(cert is null)
+            if (cert is null)
             {
                 await GenerateCertificateAsync(new CreateCertificateRequest
                 {
                     SignByRootCa = true,
                     Name = domainName,
-                    EnhancedUsages = new List<EnhancedCertificateUsageDto> 
-                    { 
+                    EnhancedUsages = new List<EnhancedCertificateUsageDto>
+                    {
                         EnhancedCertificateUsageDto.ServerAuthentication
                     },
                     CommonNames = domainName,
                     SanDnsNames = domainName,
-                    ExpiresInSeconds = TimeSpan.FromDays(365*5).TotalSeconds
+                    ExpiresInSeconds = TimeSpan.FromDays(365 * 5).TotalSeconds
                 });
                 cert = await mProvider.FindCertificateByNameAsync(domainName);
 
-                if(cert is null)
+                if (cert is null)
                 {
                     throw new Exception("Failed to generate certificate");
                 }
@@ -200,7 +200,7 @@ namespace RedMaple.Orchestrator.Security.Services
 
                     // Find the issuer certificate to use for signing
                     var issuer = await mProvider.FindCertificateBySerialAsync(request.IssuerSerial);
-                    if(issuer?.Certificate is null)
+                    if (issuer?.Certificate is null)
                     {
                         throw new Exception("Issuer not found");
                     }

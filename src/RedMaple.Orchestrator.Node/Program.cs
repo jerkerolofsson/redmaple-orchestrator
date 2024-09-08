@@ -7,6 +7,12 @@ builder.AddServiceDefaults();
 builder.Services.AddContainerServices();
 
 builder.Services.AddHostedService<EnrollAtStartup>();
+builder.Services.AddMediatR(options => 
+{
+    options.RegisterServicesFromAssembly(typeof(EnrollAtStartup).Assembly);
+});
+builder.Services.AddSingleton<INodeSettingsProvider, NodeSettingsProvider>();
+builder.Services.AddDns().AddIngress();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -21,7 +27,6 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 

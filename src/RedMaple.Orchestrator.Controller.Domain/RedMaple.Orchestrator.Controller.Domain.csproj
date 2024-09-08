@@ -8,8 +8,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Contracts\RedMaple.Orchestrator.Contracts.csproj" />
-    <ProjectReference Include="..\RedMaple.Orchestrator.Dns\RedMaple.Orchestrator.Dns.csproj" />
-    <ProjectReference Include="..\RedMaple.Orchestrator.Ingress\RedMaple.Orchestrator.Ingress.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Security\RedMaple.Orchestrator.Security.csproj" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 	  <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 
