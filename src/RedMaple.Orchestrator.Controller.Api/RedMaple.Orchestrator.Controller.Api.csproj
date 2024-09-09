@@ -16,4 +16,8 @@
     <ProjectReference Include="..\RedMaple.Orchestrator.ServiceDefaults\RedMaple.Orchestrator.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Controllers\" />
+  </ItemGroup>
+
 </Project>

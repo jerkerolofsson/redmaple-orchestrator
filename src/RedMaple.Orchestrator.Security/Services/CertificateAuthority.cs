@@ -21,7 +21,6 @@ namespace RedMaple.Orchestrator.Security.Services
     /// </summary>
     public class CertificateAuthority : ICertificateAuthority
     {
-        //public const string CA_PASSWORD = "123456";
         private readonly ILogger mLogger;
         private readonly ICertificateProvider mProvider;
 
@@ -328,6 +327,17 @@ namespace RedMaple.Orchestrator.Security.Services
             }
 
             return builder;
+        }
+
+        public async Task ReplaceRootCertificateAsync(X509Certificate2 cert)
+        {
+            await mProvider.DeleteCertificateAsync("root");
+            await mProvider.DeleteCertificateAsync("ca");
+
+            await mProvider.SaveCertificateAsync("root", cert, []);
+
+            // Generate CA certificate
+            await GetCaCertificateAsync();
         }
     }
 }

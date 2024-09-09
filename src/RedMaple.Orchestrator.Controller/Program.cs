@@ -1,5 +1,6 @@
 using MudBlazor.Services;
 using RedMaple.Orchestrator.Controller.Components;
+using RedMaple.Orchestrator.Controller.Controllers;
 
 var builder = WebApplication.CreateBuilder(args);
 builder.AddServiceDefaults();
@@ -10,10 +11,12 @@ builder.Services.AddContainerServices()
     .AddControllerDomainServices()
     .AddControllerInfrastructure();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+        options.InputFormatters.Add(new ByteArrayInputFormatter()));
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
@@ -30,6 +33,9 @@ if (!app.Environment.IsDevelopment())
 
 app.UseStaticFiles();
 app.UseAntiforgery();
+
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapControllers();
 

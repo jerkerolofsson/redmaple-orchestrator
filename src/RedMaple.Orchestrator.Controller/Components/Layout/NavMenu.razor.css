@@ -103,3 +103,14 @@
         overflow-y: auto;
     }
 }
+
+
+.container-logo {
+    display: grid;
+    gap: 0.1rem;
+    grid-template-columns: auto 1fr;
+}
+
+.container-logo img {
+    width: 48px;
+}

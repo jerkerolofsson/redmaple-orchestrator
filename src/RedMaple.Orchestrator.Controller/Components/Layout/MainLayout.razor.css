@@ -11,7 +11,8 @@ main {
 }
 
 .sidebar {
-    margin-right:1rem;
+    background: #ccc;
+    padding: 0.5rem;
 }
 
 .top-row {
@@ -38,44 +39,32 @@ main {
         text-overflow: ellipsis;
     }
 
-@media (max-width: 640.98px) {
-    .top-row {
-        justify-content: space-between;
-    }
-
-    .top-row ::deep a, .top-row ::deep .btn-link {
-        margin-left: 0;
-    }
+.page {
+    flex-direction: row;
 }
 
-@media (min-width: 641px) {
-    .page {
-        flex-direction: row;
-    }
+.sidebar {
+    height: 100vh;
+    border-right: solid 1px #bbb;
+    position: sticky;
+    top: 0;
+}
 
-    .sidebar {
-        width: 250px;
-        height: 100vh;
-        position: sticky;
-        top: 0;
-    }
+.top-row {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
 
-    .top-row {
-        position: sticky;
-        top: 0;
-        z-index: 1;
-    }
+.top-row.auth ::deep a:first-child {
+    flex: 1;
+    text-align: right;
+    width: 0;
+}
 
-    .top-row.auth ::deep a:first-child {
-        flex: 1;
-        text-align: right;
-        width: 0;
-    }
-
-    .top-row, article {
-        padding-left: 2rem !important;
-        padding-right: 1.5rem !important;
-    }
+.top-row, article {
+    padding-left: 2rem !important;
+    padding-right: 1.5rem !important;
 }
 
 #blazor-error-ui {

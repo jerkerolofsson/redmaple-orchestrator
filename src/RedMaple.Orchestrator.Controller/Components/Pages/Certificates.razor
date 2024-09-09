@@ -6,17 +6,77 @@
 @using System.Security.Cryptography.X509Certificates
 @rendermode InteractiveServer
 @inject ICertificateAuthority certificateAuthority
+@inject NavigationManager navigationManager
 <MudPopoverProvider />
 
-<h1>Root Certificate</h1>
-@rootCert?.GetSerialNumberString();
+<h1>Certificates</h1>
+<h2 class="mt-5">Root Certificate</h2>
+<MudPaper Class="pa-5">
+    <a href="/api/ca/root/cert">Download .crt</a>
+    <a href="/api/ca/root/pem">Download .pem</a>
+</MudPaper>
 
-<h1>CA Certificate</h1>
-@caCert?.GetSerialNumberString();
+<h2 class="mt-5">Intermediate CA Certificate</h2>
+<MudPaper Class="pa-5">
+    <a href="/api/ca/intermediate/cert">Download .crt</a>
+    <a href="/api/ca/intermediate/pem">Download .pem</a>
+</MudPaper>
+
+<h3 class="mt-5">Replace root certificate</h3>
+<MudPaper Class="pa-5">
+    <code>
+        <pre>curl -X POST --data-binary @@root_ca.pfx -H "Content-Type: application/octet-stream" https://URL/api/ca/root?password=PASSWORD</pre>
+    </code>
+</MudPaper>
+
+<h3 class="mt-5">Generate certificate</h3>
+<EditForm Model="@model" OnValidSubmit="() => OnValidSubmit()">
+    <DataAnnotationsValidator />
+    <MudGrid>
+        <MudItem xs="12" sm="7">
+            <MudCard>
+                <MudCardContent>
+                    <MudTextField Label="Domain Name"
+                                  @bind-Value="model.DnsName" For="@(() => model.DnsName)" />
+
+                    <MudTextField Label="Password" Class="mt-5"
+                                  @bind-Value="model.Password" For="@(() => model.Password)" />
+
+                    <MudTextField Label="IP Address" Class="mt-5"
+                                  HelperText="Optional"
+                                  @bind-Value="model.IpAddress" For="@(() => model.IpAddress)" />
+
+                </MudCardContent>
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary">Create</MudButton>
+                </MudCardActions>
+            </MudCard>
+        </MudItem>
+    </MudGrid>
+</EditForm>
 
 @code {
     private X509Certificate? rootCert;
     private X509Certificate? caCert;
+
+    GenerateCertificateModel model = new GenerateCertificateModel();
+
+    public class GenerateCertificateModel
+    {
+        [Required]
+        public string DnsName { get; set; } = "app1.home.io";
+
+        public string Password { get; set; } = "hunter2";
+        public string IpAddress { get; set; } = "";
+    }
+
+    public void OnValidSubmit()
+    {
+        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}");
+    }
+
 
     protected override async Task OnInitializedAsync()
     {

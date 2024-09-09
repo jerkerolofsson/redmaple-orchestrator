@@ -38,7 +38,7 @@ namespace RedMaple.Orchestrator.Node.Enrollment
 
             if (!int.TryParse(Environment.GetEnvironmentVariable("INGRESS_HTTPS_PORT"), out int ingressHttpsPort))
             {
-                port = 443;
+                ingressHttpsPort = 443;
             }
 
             _logger.LogError("ENROLLING node with id={NodeId}, API Port={port}, Ingress Port={ingressHttpsPort}", settings.Id, port, ingressHttpsPort);

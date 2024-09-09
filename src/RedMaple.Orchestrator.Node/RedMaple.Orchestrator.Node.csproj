@@ -6,6 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>ac0ad6ad-1a4d-435f-88a6-e80185f170f8</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	  <ContainerUser>root</ContainerUser>
     <DockerfileTag>redmaple-node</DockerfileTag>
   </PropertyGroup>
 

@@ -99,7 +99,7 @@ namespace RedMaple.Orchestrator.Security.Serialization
                 File.WriteAllBytes(filename, bytes);
             }
         }
-        public static void ToCertFile(X509Certificate2 cert, string filename, string password)
+        public static void ToCertFile(X509Certificate2 cert, string filename, string? password)
         {
             var bytes = cert.Export(X509ContentType.Cert, password);
             File.WriteAllBytes(filename, bytes);
@@ -110,11 +110,29 @@ namespace RedMaple.Orchestrator.Security.Serialization
             var bytes = cert.Export(X509ContentType.Pfx);
             return bytes;
         }
-        public static byte[] ToPfx(X509Certificate2 cert, string password)
+        public static byte[] ToPfx(X509Certificate2 cert, string? password)
         {
             var bytes = cert.Export(X509ContentType.Pfx, password);
             return bytes;
         }
+        public static byte[] ToPfx(X509Certificate2 cert, string? password, List<X509Certificate2> chain)
+        {
+            if (chain.Count == 0)
+            {
+                return cert.Export(X509ContentType.Pfx, password);
+            }
+            else
+            {
+                X509Certificate2Collection collection = [cert, .. chain];
+                var bytes = collection.Export(X509ContentType.Pfx, password);
+                if(bytes is null)
+                {
+                    throw new Exception("Failed to export certificate");
+                }
+                return bytes;
+            }
+        }
+
         public static void ToPfxFile(X509Certificate2 cert, string filename, string password, List<X509Certificate2> chain)
         {
             if (chain.Count == 0)

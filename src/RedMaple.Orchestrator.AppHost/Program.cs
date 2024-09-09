@@ -9,6 +9,4 @@ builder.AddProject<Projects.RedMaple_Orchestrator_Node>("node")
     .WithEnvironment("NODE_IP", "192.168.0.241")
     .WithReference(controller);
 
-builder.AddProject<Projects.RedMaple_Orchestrator_Controller_Api>("redmaple-orchestrator-controller-api");
-
 builder.Build().Run();

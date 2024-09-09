@@ -37,9 +37,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CertificateTests", "..\test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Dns", "RedMaple.Orchestrator.Dns\RedMaple.Orchestrator.Dns.csproj", "{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Controller.Api", "RedMaple.Orchestrator.Controller.Api\RedMaple.Orchestrator.Controller.Api.csproj", "{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Sdk", "RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj", "{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Sdk", "RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj", "{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -95,10 +93,6 @@ Global
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F}.Release|Any CPU.Build.0 = Release|Any CPU
 		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -120,7 +114,6 @@ Global
 		{CFEE6546-7D0F-48CF-846F-49D7A0DDE062} = {9D47399A-AF2F-4835-925B-5E54718DF316}
 		{030F2F76-9A99-42D7-805E-45DE4CCE5BEA} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 		{FB1EFA68-1806-4E0B-80B6-19FA7E67A778} = {BF3CA9CF-C40A-4604-8EB9-A06D739D5079}
-		{A16B77BE-E72F-4EEB-A38B-AE47AD8B9A4F} = {9D47399A-AF2F-4835-925B-5E54718DF316}
 		{1F0BAA75-65EB-42A6-8704-2DF51D7032F7} = {BF3CA9CF-C40A-4604-8EB9-A06D739D5079}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
