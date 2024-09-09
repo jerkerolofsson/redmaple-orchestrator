@@ -1,13 +1,14 @@
 ﻿@page "/node/{id}/ingress"
 @using MudBlazor
 @using RedMaple.Orchestrator.Contracts.Ingress
-@using RedMaple.Orchestrator.Controller.Domain
+@using RedMaple.Orchestrator.Controller.Domain;
+@using RedMaple.Orchestrator.Controller.Domain.Ingress;
 @rendermode InteractiveServer
 @inject IIngressManager ingressManager
 @inject NavigationManager navigationManager
 @inject INodeManager nodeManager
 
-<h1>Reverse Proxy</h1>
+<MudPopoverProvider />
 
 <div class="buttons">
     <MudButton 
@@ -16,55 +17,62 @@
         @onclick="OnCreate">Create</MudButton>
 </div>
 
-@if(_services.Count == 0)
-{
-    <MudAlert Severity="Severity.Warning">No ingress services created</MudAlert>
-}
-else
-{
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Ingress Port</th>
-                <th>Schema</th>
-                <th>Destination IP</th>
-                <th>Destination Port</th>
-            </tr>
-        </thead>
-        <tbody>
+<MudPaper Class="pa-5">
 
-            @foreach (var service in _services)
-            {
-                <tr>
-                    <td><a href="@(service.Scheme)://@(service.DomainName):@(service.IngressPort)">@service.DomainName</a></td>
-                    <td>@service.IngressPort</td>
-                    <td>@service.Scheme</td>
-                    <td>@service.DestinationIp</td>
-                    <td>@service.DestinationPort</td>
-                    <td>
-                    </td>
-                </tr>
-            }
+    <h1>Ingress Services</h1>
 
-        </tbody>
-    </table>
-}
+    @if(_services.Count == 0)
+    {
+        <MudAlert Severity="Severity.Warning">No ingress services created</MudAlert>
+    }
+    else
+    {
+
+        <MudDataGrid Bordered="true" Dense="true"
+                     ReadOnly="false"
+                     Items="@_services"
+                     SortMode="SortMode.Multiple">
+            <Columns>
+                <PropertyColumn Property="x => x.DomainName" Title="Name" />
+                <PropertyColumn Property="x => x.IngressIp" Title="Ingress IP" />
+                <PropertyColumn Property="x => x.IngressPort" Title="Ingress Port" />
+
+                <PropertyColumn Property="x => x.Scheme" Title="Scheme" />
+                <PropertyColumn Property="x => x.DestinationIp" Title="Destination IP" />
+                <PropertyColumn Property="x => x.DestinationPort" Title="Destination Port" />
+
+                <TemplateColumn StickyRight="true">
+                    <CellTemplate>
+                        <MudButton OnClick="async () => await DeleteAsync(context.Item)">Delete</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+
+            </Columns>
+        </MudDataGrid>
+    }
+</MudPaper>
 
 @code {
     private List<IngressServiceDescription> _services = new();
 
     [Parameter] public string Id { get; set; } = null!;
 
+    private async Task DeleteAsync(IngressServiceDescription service)
+    {
+        await ingressManager.DeleteIngressServiceAsync(service.Id);
+        await LoadServicesAsync();
+    }
+
     private void OnCreate()
     {
         navigationManager.NavigateTo($"/node/{Id}/create-ingress");
     }
-    protected override async Task OnInitializedAsync()
+
+    private async Task LoadServicesAsync()
     {
         var nodes = await nodeManager.GetNodesAsync();
         var node = nodes.Where(x => x.Id == Id).FirstOrDefault();
-        if(node is null)
+        if (node is null)
         {
             throw new ArgumentException("Node not found");
         }
@@ -72,5 +80,11 @@ else
         // Add a services
         var services = await ingressManager.GetServicesAsync();
         _services = services.Where(x => x.IngressIp == node.IpAddress).ToList();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadServicesAsync();
+
     }
 }

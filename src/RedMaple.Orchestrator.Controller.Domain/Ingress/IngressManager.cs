@@ -7,7 +7,7 @@ using System.Net;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
-namespace RedMaple.Orchestrator.Controller.Domain
+namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 {
     public class IngressManager : IIngressManager
     {
@@ -19,7 +19,7 @@ namespace RedMaple.Orchestrator.Controller.Domain
         public IngressManager(
             ILogger<IngressManager> logger,
             ICertificateAuthority certificateAuthority,
-            IIngressRepository nodeRepository, 
+            IIngressRepository nodeRepository,
             INodeManager nodeManager)
         {
             _logger = logger;

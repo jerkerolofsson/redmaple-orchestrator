@@ -4,57 +4,35 @@
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
 
-<h1>Containers</h1>
-
 <div class="buttons">
     <MudButton Variant="Variant.Filled"
                Color="Color.Primary"
                @onclick="OnCreateContainer">Create Container</MudButton>
-
-    <MudButton Variant="Variant.Filled"
-               Color="Color.Primary"
-               @onclick="OnCreateContainer">Import Docker Compose</MudButton>
 </div>
 
 <MudPaper Class="pa-5">
-    <table>
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>State</th>
-                <th>Status</th>
-                <th>Ports</th>
-                <th>Actions</th>
-            </tr>
-        </thead>
-        <tbody>
 
-            @foreach (var container in _containers)
-            {
-                <tr>
-                    <td>@container.Name</td>
-                    <td>@container.State</td>
-                    <td>@container.Status</td>
-                    <td>
-                        @if(container.Ports is not null)
-                        {
-                            foreach(var port in container.Ports.Where(x => x.PublicPort > 0))
-                            {
-                                <div>@port.PublicPort (@port.Type)</div>
-                            }
-                        }
+    <h1>Containers</h1>
 
-                    </td>
-                    <td>
-                        <a class="link" @onclick="async () => await StopContainerAsync(container.Id)">STOP</a>
-                        <a class="link" @onclick="async () => await StartContainerAsync(container.Id)">START</a>
-                        <a class="link" @onclick="async () => await RestartContainerAsync(container.Id)">RESTART</a>
-                    </td>
-                </tr>
-            }
+    <MudDataGrid Bordered="true" Dense="true"
+                 ReadOnly="false"
+                 Items="@_containers"
+                 SortMode="SortMode.Multiple">
+        <Columns>
+            <PropertyColumn Property="x => x.Name" Title="Name" />
+            <PropertyColumn Property="x => x.Status" Title="Status" />
+            <PropertyColumn Property="x => x.State" Title="State" />
 
-        </tbody>
-    </table>
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudButton OnClick="async() => await StartContainerAsync(context.Item.Id)">Start</MudButton>
+                    <MudButton OnClick="async() => await StopContainerAsync(context.Item.Id)">Stop</MudButton>
+                    <MudButton OnClick="async() => await RestartContainerAsync(context.Item.Id)">Restart</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+
+        </Columns>
+    </MudDataGrid>
 </MudPaper>
 
 @code {

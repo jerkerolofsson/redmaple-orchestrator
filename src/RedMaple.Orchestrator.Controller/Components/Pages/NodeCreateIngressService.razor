@@ -4,14 +4,15 @@
 @inject INodeManager _nodeManager
 @using System.ComponentModel.DataAnnotations
 
-<h1>Create new ingress service</h1>
 <MudPopoverProvider />
 
 <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
     <DataAnnotationsValidator />
     <MudGrid>
         <MudItem xs="12" sm="7">
-            <MudCard>
+            <MudCard Class="pa-5">
+                <h1>Create new ingress service</h1>
+
                 <MudCardContent>
                     <MudTextField Label="Domain Name"
                                   @bind-Value="model.DomainName" For="@(() => model.DomainName)" />

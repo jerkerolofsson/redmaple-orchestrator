@@ -5,9 +5,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace RedMaple.Orchestrator.Controller.Domain
+namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 {
-    public interface IIngressManager: IIngressServiceController
+    public interface IIngressManager : IIngressServiceController
     {
     }
 }

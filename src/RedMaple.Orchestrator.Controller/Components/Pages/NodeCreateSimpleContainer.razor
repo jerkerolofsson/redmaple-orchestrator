@@ -4,13 +4,12 @@
 @inject INodeManager nodeManager
 @inject NavigationManager navigationManager
 
-<h1>Create a new container</h1>
-
 <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
     <DataAnnotationsValidator />
     <MudGrid>
         <MudItem xs="12" sm="7">
-            <MudCard>
+            <MudCard Class="pa-5">
+                <h1>Create new container</h1>
                 <MudCardContent>
                     <MudTextField Label="Name"
                                   @bind-Value="model.ContainerName" For="@(() => model.ContainerName)" />
@@ -27,13 +26,7 @@
                                   @bind-Value="model.ContainerPort" For="@(() => model.ContainerPort)" />
 
                 </MudCardContent>
-                <MudCardActions>
-                    <MudButton 
-                        ButtonType="ButtonType.Submit" 
-                        Variant="Variant.Filled" 
-                        Color="Color.Primary" >Create</MudButton>
-                </MudCardActions>
-
+               
                 @if (_errorMessage is not null)
                 {
                     <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Error">
@@ -46,6 +39,12 @@
                         Create a new container which will be started on a remote node
                     </MudAlert>
                 }
+                <MudCardActions>
+                    <MudButton ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary">Create</MudButton>
+                </MudCardActions>
+
             </MudCard>
         </MudItem>
     </MudGrid>
