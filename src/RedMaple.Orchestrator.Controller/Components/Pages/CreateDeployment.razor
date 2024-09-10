@@ -1,43 +1,20 @@
-﻿@page "/node/{id}/create-ingress"
+﻿@page "/node/{id}/create-deployment"
 @rendermode InteractiveServer
 @inject IIngressManager _ingressManager
 @inject INodeManager _nodeManager
-@using System.ComponentModel.DataAnnotations
-@using RedMaple.Orchestrator.Controller.Domain.Ingress
 
 <MudPopoverProvider />
-
-<MudItem xs="12" sm="7">
-    <MudPaper Class="pa-5">
-        <div class="schematics">
-            <img src="cloud-server.png" class="server"/>
-            <img src="arrow-right.png" class="arrow" />
-            <img src="app-server.png" class="server" />
-            <MudText Typo="Typo.subtitle1">Ingress</MudText>
-            <MudText Typo="Typo.subtitle1"></MudText>
-            <MudText Typo="Typo.subtitle1">Application Service</MudText>
-
-            <MudText Typo="Typo.body1">https://@model.DomainName</MudText>
-            <MudText Typo="Typo.body1"></MudText>
-            <MudText Typo="Typo.body1">@model.Destination</MudText>
-        </div>
-    </MudPaper>
-</MudItem>
 
 <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
     <DataAnnotationsValidator />
     <MudGrid>
         <MudItem xs="12" sm="7">
-            <MudCard Class="pa-5 mt-5">
+            <MudCard Class="pa-5">
                 <h1>Create new ingress service</h1>
 
                 <MudCardContent>
                     <MudTextField Label="Domain Name"
                                   @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
-
-                    <MudTextField Label="Destination" Class="mt-5"
-                                  HelperText="Destination URL where the app/service is running"
-                                  @bind-Value="model.Destination" For="@(() => model.Destination)" />
 
                 </MudCardContent>
                 <MudCardActions>

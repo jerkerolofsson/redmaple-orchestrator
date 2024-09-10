@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Contracts.Ingress;
+using RedMaple.Orchestrator.Controller.Domain.Node;
 using RedMaple.Orchestrator.Sdk;
 using RedMaple.Orchestrator.Security.Services;
 using System.Net;
@@ -13,17 +14,20 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
     {
         private readonly ILogger<IngressManager> _logger;
         private readonly ICertificateAuthority _certificateAuthority;
+        private readonly IGlobalDnsRepository _globalDnsRepository;
         private readonly IIngressRepository _repository;
         private readonly INodeManager _nodeManager;
 
         public IngressManager(
             ILogger<IngressManager> logger,
             ICertificateAuthority certificateAuthority,
+            IGlobalDnsRepository globalDnsRepository,
             IIngressRepository nodeRepository,
             INodeManager nodeManager)
         {
             _logger = logger;
             _certificateAuthority = certificateAuthority;
+            _globalDnsRepository = globalDnsRepository;
             _repository = nodeRepository;
             _nodeManager = nodeManager;
         }
@@ -60,18 +64,25 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         private async Task UpdateDnsServersAsync(IngressServiceDescription service)
         {
-            var dnsEntry = new DnsEntry { Hostname = service.DomainName, IpAddress = service.IngressIp };
+            var dnsEntry = new DnsEntry { Hostname = service.DomainName, IpAddress = service.IngressIp, IsGlobal = true };
+
+            _logger.LogInformation("Adding DNS entry {Name}-{IpAddress}", service.DomainName, service.IngressIp);
+
+            var dnsEntries = await _globalDnsRepository.GetDnsEntriesAsync();
+            dnsEntries.RemoveAll(x => x.Hostname == dnsEntry.Hostname);
+            dnsEntries.Add(dnsEntry);
+            await _globalDnsRepository.SetDnsEntriesAsync(dnsEntries);
+
+            /*
             foreach (var dnsNode in await _nodeManager.GetNodesAsync())
             {
-                _logger.LogInformation("Adding DNS entry {Name}-{IpAddress} on {BaseUrl}", service.DomainName, service.IngressIp, dnsNode.BaseUrl);
-
                 using var dnsClient = new NodeDnsClient(dnsNode.BaseUrl);
                 var entries = await dnsClient.GetDnsEntriesAsync();
                 entries.RemoveAll(x => x.Hostname == dnsEntry.Hostname);
                 entries.Add(dnsEntry);
 
                 await dnsClient.SetDnsEntriesAsync(entries);
-            }
+            }*/
         }
 
         public async Task DeleteIngressServiceAsync(string id)

@@ -13,7 +13,7 @@ namespace Microsoft.Extensions.DependencyInjection
     {
         public static IServiceCollection AddDns(this IServiceCollection services)
         {
-            services.AddTransient<IDns, DnsMasq>();
+            services.AddSingleton<IDns, DnsMasq>();
             return services;
         }
     }

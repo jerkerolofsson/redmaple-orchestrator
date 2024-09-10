@@ -1,4 +1,5 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Controller.Domain.GlobalDns.Notifications;
 using System;
@@ -13,11 +14,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns
     {
         private readonly IGlobalDnsRepository _repository;
         private readonly IMediator _mediator;
+        private readonly ILogger _logger;
 
         public GlobalDnsService(
+            ILogger<GlobalDnsService> logger,
             IGlobalDnsRepository repository,
             IMediator ediator)
         {
+            _logger = logger;
             _repository = repository;
             _mediator = ediator;
         }
@@ -31,6 +35,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns
         {
             EnsureAllEntriesAreGlobal(entries);
 
+            _logger.LogInformation("Updating global DNS table..");
             await _repository.SetDnsEntriesAsync(entries);
 
             await SendNotificationAsync(entries);

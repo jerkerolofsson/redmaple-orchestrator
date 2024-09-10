@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RedMaple.Orchestrator.Contracts.Node;
-using RedMaple.Orchestrator.Controller.Domain;
+using RedMaple.Orchestrator.Controller.Domain.Node;
 using RedMaple.Orchestrator.Sdk;
 using System.Net;
 
@@ -21,6 +21,21 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             _repository = repository;
         }
 
+        /// <summary>
+        /// Returns a list of all enrolled nodes
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet]
+        public async Task<List<NodeInfo>> GetNodesAsync()
+        {
+            return await _repository.GetNodesAsync();
+        }
+
+        /// <summary>
+        /// Enrolls a new node
+        /// </summary>
+        /// <param name="request"></param>
+        /// <returns></returns>
         [HttpPost]
         public async Task<ActionResult> EnrollAsync([FromBody] EnrollmentRequest request)
         {
@@ -32,8 +47,9 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             }
 
             _logger.LogInformation("Enrolling node, remoteip={IP}", remoteIp);
-            string[] addresses = [remoteIp, ..request.HostAddresses];
+            string[] addresses = [..request.HostAddresses, remoteIp];
 
+            bool success = false;
             foreach (var addr in addresses)
             {
                 // See where we can connect back
@@ -45,10 +61,11 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                         try
                         {
                             var url = $"{request.Schema}://{ipAddress}:{request.Port}";
-                            _logger.LogInformation("Testing connection to {url}", url);
+                            _logger.LogInformation("Testing node connection to {url}", url);
                             using var client = new NodeContainersClient(url);
                             var _ = await client.GetContainersAsync();
                             remoteIp = ipAddress.ToString();
+                            success = true;
                             break;
                         }
                         catch(Exception ex)
@@ -57,6 +74,11 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                         }
                     }
                 }
+            }
+
+            if(!success)
+            {
+                return BadRequest();
             }
 
             _logger.LogInformation("Enrolling node IP={IP}, Port={Port}, Schema={Schema}", remoteIp, request.Port, request.Schema);

@@ -9,10 +9,15 @@ namespace RedMaple.Orchestrator.Node.Controllers
     {
         private readonly ILogger _logger;
         private readonly IDns _dns;
+        private readonly INodeSettingsProvider _nodeSettingsProvider;
 
-        public DnsController(ILogger<DnsController> logger, IDns dns)
+        public DnsController(
+            ILogger<DnsController> logger,
+            INodeSettingsProvider nodeSettingsProvider,
+            IDns dns)
         {
             _logger = logger;
+            _nodeSettingsProvider = nodeSettingsProvider;
             _dns = dns;
         }
 
@@ -27,8 +32,13 @@ namespace RedMaple.Orchestrator.Node.Controllers
         public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries)
         {
             await _dns.SetDnsEntriesAsync(entries);
-            await _dns.StopAsync();
-            await _dns.StartAsync();
+            var settings = await _nodeSettingsProvider.GetSettingsAsync();
+            if (settings.EnableDns)
+            {
+                _logger.LogInformation("DNS table updated, restarting dns..");
+                await _dns.StopAsync();
+                await _dns.StartAsync();
+            }
         }
 
         [HttpPost("/api/dns/entries")]

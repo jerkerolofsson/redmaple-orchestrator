@@ -13,7 +13,7 @@ namespace RedMaple.Orchestrator.Security.Storage
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                return @"c:\temp\certs";
+                return @"c:\temp\redmaple\controller\certs";
             }
             return "/data/redmaple/controller/certs";
         }

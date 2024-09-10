@@ -1,1 +1,12 @@
-﻿
+﻿.schematics {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    place-items: center;
+}
+
+.schematics img {
+    width: 64px;
+}
+.schematics img.arrow {
+    width: 32px;
+}

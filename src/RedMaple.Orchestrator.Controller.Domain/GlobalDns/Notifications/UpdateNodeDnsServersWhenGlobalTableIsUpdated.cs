@@ -1,5 +1,7 @@
 ﻿using MediatR;
+using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Dns;
+using RedMaple.Orchestrator.Controller.Domain.Node;
 using RedMaple.Orchestrator.Sdk;
 using System;
 using System.Collections.Generic;
@@ -13,10 +15,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns.Notifications
 
     internal class UpdateNodeDnsServersWhenGlobalTableIsUpdated : INotificationHandler<GlobalDnsTableUpdatedNotification>
     {
+        private readonly ILogger _logger;
         private readonly INodeManager _nodeManager;
 
-        public UpdateNodeDnsServersWhenGlobalTableIsUpdated(INodeManager nodeManager)
+        public UpdateNodeDnsServersWhenGlobalTableIsUpdated(
+            ILogger<UpdateNodeDnsServersWhenGlobalTableIsUpdated> logger,
+            INodeManager nodeManager)
         {
+            _logger = logger;
             _nodeManager = nodeManager;
         }
 
@@ -24,11 +30,19 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns.Notifications
         {
             foreach(var node in await _nodeManager.GetNodesAsync())
             {
-                using var dnsClient = new NodeDnsClient(node.BaseUrl);
-                var entries = await dnsClient.GetDnsEntriesAsync();
-                entries.RemoveAll(x => x.IsGlobal);
-                entries.AddRange(notification.Entries);
-                await dnsClient.SetDnsEntriesAsync(entries);
+                _logger.LogInformation("Updating DNS table on {BaseUrl}..", node.BaseUrl);
+                try
+                {
+                    using var dnsClient = new NodeDnsClient(node.BaseUrl);
+                    var entries = await dnsClient.GetDnsEntriesAsync();
+                    entries.RemoveAll(x => x.IsGlobal);
+                    entries.AddRange(notification.Entries);
+                    await dnsClient.SetDnsEntriesAsync(entries);
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to update DNS entries on {BaseUrl}", node.BaseUrl);
+                }
             }
         }
     }

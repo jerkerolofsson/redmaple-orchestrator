@@ -7,11 +7,11 @@ namespace RedMaple.Orchestrator.Contracts.Containers
     /// </summary>
     public interface ILocalContainersClient : IDisposable
     {
-        Task StartAsync(string id);
-        Task StopAsync(string id);
-        Task<CreateContainerResponse> CreateContainerAsync(CreateContainerParameters parameters);
-        Task<Container?> GetContainerByNameAsync(string name);
-        Task<List<Container>> GetContainersAsync();
-        Task<bool> HasContainerByNameAsync(string name);
+        Task StartAsync(string id, CancellationToken cancellationToken = default);
+        Task StopAsync(string id, CancellationToken cancellationToken = default);
+        Task<CreateContainerResponse> CreateContainerAsync(CreateContainerParameters parameters, CancellationToken cancellationToken = default);
+        Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken = default);
+        Task<List<Container>> GetContainersAsync(CancellationToken cancellationToken = default);
+        Task<bool> HasContainerByNameAsync(string name, CancellationToken cancellationToken = default);
     }
 }

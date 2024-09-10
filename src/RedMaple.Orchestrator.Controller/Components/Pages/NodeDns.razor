@@ -3,7 +3,7 @@
 @using RedMaple.Orchestrator.Containers
 @using RedMaple.Orchestrator.Contracts
 @using RedMaple.Orchestrator.Contracts.Containers
-@using RedMaple.Orchestrator.Controller.Domain
+@using RedMaple.Orchestrator.Controller.Domain;
 @rendermode InteractiveServer
 @inject INodeManager nodeManager
 @inject NavigationManager navigationManager
@@ -28,9 +28,14 @@ else
                         Items="@_entries" 
                         SortMode="SortMode.Multiple">
             <Columns>
+                <TemplateColumn StickyLeft="true">
+                    <EditTemplate>
+                        <img src="app-server.png" class="icon" />
+                    </EditTemplate>
+                </TemplateColumn>
+
                 <PropertyColumn Property="x => x.Hostname" Title="Name"/>
                 <PropertyColumn Property="x => x.IpAddress" Title="IP Address"/>
-
                
                 <TemplateColumn StickyRight="true">
                     <EditTemplate>
@@ -59,6 +64,12 @@ else
                      Items="@_globalEntries"
                      SortMode="SortMode.Multiple">
             <Columns>
+                <TemplateColumn StickyLeft="true">
+                    <EditTemplate>
+                        <img src="app-server.png" class="icon" />
+                    </EditTemplate>
+                </TemplateColumn>
+
                 <PropertyColumn Property="x => x.Hostname" Title="Name" />
                 <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
 

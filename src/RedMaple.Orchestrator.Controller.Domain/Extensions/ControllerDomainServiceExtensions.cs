@@ -1,8 +1,8 @@
 ﻿using RedMaple.Orchestrator.Contracts;
 using RedMaple.Orchestrator.Contracts.Ingress;
-using RedMaple.Orchestrator.Controller.Domain;
 using RedMaple.Orchestrator.Controller.Domain.GlobalDns;
 using RedMaple.Orchestrator.Controller.Domain.Ingress;
+using RedMaple.Orchestrator.Controller.Domain.Node;
 using System;
 using System.Collections.Generic;
 using System.Linq;

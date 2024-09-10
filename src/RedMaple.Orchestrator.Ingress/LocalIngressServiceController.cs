@@ -73,6 +73,13 @@ namespace RedMaple.Orchestrator.Ingress
             await _reverseProxy.StartAsync();
         }
 
+        public async Task StartAsync()
+        {
+            var services = await LoadSettingsAsync();
+            await _reverseProxy.UpdateConfigurationAsync(services);
+            await _reverseProxy.StartAsync();
+        }
+
         public async Task DeleteIngressServiceAsync(string id)
         {
             var services = await LoadSettingsAsync();

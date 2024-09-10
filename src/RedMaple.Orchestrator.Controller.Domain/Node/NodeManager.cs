@@ -1,19 +1,33 @@
-﻿using RedMaple.Orchestrator.Contracts.Node;
+﻿using MediatR;
+using Microsoft.Extensions.Logging;
+using RedMaple.Orchestrator.Contracts.Node;
+using RedMaple.Orchestrator.Controller.Domain.Node.Notifications;
 
-namespace RedMaple.Orchestrator.Controller.Domain
+namespace RedMaple.Orchestrator.Controller.Domain.Node
 {
     public class NodeManager : INodeManager
     {
         private readonly INodeRepository _nodeRepository;
+        private readonly IMediator _mediator;
+        private readonly ILogger _logger;
 
-        public NodeManager(INodeRepository nodeRepository)
+        public NodeManager(
+            ILogger<NodeManager> logger,
+            IMediator mediator,
+            INodeRepository nodeRepository)
         {
+            _logger = logger;
+            _mediator = mediator;
             _nodeRepository = nodeRepository;
         }
 
         public async Task EnrollNodeAsync(NodeInfo nodeInfo)
         {
+            _logger.LogInformation("Node enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+
             await _nodeRepository.AddNodeAsync(nodeInfo);
+
+            await _mediator.Publish(new NodeEnrolledNotification(nodeInfo));
         }
 
         public async Task<NodeInfo?> GetNodeByIpAddressAsync(string ingressIp)

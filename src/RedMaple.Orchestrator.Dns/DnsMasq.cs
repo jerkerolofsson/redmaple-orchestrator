@@ -1,6 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using RedMaple.Orchestrator.Containers;
 using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Dns;
 using System;
@@ -16,6 +17,7 @@ namespace RedMaple.Orchestrator.Dns
     {
         private readonly ILogger<DnsMasq> _logger;
         private readonly ILocalContainersClient mLocalContainersClient;
+        private SemaphoreSlim mStartStopLock = new SemaphoreSlim(1);
 
         public DnsMasq(
             ILogger<DnsMasq> logger,
@@ -54,7 +56,7 @@ namespace RedMaple.Orchestrator.Dns
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
-                path = @"C:\temp\dnsmasq";
+                path = @"C:\temp\redmaple\node\dns";
             }
             if (!Directory.Exists(path))
             {
@@ -165,64 +167,107 @@ namespace RedMaple.Orchestrator.Dns
         /// <inheritdoc/>
         public async Task StartAsync()
         {
-            var name = "redmaple-dns";
-            bool result = await mLocalContainersClient.HasContainerByNameAsync(name);
-            if (!result)
+            await mStartStopLock.WaitAsync();
+            try
             {
-                string dnsmasqD = GetLocalDnsmasqDDir();
-                var managedConf = CreateManagedConfIfItDoesntExist();
-                var dnsmasqDotConf = CreateDnsmasqConfIfItDoesntExist();
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
-                _logger.LogInformation("Creating DNS container, dnsmasq.conf={DnsMasqConf}, dnsmasq.d={DnsMasqD}, managed.conf={ManagedConf}", dnsmasqDotConf, dnsmasqD, managedConf);
-
-                await mLocalContainersClient.CreateContainerAsync(new CreateContainerParameters
+                var name = "redmaple-dns";
+                bool result = await mLocalContainersClient.HasContainerByNameAsync(name, cts.Token);
+                if (!result)
                 {
-                    Name = "redmaple-dns",
-                    Image = "strm/dnsmasq",
-                    ExposedPorts = new Dictionary<string, EmptyStruct>
+                    string dnsmasqD = GetLocalDnsmasqDDir();
+                    var managedConf = CreateManagedConfIfItDoesntExist();
+                    var dnsmasqDotConf = CreateDnsmasqConfIfItDoesntExist();
+
+                    _logger.LogInformation("Creating DNS container, dnsmasq.conf={DnsMasqConf}, dnsmasq.d={DnsMasqD}, managed.conf={ManagedConf}", dnsmasqDotConf, dnsmasqD, managedConf);
+
+                    await CreateContainerAsync(dnsmasqD, dnsmasqDotConf);
+                }
+
+                var container = await mLocalContainersClient.GetContainerByNameAsync(name, cts.Token);
+                if (container is null)
+                {
+                    throw new Exception("Failed to create container");
+                }
+
+                _logger.LogInformation("StartAsync: dnsmasq container id={id}, state={state}, status={status}", container.Id, container.State, container.Status);
+                if (!container.IsRunning)
+                {
+                    _logger.LogInformation("StartAsync: Starting dnsmasq container..");
+                    using var ctsStart = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+                    await mLocalContainersClient.StartAsync(container.Id, ctsStart.Token);
+                }
+                else
+                {
+                    _logger.LogInformation("StartAsync: dnsmasq container is already running, state={state}, status={status} ..", container.State, container.Status);
+                }
+            }
+            finally
+            {
+                mStartStopLock.Release();
+            }
+        }
+
+
+        public async Task StopAsync()
+        {
+            await mStartStopLock.WaitAsync();
+            try
+            {
+                var name = "redmaple-dns";
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+
+                var container = await mLocalContainersClient.GetContainerByNameAsync(name, cts.Token);
+                if (container is not null)
+                {
+                    _logger.LogInformation("StopAsync: dnsmasq container id={id}, state={state}, status={status}", container.Id, container.State, container.Status);
+                    if (container.IsRunning)
+                    {
+                        _logger.LogInformation("StopAsync: Stopping dnsmasq container..");
+                        await mLocalContainersClient.StopAsync(container.Id, cts.Token);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("StopAsync: dnsmasq is not running");
+
+                    }
+                }
+            }
+            finally
+            {
+                mStartStopLock.Release();
+            }
+        }
+
+        private async Task CreateContainerAsync(string dnsmasqD, string dnsmasqDotConf)
+        {
+            using var ctsCreate = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+
+            await mLocalContainersClient.CreateContainerAsync(new CreateContainerParameters
+            {
+                Name = "redmaple-dns",
+                Image = "strm/dnsmasq",
+                ExposedPorts = new Dictionary<string, EmptyStruct>
                     {
                         { "53/udp", new EmptyStruct() }
                     },
-                    HostConfig = new HostConfig
-                    {
-                        Binds = new List<string> 
-                        { 
+                HostConfig = new HostConfig
+                {
+                    Binds = new List<string>
+                        {
                             $"{dnsmasqDotConf}:/etc/dnsmasq.conf:z",
-                            $"{dnsmasqD}:/etc/dnsmasq.d:z" 
+                            $"{dnsmasqD}:/etc/dnsmasq.d:z"
                         },
-                        PortBindings = new Dictionary<string, IList<PortBinding>>
+                    PortBindings = new Dictionary<string, IList<PortBinding>>
                         {
                             { "53/udp", new List<PortBinding>() { new PortBinding() { HostPort = "53" } } }
                         },
-                        CapAdd = new List<string> { "NET_ADMIN" }
-                    }
-                });
-            }
-
-            var container = await mLocalContainersClient.GetContainerByNameAsync(name);
-            if(container is null)
-            {
-                throw new Exception("Failed to create container");
-            }
-            if(!container.IsRunning)
-            {
-                await mLocalContainersClient.StartAsync(container.Id);
-            }
-        }
-
-        /// <inheritdoc/>
-        public async Task StopAsync()
-        {
-            var name = "redmaple-dns";
-            var container = await mLocalContainersClient.GetContainerByNameAsync(name);
-            if (container is not null)
-            {
-                if (container.IsRunning)
-                {
-                    await mLocalContainersClient.StopAsync(container.Id);
+                    CapAdd = new List<string> { "NET_ADMIN" }
                 }
-            }
+            }, ctsCreate.Token);
         }
+
 
         /// <inheritdoc/>
         public async Task SetDnsEntriesAsync(List<DnsEntry> entries)

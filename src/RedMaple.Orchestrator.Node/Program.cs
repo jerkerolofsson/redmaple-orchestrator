@@ -7,6 +7,8 @@ builder.AddServiceDefaults();
 builder.Services.AddContainerServices();
 
 builder.Services.AddHostedService<EnrollAtStartup>();
+builder.Services.AddHostedService<StartDnsAtStartup>();
+builder.Services.AddHostedService<StartIngressAtStartup>();
 builder.Services.AddMediatR(options => 
 {
     options.RegisterServicesFromAssembly(typeof(EnrollAtStartup).Assembly);
