@@ -1,0 +1,72 @@
+﻿@page "/dns"
+@using MudBlazor
+@using RedMaple.Orchestrator.Containers
+@using RedMaple.Orchestrator.Contracts
+@using RedMaple.Orchestrator.Controller.Domain
+@using RedMaple.Orchestrator.Controller.Domain.GlobalDns
+@rendermode InteractiveServer
+@inject IGlobalDns dns
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
+
+<MudCard Class="pa-5 mt-5">
+
+    <MudText Typo="Typo.h6">Global DNS entries</MudText>
+    <MudText Typo="Typo.subtitle2">These DNS entries are provisioned to all DNS servers</MudText>
+
+    <MudDataGrid Bordered="true" Dense="true"
+                    ReadOnly="false"
+                    EditMode="DataGridEditMode.Cell"
+                    Items="@_entries"
+                    SortMode="SortMode.Multiple">
+        <Columns>
+            <PropertyColumn Property="x => x.Hostname" Title="Name" />
+            <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
+
+
+            <TemplateColumn StickyRight="true">
+                <EditTemplate>
+                    <MudButton OnClick="async() => RemoveItem(context.Item)">Delete</MudButton>
+                </EditTemplate>
+            </TemplateColumn>
+
+        </Columns>
+    </MudDataGrid>
+
+    <MudCardActions>
+
+        <MudButton OnClick="@AddItem" Color="Color.Primary" Class="add-item-btn">Add Item</MudButton>
+
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
+                    OnClick="@(async () => await SaveTableAsync())">Save</MudButton>
+    </MudCardActions>
+</MudCard>
+
+@code {
+    [Parameter] public string Id { get; set; } = null!;
+
+    private List<DnsEntry> _entries = new();
+
+    void AddItem()
+    {
+        _entries.Add(new DnsEntry { Hostname = "name", IpAddress = "192.168.0.202" });
+    }
+
+    void RemoveItem(DnsEntry entry)
+    {
+        _entries.Remove(entry);
+    }
+    private async Task LoadTableAsync()
+    {
+        _entries = (await dns.GetDnsEntriesAsync()).Where(x => x.IsGlobal).ToList();
+    }
+    private async Task SaveTableAsync()
+    {
+        await dns.SetDnsEntriesAsync(_entries);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTableAsync();
+    }
+}

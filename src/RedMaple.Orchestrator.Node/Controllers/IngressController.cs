@@ -30,7 +30,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
             await _ingress.AddIngressServiceAsync(service);
         }
 
-        [HttpPost("/api/ingress/{id}")]
+        [HttpDelete("/api/ingress/{id}")]
         public async Task DeleteIngressServiceAsync([FromRoute] string id)
         {
             await _ingress.DeleteIngressServiceAsync(id);

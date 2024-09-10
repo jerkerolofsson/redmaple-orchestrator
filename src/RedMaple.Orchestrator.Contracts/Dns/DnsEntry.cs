@@ -10,5 +10,10 @@ namespace RedMaple.Orchestrator.Contracts.Dns
     {
         public required string Hostname { get; set; }
         public required string IpAddress { get; set; }
+
+        /// <summary>
+        /// Global DNS entries are managed in a separate UI
+        /// </summary>
+        public bool IsGlobal { get; set; }
     }
 }

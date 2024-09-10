@@ -9,29 +9,20 @@
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
 
-@if (_nodeSettings is not null)
+@if (_nodeSettings?.EnableDns == false || _nodeInfo is null)
 {
-    <h1>Settings</h1>
-    <MudCard Class="pa-5">
-        <MudCardContent>
-            <MudForm Spacing="2" Model="@_nodeSettings">
-                <MudSwitch @bind-Value="_nodeSettings.EnableDns"
-                           Label="Enabled" Color="Color.Primary" />
-            </MudForm>
-        </MudCardContent>
+    <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Normal">
+        DNS is not enabled on this node
+    </MudAlert>
+}
+else
+{
+    <MudCard Class="pa-5 mt-5">
 
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
-                       OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
-        </MudCardActions>
-    </MudCard>
+        <MudText Typo="Typo.h6">Local DNS entries</MudText>
+        <MudText Typo="Typo.subtitle2">These DNS entries are only provisioned to @_nodeInfo.IpAddress</MudText>
 
-    <h1>DNS Entries</h1>
-    <MudCard Class="pa-5">
-        
-        
-
-        <MudDataGrid @ref="DataGrid"
+        <MudDataGrid Bordered="true" Dense="true"
                      ReadOnly="false"
                      EditMode="DataGridEditMode.Cell"
                         Items="@_entries" 
@@ -39,6 +30,14 @@
             <Columns>
                 <PropertyColumn Property="x => x.Hostname" Title="Name"/>
                 <PropertyColumn Property="x => x.IpAddress" Title="IP Address"/>
+
+               
+                <TemplateColumn StickyRight="true">
+                    <EditTemplate>
+                        <MudButton OnClick="async() => RemoveItem(context.Item)">Delete</MudButton>
+                    </EditTemplate>
+                </TemplateColumn>
+
             </Columns>
         </MudDataGrid>
 
@@ -50,28 +49,51 @@
                        OnClick="@(async () => await SaveTableAsync())">Save</MudButton>
         </MudCardActions>
     </MudCard>
+
+    <MudCard Class="pa-5 mt-5">
+
+        <MudText Typo="Typo.h6">Global DNS entries</MudText>
+        <MudText Typo="Typo.subtitle2">These DNS entries are inherited from the controller</MudText>
+        <MudDataGrid Bordered="true" Dense="true"
+                     ReadOnly="true"
+                     Items="@_globalEntries"
+                     SortMode="SortMode.Multiple">
+            <Columns>
+                <PropertyColumn Property="x => x.Hostname" Title="Name" />
+                <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
+
+                <TemplateColumn StickyRight="true">
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudCard>
 }
 
 @code {
     [Parameter] public string Id { get; set; } = null!;
 
-    private MudDataGrid<DnsEntry> DataGrid = null!;
-
     private NodeInfo? _nodeInfo;
     private RedMaple.Orchestrator.Contracts.Node.NodeSettings? _nodeSettings;
     private List<DnsEntry> _entries = new();
+    private List<DnsEntry> _globalEntries = new();
 
     void AddItem()
     {
         _entries.Add(new DnsEntry { Hostname = "name", IpAddress="192.168.0.202" });
     }
 
+    void RemoveItem(DnsEntry entry)
+    {
+        _entries.Remove(entry);
+    }
     private async Task LoadTableAsync()
     {
         if (_nodeInfo is not null)
         {
             using var client = new NodeDnsClient(_nodeInfo.BaseUrl);
-            _entries = await client.GetDnsEntriesAsync();
+            var dnsEntries = await client.GetDnsEntriesAsync();
+            _entries = dnsEntries.Where(x=>!x.IsGlobal).ToList();
+            _globalEntries = dnsEntries.Where(x => x.IsGlobal).ToList();
         }
 
     }
@@ -80,7 +102,7 @@
         if (_nodeInfo is not null)
         {
             using var client = new NodeDnsClient(_nodeInfo.BaseUrl);
-            await client.SetDnsEntriesAsync(_entries);
+            await client.SetDnsEntriesAsync([.. _entries, .. _globalEntries]);
         }
     }
 

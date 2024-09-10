@@ -108,7 +108,9 @@ namespace RedMaple.Orchestrator.Dns
                     server=8.8.4.4
                     server=8.8.8.8
 
+                    conf-file=/etc/dnsmasq.d/global.conf
                     conf-file=/etc/dnsmasq.d/managed.conf
+                    
                     """);
 
             }
@@ -124,6 +126,29 @@ namespace RedMaple.Orchestrator.Dns
         {
             string dir = GetLocalDnsmasqDDir();
             var filePath = Path.Combine(dir, "managed.conf");
+
+            if (!File.Exists(filePath))
+            {
+                _logger.LogDebug("Creating default {path}", filePath);
+
+                using var writer = File.CreateText(filePath);
+                writer.WriteLine("""
+                    # Default
+                    """);
+            }
+            return filePath;
+        }
+
+
+        /// <summary>
+        /// Returns the path to the file where globally managed (through API) addresses
+        /// are located
+        /// </summary>
+        /// <returns></returns>
+        private string GetGlobalConfigFilePath()
+        {
+            string dir = GetLocalDnsmasqDDir();
+            var filePath = Path.Combine(dir, "global.conf");
 
             if (!File.Exists(filePath))
             {
@@ -202,9 +227,26 @@ namespace RedMaple.Orchestrator.Dns
         /// <inheritdoc/>
         public async Task SetDnsEntriesAsync(List<DnsEntry> entries)
         {
+            await SetManagedDnsEntriesAsync(entries.Where(x => !x.IsGlobal));
+            await SetGlobalDnsEntriesAsync(entries.Where(x => x.IsGlobal));
+        }
+
+        private async Task SetManagedDnsEntriesAsync(IEnumerable<DnsEntry> entries)
+        {
             var managedDnsMasqConfFile = GetManagedConfigFilePath();
             using var writer = File.CreateText(managedDnsMasqConfFile);
-            foreach(var entry in entries)
+            foreach (var entry in entries)
+            {
+                var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
+                await writer.WriteLineAsync(line);
+            }
+        }
+
+        private async Task SetGlobalDnsEntriesAsync(IEnumerable<DnsEntry> entries)
+        {
+            var managedDnsMasqConfFile = GetGlobalConfigFilePath();
+            using var writer = File.CreateText(managedDnsMasqConfFile);
+            foreach (var entry in entries)
             {
                 var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
                 await writer.WriteLineAsync(line);
@@ -216,22 +258,45 @@ namespace RedMaple.Orchestrator.Dns
         {
             var entries = new List<DnsEntry>();
 
+            await GetManagedDnsEntriesAsync(entries);
+            await GetGlobalDnsEntriesAsync(entries);
+
+            return entries;
+        }
+
+        private async Task GetGlobalDnsEntriesAsync(List<DnsEntry> entries)
+        {
+            var managedDnsMasqConfFile = GetGlobalConfigFilePath();
+            var lines = await File.ReadAllLinesAsync(managedDnsMasqConfFile);
+
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("address="))
+                {
+                    var items = line.Split('/');
+                    if (items.Length == 3)
+                    {
+                        entries.Add(new DnsEntry { Hostname = items[1], IpAddress = items[2], IsGlobal = true });
+                    }
+                }
+            }
+        }
+        private async Task GetManagedDnsEntriesAsync(List<DnsEntry> entries)
+        {
             var managedDnsMasqConfFile = GetManagedConfigFilePath();
             var lines = await File.ReadAllLinesAsync(managedDnsMasqConfFile);
 
             foreach (var line in lines)
             {
-                if(line.StartsWith("address="))
+                if (line.StartsWith("address="))
                 {
                     var items = line.Split('/');
-                    if(items.Length == 3)
+                    if (items.Length == 3)
                     {
-                        entries.Add(new DnsEntry { Hostname = items[1], IpAddress = items[2] });
+                        entries.Add(new DnsEntry { Hostname = items[1], IpAddress = items[2], IsGlobal = false });
                     }
                 }
             }
-
-            return entries;
         }
     }
 }
