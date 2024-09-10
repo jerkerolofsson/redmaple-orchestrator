@@ -107,10 +107,15 @@
 
 .container-logo {
     display: grid;
-    gap: 0.1rem;
     grid-template-columns: auto 1fr;
+}
+.container-logo .title {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.4rem;
 }
 
 .container-logo img {
     width: 48px;
+    margin-left: 0.75rem;
 }
