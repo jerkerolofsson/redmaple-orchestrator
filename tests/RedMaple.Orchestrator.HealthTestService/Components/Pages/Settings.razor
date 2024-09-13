@@ -1,0 +1,86 @@
+﻿@page "/"
+@using Microsoft.Extensions.Diagnostics.HealthChecks
+@using MudBlazor
+@using RedMaple.Orchestrator.HealthTestService.Components.Views
+@using RedMaple.Orchestrator.HealthTestService.Services
+@using System.Net
+@rendermode InteractiveServer
+@inject NormalHealthCheckService normal
+@inject ReadyHealthCheckService ready
+@inject LiveHealthCheckService live
+
+<PageTitle>Health API endpoint test</PageTitle>
+
+<MudButton 
+    ButtonType="ButtonType.Button" Variant="Variant.Filled" Color="Color.Primary" OnClick="Test">Test Local</MudButton>
+
+<MudPaper Class="pa-5 mt-5">
+    <h1>Health response (untagged)</h1>
+    <MudForm>
+        <MudRadioGroup @bind-Value="@normal.Status" T="HealthStatus">
+            <MudRadio Value="@(HealthStatus.Healthy)" Color="Color.Primary">Healthy</MudRadio>
+            <MudRadio Value="@(HealthStatus.Degraded)" Color="Color.Secondary">Degraded</MudRadio>
+            <MudRadio Value="@(HealthStatus.Unhealthy)" Color="Color.Error">Unhealthy</MudRadio>
+        </MudRadioGroup>
+    </MudForm>
+
+    <h3 class="mt-5"><a href="/healthz">/healthz</a></h3>
+    <HttpResponseView Message="_normalHttpResponseMessage" Text="@_normalContent" />
+</MudPaper>
+
+<MudPaper Class="pa-5 mt-5">
+    <h1>Health response (live tag)</h1>
+    <MudForm>
+        <MudRadioGroup @bind-Value="@live.Status" T="HealthStatus">
+            <MudRadio Value="@(HealthStatus.Healthy)" Color="Color.Primary">Healthy</MudRadio>
+            <MudRadio Value="@(HealthStatus.Degraded)" Color="Color.Secondary">Degraded</MudRadio>
+            <MudRadio Value="@(HealthStatus.Unhealthy)" Color="Color.Error">Unhealthy</MudRadio>
+        </MudRadioGroup>
+    </MudForm>
+
+    <h3 class="mt-5"><a href="/healthz/live">/healthz/live</a></h3>
+    <HttpResponseView Message="_liveHttpResponseMessage" Text="@_liveContent" />
+</MudPaper>
+
+<MudPaper Class="pa-5 mt-5">
+    <h1>Health response (ready tag)</h1>
+    <MudForm>
+        <MudRadioGroup @bind-Value="@ready.Status" T="HealthStatus" >
+            <MudRadio Value="@(HealthStatus.Healthy)" Color="Color.Primary">Healthy</MudRadio>
+            <MudRadio Value="@(HealthStatus.Degraded)" Color="Color.Secondary">Degraded</MudRadio>
+            <MudRadio Value="@(HealthStatus.Unhealthy)" Color="Color.Error">Unhealthy</MudRadio>
+        </MudRadioGroup>
+    </MudForm>
+
+    <h3 class="mt-5"><a href="/healthz/ready">/healthz/ready</a></h3>
+    <HttpResponseView Message="_readyHttpResponseMessage" Text="@_readyContent" />
+</MudPaper>
+
+@code {
+    private HttpResponseMessage? _normalHttpResponseMessage;
+    private HttpResponseMessage? _readyHttpResponseMessage;
+    private HttpResponseMessage? _liveHttpResponseMessage;
+
+    private string? _normalContent;
+    private string? _readyContent;
+    private string? _liveContent;
+
+    private async Task Test()
+    {
+        using var client = new HttpClient();
+        _normalHttpResponseMessage = await client.GetAsync("http://localhost:14911/healthz");
+        _normalContent = await _normalHttpResponseMessage.Content.ReadAsStringAsync();
+
+        _liveHttpResponseMessage = await client.GetAsync("http://localhost:14911/healthz/live");
+        _liveContent = await _liveHttpResponseMessage.Content.ReadAsStringAsync();
+
+        _readyHttpResponseMessage = await client.GetAsync("http://localhost:14911/healthz/ready");
+        _readyContent = await _readyHttpResponseMessage.Content.ReadAsStringAsync();
+
+        this.StateHasChanged();
+    }
+
+    protected override void OnInitialized()
+    {
+    }
+}
