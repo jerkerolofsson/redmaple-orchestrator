@@ -4,6 +4,6 @@
     {
         Task<List<IngressServiceDescription>> GetServicesAsync();
         Task DeleteIngressServiceAsync(string id);
-        Task AddIngressServiceAsync(IngressServiceDescription service);
+        Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress);
     }
 }

@@ -1,0 +1,73 @@
+﻿@implements IProgress<string>
+@if(Visible)
+{
+    <MudCard Elevation="5" Class="pa-5">
+        <div class="current">
+            <MudProgressCircular Size="Size.Small" Color="Color.Default" Indeterminate="true" />
+            <div>
+                @_message?.Text
+            </div>
+        </div>
+        <table class="completed">
+            <thead>
+                <tr>
+                    <th></th>
+                    <th>Started</th>
+                    <th>Completed</th>
+                    <th>Message</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var line in _completed)
+                {
+                    <tr>
+                        <td>✓</td>
+                        <td>@line.Started</td>
+                        <td>@line.Completed</td>
+                        <td>@line.Text</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </MudCard>
+}
+@code {
+    private HistoryItem? _message = null;
+    private List<HistoryItem> _completed = new();
+
+    private class HistoryItem
+    {
+        public required string Text {get;set;}
+        public DateTime Started { get; set; } = DateTime.Now;
+        public DateTime Completed { get; set; }
+    }
+
+    [Parameter]
+    public bool Visible { get; set; }
+
+    public void Begin()
+    {
+        _message = null;
+        _completed.Clear();
+        this.StateHasChanged();
+    }
+
+    public void Report(string message)
+    {
+        var item = new HistoryItem
+            {
+                Text = message
+            };
+        InvokeAsync(() =>
+        {
+            if (_message is not null)
+            {
+                _message.Completed = DateTime.Now;
+                _completed.Add(_message);
+            }
+            _message = item;
+            this.StateHasChanged();
+        });
+    }
+
+}

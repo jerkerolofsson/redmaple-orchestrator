@@ -1,3 +1,248 @@
 ﻿@page "/deployments"
+@using RedMaple.Orchestrator.Contracts.Deployments
+@using RedMaple.Orchestrator.Controller.Components.Views
+@using RedMaple.Orchestrator.Controller.Domain.Deployments
+@rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IDeplomentManager deploymentManager
+@inject IDialogService dialogService
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<ProgressView Visible="_loading" @ref="_progress" />
+@if(_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if(!_loading)
+{
+
+    <div class="buttons">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="OnCreate">Create</MudButton>
+    </div>
 
 
+    <MudCard Class="pa-5 mt-5">
+
+        <MudText Typo="Typo.h6">Deployments</MudText>
+
+        <MudDataGrid Bordered="true" Dense="true"
+                     EditMode="DataGridEditMode.Cell"
+                     Items="@_plans"
+                     SortMode="SortMode.Multiple">
+            <Columns>
+                <TemplateColumn StickyLeft="true">
+                    <EditTemplate>
+                        <img src="app-server.png" class="icon" />
+                    </EditTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="">
+                    <CellTemplate>
+                        @if(context.Item.IconUrl is not null)
+                        {
+                            <img src="@context.Item.IconUrl" class="deployment-icon" alt="logo"/>
+                        }
+                        else
+                        {
+                            <img src="/data-server.png" class="deployment-icon" alt="logo" />
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <PropertyColumn Property="x => x.Name" Title="Name" />
+                <PropertyColumn Property="x => x.DomainName" Title="Domain Name" />
+                <PropertyColumn Property="x => x.Kind" Title="Kind" />
+
+                <TemplateColumn Title="Ingress">
+                    <CellTemplate>
+                        @if (context.Item.DomainName is not null && context.Item.CreateIngress)
+                        {
+                            string url = $"https://{context.Item.DomainName}";
+                            <a href="@url">@url</a>
+                        }
+                       
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Application">
+                    <CellTemplate>
+                        @if (context.Item.ApplicationServerIp is not null)
+                        {
+                            string url = $"{context.Item.ApplicationProtocol}://{context.Item.ApplicationServerIp}:{context.Item.ApplicationServerPort}";
+                            if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
+                            {
+                                <a href="@url">@url</a>
+                            }
+                            else
+                            {
+                                <span>@url</span>
+                            }
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn Title="Images">
+                    <CellTemplate>
+                        @foreach(var image in context.Item.ContainerImages)
+                        {
+                            <div>@image</div>
+                        }
+                    </CellTemplate>
+                </TemplateColumn>
+
+                <TemplateColumn StickyRight="true">
+                    <CellTemplate>
+                        <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
+                        <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
+                        <MudButton Color="Color.Error" OnClick="async() => await DeleteAsync(context.Item)">Delete</MudButton>
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+        </MudDataGrid>
+
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+@code {
+    private ProgressView _progress = null!;
+
+    private List<DeploymentPlan> _plans = new();
+    private bool _loading = false;
+    private string? _error = null;    
+    private CancellationTokenSource? _cancellationTokenSource = null;
+
+    private void OnCreate()
+    {
+        navigationManager.NavigateTo($"/create-deployment");
+    }
+
+    private void Cancel()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = null;
+    }
+
+    private async Task BringUpAsync(DeploymentPlan plan)
+    {
+        _loading = true;
+        _error = null;
+        _progress.Begin();
+        this.StateHasChanged();
+
+        _cancellationTokenSource = new();
+        var token = _cancellationTokenSource.Token;
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await deploymentManager.BringUpAsync(plan, _progress, token);
+            }
+            catch(Exception ex)
+            {
+                _error = ex.ToString();
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+            finally
+            {
+                _loading = false;
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+
+            }
+        });
+    }
+
+    private async Task DeleteAsync(DeploymentPlan plan)
+    {
+        bool? result = await dialogService.ShowMessageBox(
+           "Confirm",
+           "Do you really want to delete the deployment",
+           yesText: "Yeah", cancelText: "Cancel");
+        if (result == true)
+        {
+            _loading = true;
+            _error = null;
+            _progress.Begin();
+            this.StateHasChanged();
+
+            _cancellationTokenSource = new();
+            var token = _cancellationTokenSource.Token;
+            await Task.Run(async () =>
+            {
+                try
+                {
+                    await deploymentManager.DeleteAsync(plan, _progress, token);
+                }
+                catch (Exception ex)
+                {
+                    _error = ex.ToString();
+                }
+                finally
+                {
+                    await LoadPlansAsync();
+                    _loading = false;
+                    await InvokeAsync(() =>
+                    {
+                        StateHasChanged();
+                    });
+
+                }
+            });
+        }
+    }
+
+    private async Task TakeDownAsync(DeploymentPlan plan)
+    {
+        _loading = true;
+        _error = null;
+        _progress.Begin();
+        this.StateHasChanged();
+
+        _cancellationTokenSource = new();
+        var token = _cancellationTokenSource.Token;
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await deploymentManager.TakeDownAsync(plan, _progress, token);
+            }
+            catch (Exception ex)
+            {
+                _error = ex.ToString();
+            }
+            finally
+            {
+                _loading = false;
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+
+            }
+        });
+
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadPlansAsync();
+    }
+
+    private async Task LoadPlansAsync()
+    {
+        _plans = await deploymentManager.GetDeploymentPlansAsync();
+    }
+}

@@ -63,13 +63,17 @@ namespace RedMaple.Orchestrator.Ingress
             return new List<IngressServiceDescription>();
         }
 
-        public async Task AddIngressServiceAsync(IngressServiceDescription service)
+        public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress)
         {
+            progress.Report("Saving changes..");
             var services = await LoadSettingsAsync();
             services.Add(service);
             await WriteSettingsAsync(services);
 
+            progress.Report("Updating configuration..");
             await _reverseProxy.UpdateConfigurationAsync(services);
+
+            progress.Report("Starting proxy..");
             await _reverseProxy.StartAsync();
         }
 

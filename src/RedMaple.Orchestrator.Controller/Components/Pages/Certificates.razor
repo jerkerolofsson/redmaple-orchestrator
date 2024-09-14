@@ -1,11 +1,13 @@
 ﻿@page "/certificates"
 @using MudBlazor
+@using RedMaple.Orchestrator.Controller.Domain.Domain
 @using RedMaple.Orchestrator.Security
 @using RedMaple.Orchestrator.Security.Models
 @using RedMaple.Orchestrator.Security.Services
 @using System.Security.Cryptography.X509Certificates
 @rendermode InteractiveServer
 @inject ICertificateAuthority certificateAuthority
+@inject IDomainService domain
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
 
@@ -66,7 +68,7 @@
     public class GenerateCertificateModel
     {
         [Required]
-        public string DnsName { get; set; } = "app1.home.io";
+        public string DnsName { get; set; } = "";
 
         public string Password { get; set; } = "hunter2";
         public string IpAddress { get; set; } = "";
@@ -82,5 +84,7 @@
     {
         rootCert = await certificateAuthority.GetRootCertificateAsync();
         caCert = await certificateAuthority.GetCaCertificateAsync();
+
+        model.DnsName = "app1." + domain.DefaultDomain;
     }
 }

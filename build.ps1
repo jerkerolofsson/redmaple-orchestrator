@@ -1,5 +1,3 @@
-$DOCKER_REGISTRY="docker-repo.dev.ec.lan:5005"
-
 cd src
 nuget restore RedMaple.Orchestrator.sln 
   

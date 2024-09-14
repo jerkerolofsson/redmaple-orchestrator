@@ -1,4 +1,5 @@
-﻿using RedMaple.Orchestrator.Contracts.Dns;
+﻿using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Contracts.Node;
 using RedMaple.Orchestrator.Controller.Infrastructure.Database;
@@ -17,6 +18,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IGlobalDnsRepository, GlobalDnsRepository>();
             services.AddSingleton<INodeRepository, InMemoryNodeRepository>();
             services.AddSingleton<IIngressRepository, FileSystemIngressRepository>();
+            services.AddSingleton<IDeploymentPlanRepository, DeploymentPlanRepository>();
+            services.AddSingleton<IDeploymentPlanTemplateRepository, DeploymentPlanTemplateRepository>();
             return services;
         }
     }

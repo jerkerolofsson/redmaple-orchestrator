@@ -1,5 +1,8 @@
 ﻿using RedMaple.Orchestrator.Contracts;
 using RedMaple.Orchestrator.Contracts.Ingress;
+using RedMaple.Orchestrator.Controller.Domain.Deployments;
+using RedMaple.Orchestrator.Controller.Domain.Deployments.Templates;
+using RedMaple.Orchestrator.Controller.Domain.Domain;
 using RedMaple.Orchestrator.Controller.Domain.GlobalDns;
 using RedMaple.Orchestrator.Controller.Domain.Ingress;
 using RedMaple.Orchestrator.Controller.Domain.Node;
@@ -21,7 +24,11 @@ namespace Microsoft.Extensions.DependencyInjection
             });
             services.AddSingleton<IGlobalDns, GlobalDnsService>();
             services.AddSingleton<IIngressManager, IngressManager>();
+            services.AddSingleton<IDomainService, DomainService>();
+            services.AddSingleton<IDeplomentManager, DeplomentManager>();
+
             services.AddSingleton<INodeManager, NodeManager>();
+            services.AddSingleton<IDeploymentTemplateProvider, DeploymentTemplateProvider>();
             return services;
         }
     }

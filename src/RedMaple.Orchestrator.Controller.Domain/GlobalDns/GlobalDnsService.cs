@@ -35,7 +35,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns
         {
             EnsureAllEntriesAreGlobal(entries);
 
-            _logger.LogInformation("Updating global DNS table..");
+            _logger.LogInformation("Updating global DNS table with {dnsEntryCount}..", entries.Count);
             await _repository.SetDnsEntriesAsync(entries);
 
             await SendNotificationAsync(entries);

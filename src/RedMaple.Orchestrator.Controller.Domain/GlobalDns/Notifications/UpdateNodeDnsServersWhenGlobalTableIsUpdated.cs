@@ -30,12 +30,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns.Notifications
         {
             foreach(var node in await _nodeManager.GetNodesAsync())
             {
-                _logger.LogInformation("Updating DNS table on {BaseUrl}..", node.BaseUrl);
+                _logger.LogInformation("Updating global DNS table on {BaseUrl}..", node.BaseUrl);
                 try
                 {
                     using var dnsClient = new NodeDnsClient(node.BaseUrl);
                     var entries = await dnsClient.GetDnsEntriesAsync();
                     entries.RemoveAll(x => x.IsGlobal);
+
+                    _logger.LogInformation("Adding {dnsEntryCount} entries to {BaseUrl}..", entries.Count, node.BaseUrl);
                     entries.AddRange(notification.Entries);
                     await dnsClient.SetDnsEntriesAsync(entries);
                 }

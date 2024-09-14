@@ -1,6 +1,8 @@
-﻿using RedMaple.Orchestrator.Contracts.Ingress;
+﻿using Microsoft.Extensions.Logging;
+using RedMaple.Orchestrator.Contracts.Ingress;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -11,9 +13,16 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 {
     internal class FileSystemIngressRepository : IIngressRepository
     {
+        private readonly ILogger _logger;
+
+        public FileSystemIngressRepository(ILogger<FileSystemIngressRepository> logger)
+        {
+            _logger = logger;
+        }
+
         private string GetLocalConfigDir()
         {
-            string path = "/data/redmaple/conrtoller/ingress";
+            string path = "/data/redmaple/controller/ingress";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)
             {
@@ -33,6 +42,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
             if (!File.Exists(filePath))
             {
+                // Create empty
                 File.WriteAllText(filePath, JsonSerializer.Serialize(new List<IngressServiceDescription>()));
             }
             return filePath;
@@ -44,28 +54,31 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 service.Id = Guid.NewGuid().ToString();
             }
-
-            var services = await LoadSettingsAsync();
+            _logger.LogInformation("Adding ingress service with ID {id}..", service.Id);
+            var services = await LoadDataAsync();
             services.Add(service);
-            await WriteSettingsAsync(services);
+            await WriteDataAsync(services);
         }
 
         public async Task<List<IngressServiceDescription>> GetServicesAsync()
         {
-            return await LoadSettingsAsync();
+            return await LoadDataAsync();
         }
 
         public async Task DeleteIngressServiceAsync(string id)
         {
-            var services = await LoadSettingsAsync();
+            _logger.LogInformation("Removing ingress service with ID {id}..", id);
+            var services = await LoadDataAsync();
             services.RemoveAll(x => x.Id == id);
-            await WriteSettingsAsync(services);
+            await WriteDataAsync(services);
         }
-        public async Task<List<IngressServiceDescription>> LoadSettingsAsync()
+
+        private async Task<List<IngressServiceDescription>> LoadDataAsync()
         {
             var path = GetConfigFilePath();
             try
             {
+                _logger.LogInformation("Loading service configuration from {path}", path);
                 var json = await File.ReadAllTextAsync(path);
                 var services = JsonSerializer.Deserialize<List<IngressServiceDescription>>(json);
                 return services ?? new();
@@ -73,10 +86,12 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             catch (Exception) { }
             return new List<IngressServiceDescription>();
         }
-        private async Task WriteSettingsAsync(List<IngressServiceDescription> services)
+        private async Task WriteDataAsync(List<IngressServiceDescription> services)
         {
             var json = JsonSerializer.Serialize(services);
             var path = GetConfigFilePath();
+
+            _logger.LogInformation("Writing service configuration to {path}", path);
             await File.WriteAllTextAsync(path, json);
         }
 

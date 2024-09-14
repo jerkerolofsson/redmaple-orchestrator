@@ -39,5 +39,10 @@ namespace RedMaple.Orchestrator.Contracts.Node
         /// This IP address is set from the remote IP when the node enrolls
         /// </summary>
         public string? IpAddress { get; set; }
+
+        public override string ToString()
+        {
+            return IpAddress ?? base.ToString() ?? "NodeInfo";
+        }
     }
 }

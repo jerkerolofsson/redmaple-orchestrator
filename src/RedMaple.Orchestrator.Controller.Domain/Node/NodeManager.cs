@@ -23,11 +23,19 @@ namespace RedMaple.Orchestrator.Controller.Domain.Node
 
         public async Task EnrollNodeAsync(NodeInfo nodeInfo)
         {
-            _logger.LogInformation("Node enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+            ArgumentNullException.ThrowIfNull(nodeInfo?.IpAddress);
 
-            await _nodeRepository.AddNodeAsync(nodeInfo);
-
-            await _mediator.Publish(new NodeEnrolledNotification(nodeInfo));
+            var existingNode = await GetNodeByIpAddressAsync(nodeInfo.IpAddress);
+            if (existingNode is null)
+            {
+                _logger.LogInformation("Node enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+                await _nodeRepository.AddNodeAsync(nodeInfo);
+                await _mediator.Publish(new NodeEnrolledNotification(nodeInfo));
+            }
+            else
+            {
+                _logger.LogInformation("Node already enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+            }
         }
 
         public async Task<NodeInfo?> GetNodeByIpAddressAsync(string ingressIp)

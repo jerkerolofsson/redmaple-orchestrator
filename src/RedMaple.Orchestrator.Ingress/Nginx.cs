@@ -61,6 +61,7 @@ namespace RedMaple.Orchestrator.Ingress
         private async Task CreateNginxMainConfAsync()
         {
             var path = GetLocalConfigPath();
+            _logger.LogInformation("Creationg nginx.conf @ {path}", path);
             var conf = new StringBuilder();
             conf.Append("""
                 user  nginx;
@@ -207,14 +208,14 @@ namespace RedMaple.Orchestrator.Ingress
         {
             using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 
+            await CreateNginxMainConfAsync();
+            await CreateCommonConfIfNotExistsAsync();
+
             var name = "redmaple-ingress";
             bool result = await _localContainersClient.HasContainerByNameAsync(name, cts.Token);
             if (!result)
             {
                 var configFile = GetServersConfigPath();
-
-                await CreateNginxMainConfAsync();
-                await CreateCommonConfIfNotExistsAsync();
 
                 string httpPort = Environment.GetEnvironmentVariable("NGINX_HTTP_PORT") ?? "80";
                 string httpsPort = Environment.GetEnvironmentVariable("NGINX_HTTPS_PORT") ?? "443";
@@ -266,7 +267,7 @@ namespace RedMaple.Orchestrator.Ingress
 
         public async Task StopAsync()
         {
-            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
 
             var name = "redmaple-ingress";
             var container = await _localContainersClient.GetContainerByNameAsync(name, cts.Token);

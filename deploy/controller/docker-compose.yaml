@@ -1,7 +1,7 @@
 services:
   ctrl:
     container_name: "redmaple-ctrl"
-    image: "docker-repo.dev.ec.lan:5005/redmaple-controller:latest"
+    image: "${DOCKER_REPO}/redmaple-controller:latest"
     restart: unless-stopped
     ports:
     - target: 8080
@@ -12,13 +12,13 @@ services:
 
   node:
     container_name: "redmaple-node"
-    image: "docker-repo.dev.ec.lan:5005/redmaple-node:latest"
+    image: "${DOCKER_REPO}/redmaple-node:latest"
     restart: unless-stopped
     environment:
       NODE_IP: 172.18.6.3
       NODE_PORT: 1889
       INGRESS_HTTPS_PORT: 443
-      services__controller__http__0: http://172.18.6.3:1888
+      services__controller__http__0: http://192.168.0.241:1888
     ports:
     - target: 8080
       published: 1889

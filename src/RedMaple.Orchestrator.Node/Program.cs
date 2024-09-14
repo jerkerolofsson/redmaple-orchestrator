@@ -1,4 +1,5 @@
 using RedMaple.Orchestrator.Node.Enrollment;
+using RedMaple.Orchestrator.Node.LocalDeployments;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,8 @@ builder.Services.AddMediatR(options =>
 {
     options.RegisterServicesFromAssembly(typeof(EnrollAtStartup).Assembly);
 });
+
+builder.Services.AddSingleton<ILocalDeploymentService, LocalDeploymentService>();
 builder.Services.AddSingleton<INodeSettingsProvider, NodeSettingsProvider>();
 builder.Services.AddDns().AddIngress();
 

@@ -1,74 +1,295 @@
-﻿@page "/node/{id}/create-deployment"
+﻿@page "/create-deployment"
 @rendermode InteractiveServer
-@inject IIngressManager _ingressManager
+@using RedMaple.Orchestrator.Contracts.Deployments
+@using RedMaple.Orchestrator.Controller.Components.Views
+@using RedMaple.Orchestrator.Controller.Domain.Deployments
+@using RedMaple.Orchestrator.Controller.Domain.Deployments.Templates
+@using RedMaple.Orchestrator.Controller.Domain.Domain
+@inject IDeploymentTemplateProvider _templateProvider
 @inject INodeManager _nodeManager
+@inject IDomainService domain
+@inject IDeplomentManager deploymentManager
+@inject NavigationManager navigationManager
 
 <MudPopoverProvider />
 
 <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
     <DataAnnotationsValidator />
-    <MudGrid>
-        <MudItem xs="12" sm="7">
-            <MudCard Class="pa-5">
-                <h1>Create new ingress service</h1>
+    <MudItem >
+        <MudCard Class="pa-5">
+            <MudText Typo="Typo.h5">Create deployment</MudText>
+            <MudCardActions>
 
-                <MudCardContent>
-                    <MudTextField Label="Domain Name"
+                @if (_wizardPage != Pages.SelectTemplate)
+                {
+                    <MudButton OnClick="PrevPage"
+                               ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary">Back</MudButton>
+                }
+
+                @if (_wizardPage != Pages.ValidateAndConfirm)
+                {
+                    <MudButton Class="ml-auto"
+                               OnClick="NextPage"
+                               ButtonType="ButtonType.Submit"
+                               Variant="Variant.Filled"
+                               Color="Color.Primary">Next</MudButton>
+                }
+            </MudCardActions>
+            <MudCardContent>
+
+                @if (_wizardPage == Pages.SelectDomainName)
+                {
+                    <MudTextField Label="Deployment Name" Class="mt-5"
+                                  @bind-Value="model.Name" For="@(() => model.Name)" />
+
+                    <MudTextField Label="Domain Name" Class="mt-5"
                                   @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                }
+                else if (_wizardPage == Pages.SelectTemplate)
+                {
+                    <MudText Typo="Typo.h6">Select template</MudText>
+                    <div class="templates mt-5">
+                        @foreach(var template in _templates)
+                        {
+                            <MudPaper Class="pa-4 hover-elevation" @onclick="() => ApplyTemplate(template)">
+                                <div class="template">
+                                    <img src="@template.IconUrl" />
+                                    <div>@template.Name</div>
+                                </div>
+                            </MudPaper>
+                        }
+                    </div>
 
-                </MudCardContent>
-                <MudCardActions>
-                    <MudButton 
-                        ButtonType="ButtonType.Submit" 
-                        Variant="Variant.Filled" 
-                        Color="Color.Primary" >Create</MudButton>
-                </MudCardActions>
 
-                <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Normal">
-                    Creating an ingress service will create a DNS entry, setup a reverse proxy and generate https certificates for the service
-                </MudAlert>
-            </MudCard>
-        </MudItem>
-    </MudGrid>
+                    <MudTextField Width="500px"
+                                  Label="Compose"
+                                  Class="mt-5 pa-5"
+                                  Style="border: solid 1px #ccc; font-family: monspace; background: #ddd"
+                                  Lines="20"
+                                  @bind-Value="model.Plan"
+                                  For="@(() => model.Plan)" />
+                }
+                else if (_wizardPage == Pages.ConfigureServers)
+                {
+                    <MudText Typo="Typo.h6">Select target nodes</MudText>
+
+                    @if (model.CreateIngress)
+                    {
+                        <MudItem xs="12" sm="6" md="4">
+                            <SelectNode @bind-Value="model.IngressNode" Label="Ingress Server" />
+                        </MudItem>
+                    }
+
+                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
+                        <SelectNode @bind-Value="model.ApplicationNode" Label="Application Server" />
+                    </MudItem>
+                }
+                else if (_wizardPage == Pages.ConfigureEnvironmentVariables)
+                {
+                    <MudText Typo="Typo.h6">Environment Variables</MudText>
+                    <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables"/>
+                }
+                else if (_wizardPage == Pages.ValidateAndConfirm)
+                {
+                    @if(!_validationResult.IsValid)
+                    {
+                        @foreach(var error in _validationResult.Errors)
+                        {
+                            if(error.Severity == FluentValidation.Severity.Error)
+                            {
+                                <MudAlert Severity="Severity.Error">@error.ErrorMessage</MudAlert>
+                            }
+                            else if(error.Severity == FluentValidation.Severity.Warning)
+                            {
+                                <MudAlert Severity="Severity.Warning">@error.ErrorMessage</MudAlert>
+                            }
+                            else
+                            {
+                                <MudAlert Severity="Severity.Info">@error.ErrorMessage</MudAlert>
+                            }
+                        }
+                    }
+                    else
+                    {
+                        <MudText Typo="Typo.h6">Ready for deployment</MudText>
+                        <MudButton  Class="ml-auto"
+                                    OnClick="CreateDeploymentAsync"
+                                    ButtonType="ButtonType.Submit"
+                                    Variant="Variant.Filled"
+                                    Color="Color.Primary">Create</MudButton>
+
+                        <MudItem Class="ml-5">
+                        <ol>
+                            @if(model.CreateIngress)
+                            {
+                                <li>Create DNS entry @model.DomainName for Ingress</li>
+                                <li>Create ingress service @model.DomainName at @model.IngressNode?.IpAddress</li>
+                                <li>Generate HTTPS certificates for SAN: @model.DomainName</li>
+                                <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                            }
+                            else
+                            {
+                                <li>Create DNS entry @model.DomainName for application</li>
+                                <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                            }
+
+                            @if(_workPlan is not null)
+                            {
+                                foreach(var container in _workPlan.ContainerImages)
+                                {
+                                    <li>Create container '@container' at @model.ApplicationNode?.IpAddress</li>
+                                }
+                            }
+                        </ol>
+                        </MudItem>
+                    }                    
+                }
+
+            </MudCardContent>
+         
+
+        </MudCard>
+    </MudItem>
 </EditForm>
 
 
 @code {
-    CreateIngressServiceModel model = new CreateIngressServiceModel();
+    private CreateDeploymentModel model = new();
+    private List<DeploymentPlanTemplate> _templates = new();
+    private Pages _wizardPage = Pages.SelectTemplate;
 
-    public class CreateIngressServiceModel
+    public enum Pages
+    {
+        SelectTemplate = 0,
+        SelectDomainName = 1,
+        ConfigureServers = 2,
+        ConfigureEnvironmentVariables = 3,
+
+        ValidateAndConfirm = 4
+    }
+
+    public class CreateDeploymentModel
     {
         [Required]
-        public string DomainName { get; set; } = "fortress.home.io";
+        public string Name { get; set; } = "";
 
         [Required]
-        public string Destination { get; set; } = "http://192.168.89.122:9088";
+        public string DomainName { get; set; } = "";
+
+        public DeploymentKind Kind { get; set; } = DeploymentKind.DockerCompose;
+
+        [Required]
+        public string? Plan { get; set; }
+
+        public Dictionary<string, string>? EnvironmentVariables = null;
+
+        public bool CreateIngress { get; set; }
+
+        public NodeInfo? IngressNode { get; set; }
+
+        public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
+        public string ApplicationProtocol { get; set; } = "https";
+
+        public string IconUrl{ get; set; }
+
+        [Required]
+        public NodeInfo? ApplicationNode { get; set; }
     }
 
     [Parameter] public string Id { get; set; } = null!;
 
+    private void PrevPage()
+    {
+        int pageNum = (int)_wizardPage;
+        if (pageNum > 0)
+        {
+            pageNum--;
+        }
+        _wizardPage = (Pages)pageNum;
+    }
+
+    private DeploymentPlan? _workPlan = null;
+    private FluentValidation.Results.ValidationResult _validationResult = new FluentValidation.Results.ValidationResult();
+
+    private void OnLeavingPage(Pages page)
+    {
+        this._workPlan = CreatePlan();
+        _validationResult = deploymentManager.ValidatePlan(this._workPlan);
+    }
+
+    private DeploymentPlan CreatePlan()
+    {
+        return new DeploymentPlan
+            {
+                Id = "0",
+                Name = model.Name,
+                IconUrl = model.IconUrl,
+                Slug = new Slugify.SlugHelper().GenerateSlug(model.Name),
+                Plan = model.Plan ?? "",
+                DomainName = model.DomainName,
+                Kind = model.Kind,
+                CreateIngress = model.CreateIngress,
+                CreateDnsEntry = true,
+                IngressServerIp = model.IngressNode?.IpAddress,
+                ApplicationServerIp = model.ApplicationNode?.IpAddress,
+                ApplicationServerPort = model.ApplicationPort,
+                ApplicationProtocol = model.ApplicationProtocol,
+                EnvironmentVariables = model.EnvironmentVariables ?? new()
+            };
+    }
+
+    private void NextPage()
+    {
+        OnLeavingPage(_wizardPage);
+
+        int pageNum = (int)_wizardPage;
+        pageNum++;
+        _wizardPage = (Pages)pageNum;
+
+        if(_wizardPage == Pages.ConfigureEnvironmentVariables && _workPlan is not null)
+        {
+            model.EnvironmentVariables = deploymentManager.GetDefaultEnvironmentVariables(_workPlan);
+        }
+    }
+
+    private async Task CreateDeploymentAsync()
+    {
+        if(_workPlan is null)
+        {
+            return;
+        }
+        await deploymentManager.SaveAsync(_workPlan);
+
+        navigationManager.NavigateTo("/deployments");
+    }
+
+    private void ApplyTemplate(DeploymentPlanTemplate template)
+    {
+        model.Plan = template.Plan;
+        model.DomainName = template.Name.ToLower().Replace(' ', '-') + "." + domain.DefaultDomain;
+        model.Name = model.DomainName;
+        model.CreateIngress = template.CreateIngress;
+        model.IconUrl = template.IconUrl;
+        model.ApplicationProtocol = template.ApplicationProtocol;
+
+        _wizardPage++;
+        this.StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _templates.Clear();
+        foreach (var template in await _templateProvider.GetDeploymentsAsync())
+        {
+            _templates.Add(template);
+        }
+    }
+
     private async Task OnValidSubmitAsync()
     {
-        var nodes = await _nodeManager.GetNodesAsync();
-        var node = nodes.Where(x=>x.Id == Id).FirstOrDefault();
-        if(node?.IpAddress is null)
-        {
-            throw new Exception("Node not active");
-        }
-
-        if (Uri.TryCreate(model.Destination, UriKind.Absolute, out var dest))
-        {
-            await _ingressManager.AddIngressServiceAsync(new IngressServiceDescription
-                {
-                    Scheme = dest.Scheme,
-                    DestinationIp = dest.Host,
-                    DomainName = model.DomainName,
-                    DestinationPort = dest.Port,
-                    Id = Guid.NewGuid().ToString(),
-                    IngressIp = node.IpAddress,
-                    IngressPort = node.IngressHttpsPort
-                });
-        }
+        await Task.Delay(1000);
     }
 
 }

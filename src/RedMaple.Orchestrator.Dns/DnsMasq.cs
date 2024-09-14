@@ -63,10 +63,6 @@ namespace RedMaple.Orchestrator.Dns
                 _logger.LogInformation("Creating dnsmasq configuration root dir: {path}", path);
                 Directory.CreateDirectory(path);
             }
-            else
-            {
-                _logger.LogDebug("dnsmasq configuration root dir: {path} exists", path);
-            }
             return path;
         }
 
@@ -79,10 +75,6 @@ namespace RedMaple.Orchestrator.Dns
             {
                 _logger.LogDebug("Creating dnsmasq.d configuration dir: {path} exists", path);
                 Directory.CreateDirectory(configD);
-            }
-            else 
-            {
-                _logger.LogDebug("dnsmasq.d configuration dir: {path} exists", path);
             }
             return configD;
         }
@@ -283,6 +275,7 @@ namespace RedMaple.Orchestrator.Dns
             foreach (var entry in entries)
             {
                 var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
+                _logger.LogInformation("Local DNS entry: {dnsmasqLine}", line);
                 await writer.WriteLineAsync(line);
             }
         }
@@ -294,6 +287,7 @@ namespace RedMaple.Orchestrator.Dns
             foreach (var entry in entries)
             {
                 var line = $"address=/{entry.Hostname}/{entry.IpAddress}";
+                _logger.LogInformation("Global DNS entry: {dnsmasqLine}", line);
                 await writer.WriteLineAsync(line);
             }
         }

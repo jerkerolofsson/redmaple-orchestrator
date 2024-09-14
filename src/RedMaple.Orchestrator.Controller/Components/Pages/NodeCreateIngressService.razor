@@ -2,10 +2,13 @@
 @rendermode InteractiveServer
 @inject IIngressManager _ingressManager
 @inject INodeManager _nodeManager
+@inject NavigationManager _navigationManager
 @using System.ComponentModel.DataAnnotations
+@using RedMaple.Orchestrator.Controller.Components.Views
 @using RedMaple.Orchestrator.Controller.Domain.Ingress
 
 <MudPopoverProvider />
+<ProgressView @ref="_progress"/>
 
 <MudItem xs="12" sm="7">
     <MudPaper Class="pa-5">
@@ -62,18 +65,21 @@
     public class CreateIngressServiceModel
     {
         [Required]
-        public string DomainName { get; set; } = "fortress.home.io";
+        public string DomainName { get; set; } = "app1.lan";
 
         [Required]
-        public string Destination { get; set; } = "http://192.168.89.122:9088";
+        public string Destination { get; set; } = "https://192.168.89.122:10000";
     }
 
     [Parameter] public string Id { get; set; } = null!;
+
+    private ProgressView _progress = null!;
 
     private async Task OnValidSubmitAsync()
     {
         var nodes = await _nodeManager.GetNodesAsync();
         var node = nodes.Where(x=>x.Id == Id).FirstOrDefault();
+        _progress.Begin();
         if(node?.IpAddress is null)
         {
             throw new Exception("Node not active");
@@ -90,7 +96,9 @@
                     Id = Guid.NewGuid().ToString(),
                     IngressIp = node.IpAddress,
                     IngressPort = node.IngressHttpsPort
-                });
+                }, _progress);
+
+                _navigationManager.NavigateTo($"/node/{Id}/ingress");
         }
     }
 

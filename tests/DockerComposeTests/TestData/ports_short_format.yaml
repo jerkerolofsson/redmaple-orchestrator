@@ -1,0 +1,21 @@
+services:
+  test:
+    container_name: "aspnet-app"
+    image: "IMAGE NAME"
+    environment:
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
+      OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
+      ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
+      ASPNETCORE_URLS: https://+:8081;http://+:8080
+      ASPNETCORE_Kestrel__Certificates__Default__Password: ${REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD}
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /certs/https.pfx
+      HTTP_PORTS: "8081"
+      OIDC_IDENTITY_SERVER_URL: ${OIDC_AUTHORITY}
+      AUTH_CLIENT_ID: ${OIDC_CLIENT_ID}
+      AUTH_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
+    ports:
+      - 1234:8081/UDP
+    restart: unless-stopped
+    volumes:
+      - ${REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH}:/certs/https.pfx:ro

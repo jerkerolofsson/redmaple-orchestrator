@@ -1,0 +1,7 @@
+﻿.current {
+    display: flex;
+    gap: 1rem;
+    font-size: 1rem;
+    padding: 1rem;
+    align-items: center;
+}

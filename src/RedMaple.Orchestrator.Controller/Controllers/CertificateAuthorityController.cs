@@ -108,7 +108,7 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                     }
                     if(ipAddress is not null)
                     {
-                        sanBuilder.AddDnsName(ipAddress);
+                        sanBuilder.AddIpAddress(IPAddress.Parse(ipAddress));
                     }
                 });
 

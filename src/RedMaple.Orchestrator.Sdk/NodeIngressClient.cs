@@ -20,11 +20,16 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
 
-        public async Task AddIngressServiceAsync(IngressServiceDescription serviceDescription)
+        public async Task AddIngressServiceAsync(IngressServiceDescription serviceDescription, IProgress<string> progress)
         {
             string url = $"/api/ingress";
             using var response = await _httpClient.PostAsJsonAsync(url, serviceDescription);
             response.EnsureSuccessStatusCode();
+            var text = await response.Content.ReadAsStringAsync();
+            foreach(var line in text.Split('\n'))
+            {
+                progress.Report(line);
+            }
         }
         public async Task DeleteIngressServiceAsync(string id)
         {

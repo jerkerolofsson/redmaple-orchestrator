@@ -8,8 +8,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Contracts\RedMaple.Orchestrator.Contracts.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.DockerCompose\RedMaple.Orchestrator.DockerCompose.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Security\RedMaple.Orchestrator.Security.csproj" />
+    <PackageReference Include="FluentValidation" Version="11.9.2" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 	  <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 
@@ -17,6 +19,7 @@
 
 	<ItemGroup>
 		<PackageReference Include="MediatR" Version="12.4.0" />
+		<PackageReference Include="Slugify.Core" Version="4.0.1" />
 	</ItemGroup>
 
 </Project>

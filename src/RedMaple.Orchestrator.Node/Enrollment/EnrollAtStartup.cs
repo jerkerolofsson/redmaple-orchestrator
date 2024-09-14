@@ -76,13 +76,14 @@ namespace RedMaple.Orchestrator.Node.Enrollment
                     using var response = await _httpClient.PostAsJsonAsync("http://controller/api/nodes", nodeInfo);
                     response.EnsureSuccessStatusCode();
                     _logger.LogInformation("Successfully enrolled with controller");
-                    return;
+
+                    await Task.Delay(TimeSpan.FromSeconds(30));
                 }
                 catch(Exception ex)
                 {
                     _logger.LogError(ex,"Failed to enroll with controller");
                 }
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(TimeSpan.FromSeconds(5));
             }
         }
     }
