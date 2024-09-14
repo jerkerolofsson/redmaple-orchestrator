@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Net.WebRequestMethods;
 
-namespace RedMaple.Orchestrator.DockerCompose
+namespace RedMaple.Orchestrator.DockerCompose.Models
 {
     /// <summary>
     /// Short syntax

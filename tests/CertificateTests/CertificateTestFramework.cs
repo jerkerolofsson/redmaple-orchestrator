@@ -56,7 +56,7 @@ namespace CertificateTests
 
         }
 
-        public CertificateAuthority CA => _serviceProvider.GetRequiredService<CertificateAuthority>();
+        public ICertificateAuthority CA => _serviceProvider.GetRequiredService<ICertificateAuthority>();
         public ICertificateProvider Provider => _serviceProvider.GetRequiredService<ICertificateProvider>();
 
         public void Dispose()

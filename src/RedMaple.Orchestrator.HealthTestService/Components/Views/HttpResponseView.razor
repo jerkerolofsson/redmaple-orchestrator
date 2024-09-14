@@ -1,0 +1,31 @@
+﻿@if (Message is not null && Text is not null)
+{
+    <div style="flex">
+        <div class="status-code @_cssClass">
+            <div>@_statusCodeText</div>
+            <div>@Text</div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public HttpResponseMessage? Message { get; set; }
+
+    [Parameter]
+    public string? Text { get; set; }
+
+    private string _cssClass = "";
+    private string _statusCodeText = "";
+
+    protected override void OnParametersSet()
+    {
+        _statusCodeText = "";
+        if (Message is not null)
+        {
+            var statusCode = (int)Message.StatusCode;
+            _cssClass = "status-code status-code-" + (statusCode / 100) + "xx";
+            _statusCodeText = statusCode + " " + Message.ReasonPhrase;
+        }
+    }
+}

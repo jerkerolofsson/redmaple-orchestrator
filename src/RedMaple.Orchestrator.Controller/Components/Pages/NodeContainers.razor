@@ -25,9 +25,16 @@
 
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudButton OnClick="async() => await StartContainerAsync(context.Item.Id)">Start</MudButton>
-                    <MudButton OnClick="async() => await StopContainerAsync(context.Item.Id)">Stop</MudButton>
-                    <MudButton OnClick="async() => await RestartContainerAsync(context.Item.Id)">Restart</MudButton>
+                    @if(context.Item.State == "running")
+                    {
+                        <MudButton OnClick="async () => await StopContainerAsync(context.Item.Id)">Stop</MudButton>
+                    <MudButton OnClick="async () => await RestartContainerAsync(context.Item.Id)">Restart</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton OnClick="async () => await StartContainerAsync(context.Item.Id)">Start</MudButton>
+                    }
+                    <MudButton OnClick="() => ReadLogs(context.Item.Id)">Logs</MudButton>
                 </CellTemplate>
             </TemplateColumn>
 
@@ -52,6 +59,12 @@
             await client.StartAsync(id);
         }
     }
+
+    private void ReadLogs(string containerId)
+    {
+        navigationManager.NavigateTo($"/node/{Id}/containers/{containerId}/logs");
+    }
+
     private async Task StopContainerAsync(string id)
     {
         if (_nodeInfo is not null)

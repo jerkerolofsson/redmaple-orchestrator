@@ -1,0 +1,6 @@
+services:
+  test:
+    container_name: "aspnet-app"
+    image: "IMAGE NAME"
+    volumes:
+      - /etc/certs/https.pfx:/certs/https.pfx:ro

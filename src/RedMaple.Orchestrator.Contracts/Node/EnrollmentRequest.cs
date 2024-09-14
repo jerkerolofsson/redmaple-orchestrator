@@ -16,5 +16,9 @@ namespace RedMaple.Orchestrator.Contracts.Node
         public required List<string> HostAddresses { get; set; }
         public string Schema { get; set; } = "http";
         public int IngressHttpsPort { get; set; }
+        public bool IsDnsEnabled { get; set; }
+        public bool IsIngressEnabled { get; set; }
+        public bool IsLoadBalancerEnabled { get; set; }
+        public bool IsApplicationHostEnabled { get; set; }
     }
 }

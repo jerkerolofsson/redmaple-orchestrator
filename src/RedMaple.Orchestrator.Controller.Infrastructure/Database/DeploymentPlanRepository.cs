@@ -68,6 +68,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             }
             _logger.LogInformation("Adding deployment plan with ID {id}..", service.Id);
             var services = await LoadDataAsync();
+            services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
             await WriteDataAsync(services);
         }

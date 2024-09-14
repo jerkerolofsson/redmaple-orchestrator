@@ -1,0 +1,22 @@
+﻿.status-code {
+    padding: 1rem;
+    border: solid 1px black;
+}
+
+.status-code-2xx {
+    border-color: rgba(0,50,0,0.3);
+    background: rgba(0,50,0,0.1);
+    color: #060;
+}
+
+.status-code-4xx {
+    border-color: rgba(50,0,0,0.3);
+    background: rgba(50,0,0,0.1);
+    color: #600;
+}
+
+.status-code-5xx {
+    border-color: rgba(50,30,0,0.3);
+    background: rgba(50,30,0,0.1);
+    color: #640;
+}

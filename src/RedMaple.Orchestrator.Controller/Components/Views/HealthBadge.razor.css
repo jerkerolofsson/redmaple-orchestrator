@@ -1,0 +1,29 @@
+﻿.badge {
+    padding: 0.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    border: solid 2px black;
+}
+
+.badge.health-Healthy {
+    border-color: lightseagreen;
+    background: lightseagreen;
+    color: white;
+}
+
+.badge.health-Degraded {
+    border-color: lightcoral;
+    background: lightcoral;
+    color: white;
+}
+.badge.health-Unhealthy {
+    border-color: firebrick;
+    background: firebrick;
+    color: white;
+}
+
+i {
+    margin-right: 0.3rem;
+}

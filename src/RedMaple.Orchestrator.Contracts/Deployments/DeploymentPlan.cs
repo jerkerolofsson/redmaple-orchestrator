@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using RedMaple.Orchestrator.Contracts.Healthz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -79,9 +81,26 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public byte[]? ApplicationHttpsCertificatePfx { get; set; }
 
+        /// <summary>
+        /// Password for the PFX certificate
+        /// </summary>
         public string? ApplicationHttpsCertificatePassword { get; set; }
 
+        /// <summary>
+        /// List of container images the plan has.
+        /// This is extracted from the plan (e.g. docker compose)
+        /// </summary>
         public List<string> ContainerImages { get; set; } = new();
 
+        /// <summary>
+        /// Flag to indicate if the deployment is up or down
+        /// </summary>
+        public bool Up { get; set; }
+
+        /// <summary>
+        /// Health check tests
+        /// </summary>
+        public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
+        public HealthStatus HealthStatus { get; set; }
     }
 }

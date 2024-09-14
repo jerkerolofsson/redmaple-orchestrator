@@ -40,6 +40,11 @@ namespace RedMaple.Orchestrator.Contracts.Node
         /// </summary>
         public string? IpAddress { get; set; }
 
+        public bool IsDnsEnabled { get; set; }
+        public bool IsIngressEnabled { get; set; }
+        public bool IsLoadBalancerEnabled { get; set; }
+        public bool IsApplicationHostEnabled { get; set; }
+
         public override string ToString()
         {
             return IpAddress ?? base.ToString() ?? "NodeInfo";

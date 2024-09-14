@@ -21,13 +21,43 @@ namespace RedMaple.Orchestrator.Sdk
         {
             _httpClient.Dispose();
         }
+
+        public Task ReadLogsAsync(string id, string? tail, IProgress<string> callback, CancellationToken cancellationToken)
+        {
+            string url = $"/api/containers/{id}/logs";
+            if(tail is not null)
+            {
+                url += "?tail=" + tail;
+            }
+            return Task.Factory.StartNew(async () =>
+            {
+                try
+                {
+                    using var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    using var stream = response.Content.ReadAsStream();
+                    using var reader = new StreamReader(stream);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        var line = await reader.ReadLineAsync(cancellationToken);
+                        if (line is null)
+                        {
+                            break;
+                        }
+                        callback.Report(line);
+                    }
+                }
+                catch { }
+            }, TaskCreationOptions.LongRunning);
+
+        }
+
         public async Task StartAsync(string id)
         {
             string url = $"/api/containers/{id}/start";
             using var response = await _httpClient.PostAsync(url, null);
             response.EnsureSuccessStatusCode();
         }
-
         public async Task StopAsync(string id)
         {
             string url = $"/api/containers/{id}/stop";

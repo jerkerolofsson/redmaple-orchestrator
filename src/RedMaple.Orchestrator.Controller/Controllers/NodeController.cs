@@ -89,7 +89,12 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                 IpAddress = remoteIp,
                 Port = request.Port,
                 Schema = request.Schema,
-                IngressHttpsPort = request.IngressHttpsPort
+                IngressHttpsPort = request.IngressHttpsPort,
+
+                IsDnsEnabled = request.IsDnsEnabled,
+                IsIngressEnabled = request.IsIngressEnabled,
+                IsLoadBalancerEnabled = request.IsLoadBalancerEnabled,
+                IsApplicationHostEnabled = request.IsApplicationHostEnabled,
             };
             await _repository.EnrollNodeAsync(nodeInfo);
             return Ok();

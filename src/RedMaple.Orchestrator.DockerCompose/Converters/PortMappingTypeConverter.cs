@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using RedMaple.Orchestrator.DockerCompose.Models;
 using YamlDotNet.Core;
 using YamlDotNet.Core.Events;
 using YamlDotNet.Serialization;
@@ -11,7 +12,7 @@ using YamlDotNet.Serialization;
 namespace RedMaple.Orchestrator.DockerCompose.Converters
 {
 
-    public class DockerComposePortMappingTypeConverter : IYamlTypeConverter
+    public class PortMappingTypeConverter : IYamlTypeConverter
     {
         public bool Accepts(Type type)
         {

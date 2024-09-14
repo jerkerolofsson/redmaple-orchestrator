@@ -4,7 +4,7 @@
 @using RedMaple.Orchestrator.Controller.Domain.Deployments
 @rendermode InteractiveServer
 @inject NavigationManager navigationManager
-@inject IDeplomentManager deploymentManager
+@inject IDeploymentManager deploymentManager
 @inject IDialogService dialogService
 
 <MudThemeProvider />
@@ -56,8 +56,13 @@ else if(!_loading)
                 </TemplateColumn>
 
                 <PropertyColumn Property="x => x.Name" Title="Name" />
-                <PropertyColumn Property="x => x.DomainName" Title="Domain Name" />
-                <PropertyColumn Property="x => x.Kind" Title="Kind" />
+
+                <TemplateColumn Title="Health">
+                    <CellTemplate>
+                        <HealthBadge Status="@context.Item.HealthStatus"/>
+                    </CellTemplate>
+                </TemplateColumn>
+
 
                 <TemplateColumn Title="Ingress">
                     <CellTemplate>
@@ -66,41 +71,51 @@ else if(!_loading)
                             string url = $"https://{context.Item.DomainName}";
                             <a href="@url">@url</a>
                         }
-                       
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn Title="Application">
                     <CellTemplate>
-                        @if (context.Item.ApplicationServerIp is not null)
+                        @if (!context.Item.Up)
                         {
-                            string url = $"{context.Item.ApplicationProtocol}://{context.Item.ApplicationServerIp}:{context.Item.ApplicationServerPort}";
-                            if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
-                            {
-                                <a href="@url">@url</a>
-                            }
-                            else
-                            {
-                                <span>@url</span>
-                            }
+                            <MudText Typo="Typo.body1" Color="Color.Error">-</MudText>                            
                         }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Images">
-                    <CellTemplate>
-                        @foreach(var image in context.Item.ContainerImages)
+                        else
                         {
-                            <div>@image</div>
+                            @if (context.Item.ApplicationServerIp is not null)
+                            {
+                                string url = $"{context.Item.ApplicationProtocol}://{context.Item.ApplicationServerIp}:{context.Item.ApplicationServerPort}";
+                                if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
+                                {
+                                    <a href="@url">@url</a>
+                                }
+                                else
+                                {
+                                    <span>@url</span>
+                                }
+                            }
                         }
                     </CellTemplate>
                 </TemplateColumn>
 
                 <TemplateColumn StickyRight="true">
                     <CellTemplate>
-                        <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
-                        <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
-                        <MudButton Color="Color.Error" OnClick="async() => await DeleteAsync(context.Item)">Delete</MudButton>
+                        <div class="d-flex align-center">
+                            @if(context.Item.Up)
+                            {
+                                <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
+                            }
+                            else
+                            {
+                                <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
+                            }
+
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Primary">
+                                <MudMenuItem OnClick="async() => await DeleteAsync(context.Item)">
+                                    Delete
+                                </MudMenuItem>
+                            </MudMenu>
+                        </div>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>

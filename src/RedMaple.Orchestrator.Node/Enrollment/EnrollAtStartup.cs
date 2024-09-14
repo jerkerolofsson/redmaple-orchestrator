@@ -70,7 +70,12 @@ namespace RedMaple.Orchestrator.Node.Enrollment
                         Schema = schema,
                         HostAddresses = hostAddresses, 
                         Port = port,
-                        IngressHttpsPort = ingressHttpsPort
+                        IngressHttpsPort = ingressHttpsPort,
+
+                        IsDnsEnabled = settings.EnableDns,
+                        IsIngressEnabled = settings.IngressHost,
+                        IsLoadBalancerEnabled = settings.LoadBalancerHost,
+                        IsApplicationHostEnabled = settings.ApplicationHost,
                     };
 
                     using var response = await _httpClient.PostAsJsonAsync("http://controller/api/nodes", nodeInfo);
@@ -78,6 +83,7 @@ namespace RedMaple.Orchestrator.Node.Enrollment
                     _logger.LogInformation("Successfully enrolled with controller");
 
                     await Task.Delay(TimeSpan.FromSeconds(30));
+                    settings = await _settingsProvider.GetSettingsAsync();
                 }
                 catch(Exception ex)
                 {

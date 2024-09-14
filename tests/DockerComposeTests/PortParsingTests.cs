@@ -2,7 +2,7 @@ using RedMaple.Orchestrator.DockerCompose;
 
 namespace DockerComposeTests
 {
-    public class ParsingTests
+    public class PortParsingTests
     {
         [Fact]
         public void ParseFile_WithLongPortFormat()

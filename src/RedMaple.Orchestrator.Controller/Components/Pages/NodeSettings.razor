@@ -19,6 +19,15 @@
             <MudForm Spacing="2" Model="@_nodeSettings">
                 <MudSwitch @bind-Value="_nodeSettings.EnableDns"
                            Label="DNS Server" Color="Color.Primary" />
+
+                <MudSwitch @bind-Value="_nodeSettings.IngressHost"
+                           Label="Ingress" Color="Color.Primary" />
+
+                <MudSwitch @bind-Value="_nodeSettings.LoadBalancerHost"
+                           Label="Load Balancer" Color="Color.Primary" />
+
+                <MudSwitch @bind-Value="_nodeSettings.ApplicationHost"
+                           Label="Application Host" Color="Color.Primary" />
             </MudForm>
         </MudCardContent>
 

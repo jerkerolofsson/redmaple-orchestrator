@@ -23,9 +23,15 @@
             @foreach (var node in _nodes)
             {
                 <MudNavGroup Title="@node.IpAddress" Expanded="true">
-                    <MudNavLink Href="@GetNodeIngressLink(node)">Ingress</MudNavLink>
                     <MudNavLink Href="@GetNodeContainersLink(node)">Containers</MudNavLink>
-                    <MudNavLink Href="@GetNodeDnsLink(node)">DNS</MudNavLink>
+                    @if(node.IsIngressEnabled)
+                    {
+                        <MudNavLink Href="@GetNodeIngressLink(node)">Ingress</MudNavLink>
+                    }
+                    @if(node.IsDnsEnabled)
+                    {
+                        <MudNavLink Href="@GetNodeDnsLink(node)">DNS</MudNavLink>
+                    }
                     <MudNavLink Href="@GetNodeSettingsLink(node)">Settings</MudNavLink>
                 </MudNavGroup>
             }

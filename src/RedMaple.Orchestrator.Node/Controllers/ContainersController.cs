@@ -29,6 +29,25 @@ namespace RedMaple.Orchestrator.Node.Controllers
             return await _containersClient.CreateContainerAsync(createContainerParameters);
         }
 
+        [HttpGet("/api/containers/{id}/logs")]
+        public async Task<IActionResult> GetLogsAsync(
+            [FromRoute] string id,
+            [FromQuery] string? tail,
+            CancellationToken cancellationToken)
+        {
+            var result = new ContentStreamingResult(cancellationToken);
+            await _containersClient.GetLogsAsync(id, follow:true, tail, result, result.CancellationTokenSource, cancellationToken);
+            return result;
+        }
+
+        [HttpGet("/api/containers/{id}/stats")]
+        public async Task<IActionResult?> GetStatsAsync([FromRoute] string id, CancellationToken cancellationToken)
+        {
+            var result = new ContentStreamingResult(cancellationToken);
+            await _containersClient.GetStatsAsync(id, result, result.CancellationTokenSource, cancellationToken);
+            return result;
+        }
+
         [HttpPost("/api/containers/{id}/stop")]
         public async Task StopAsync([FromRoute] string id)
         {

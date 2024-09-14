@@ -24,6 +24,7 @@ namespace RedMaple.Orchestrator.Containers
                 Status = container.Status,
                 State = container.State,
                 IsRunning = container.State == "running",
+                Labels = new Dictionary<string,string>(container.Labels),
                 Ports = new List<ContainerPort>(container.Ports.Select(x => new ContainerPort
                 {
                     PrivatePort = x.PrivatePort,

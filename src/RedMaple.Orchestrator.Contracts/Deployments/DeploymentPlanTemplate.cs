@@ -1,4 +1,5 @@
-﻿using System;
+﻿using RedMaple.Orchestrator.Contracts.Healthz;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -32,5 +33,10 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// for docker compose this is the docker-compose.yaml
         /// </summary>
         public required string Plan { get; set; }
+
+        /// <summary>
+        /// Health check tests
+        /// </summary>
+        public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
     }
 }

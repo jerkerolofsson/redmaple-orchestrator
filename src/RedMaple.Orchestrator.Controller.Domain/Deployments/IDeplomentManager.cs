@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
-    public interface IDeplomentManager
+    public interface IDeploymentManager
     {
         /// <summary>
         /// Returns the default environment variables for a deployment

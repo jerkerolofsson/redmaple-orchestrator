@@ -10,4 +10,8 @@
     <PackageReference Include="YamlDotNet" Version="16.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\RedMaple.Orchestrator.Containers\RedMaple.Orchestrator.Containers.csproj" />
+  </ItemGroup>
+
 </Project>

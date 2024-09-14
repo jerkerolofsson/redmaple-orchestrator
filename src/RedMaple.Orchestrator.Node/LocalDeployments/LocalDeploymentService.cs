@@ -1,5 +1,6 @@
 ﻿using CliWrap;
 using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.DockerCompose;
 using RedMaple.Orchestrator.Node.Controllers;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -8,6 +9,13 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
 {
     public class LocalDeploymentService : ILocalDeploymentService
     {
+        private readonly ILogger<LocalDeploymentService> _logger;
+        private readonly IDockerCompose _compose;
+        public LocalDeploymentService(ILogger<LocalDeploymentService> logger, IDockerCompose compose)
+        {
+            _logger = logger;
+            _compose = compose;
+        }
 
         private string GetLocalConfigDir(string deployment)
         {
@@ -34,7 +42,7 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
 
         private async Task SaveHttpsCertificateAsync(AddNodeDeploymentRequest plan, IProgress<string> progress)
         {
-            progress.Report("Writing https.pfx..");
+            progress.Report("Writing certificates..");
             var dir = GetLocalConfigDir(plan.Slug);
             var path = Path.Combine(dir, "https.pfx");
             await File.WriteAllBytesAsync(path, plan.HttpsCertificatePfx);
@@ -45,6 +53,7 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
 
         private async Task GenerateScriptsAsync(AddNodeDeploymentRequest plan, IProgress<string> progress)
         {
+            progress.Report("Writing deployment configuration..");
             var dir = GetLocalConfigDir(plan.Slug);
             var envFile = Path.Combine(dir, "plan.env");
             var upFile = Path.Combine(dir, "up.sh");
@@ -63,13 +72,8 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
                     throw new ArgumentException("Unsupported plan kind " + plan.Kind);
             }
 
-            progress.Report("Generating plan.env file..");
             await WriteEnvironmentFileAsync(envFile, plan.EnvironmentVariables);
-
-            progress.Report("Generating up.sh file..");
             await WriteUpScriptAsync(upFile, envFile);
-
-            progress.Report("Generating down.sh file..");
             await WriteDownScriptAsync(downFile, envFile);
         }
 
@@ -123,10 +127,44 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             }
         }
 
+        private string GetDockerExePath()
+        {
+            var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            if (isWindows)
+            {
+                return "docker";
+            }
+            return "/usr/bin/docker";
+        }
+
         public async Task DownAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
         {
             var dir = GetLocalConfigDir(slug);
-            var task = Cli.Wrap("docker")
+            var composePath = Path.Combine(dir, "docker-compose.yaml");
+            var envPath = Path.Combine(dir, "plan.env");
+
+            var plan = DockerComposeParser.ParseFile(composePath);
+
+            await _compose.DownAsync(progress, plan, envPath, cancellationToken);
+        }
+
+        public async Task UpAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
+        {
+            var dir = GetLocalConfigDir(slug);
+            var composePath = Path.Combine(dir, "docker-compose.yaml");
+            var envPath = Path.Combine(dir, "plan.env");
+
+            var plan = DockerComposeParser.ParseFile(composePath);
+            await _compose.UpAsync(progress, plan, envPath, cancellationToken);
+        }
+
+        private async Task DownCliAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
+        { 
+            var dir = GetLocalConfigDir(slug);
+
+            _logger.LogInformation("Running docker compose down for path: {path}", dir);
+
+            var task = Cli.Wrap(GetDockerExePath())
                 .WithArguments(args =>
                 {
                     args.Add("compose");
@@ -137,19 +175,27 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
                 .WithWorkingDirectory(dir)
                 .WithStandardErrorPipe(PipeTarget.ToDelegate((line) =>
                 {
-                    progress.Report(line);
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        progress.Report(line);
+                    }
                 }))
                 .WithStandardOutputPipe(PipeTarget.ToDelegate((line) =>
                 {
-                    progress.Report(line);
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        progress.Report(line);
+                    }
                 })).ExecuteAsync(cancellationToken);
             await task.Task;
         }
 
-        public async Task UpAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
+        public async Task UpCliAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
         {
             var dir = GetLocalConfigDir(slug);
-            var task = Cli.Wrap("docker")
+            _logger.LogInformation("Running docker compose up for path: {path}", dir);
+
+            var task = Cli.Wrap(GetDockerExePath())
                 .WithArguments(args =>
                 {
                     args.Add("compose");
@@ -161,11 +207,17 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
                 .WithWorkingDirectory(dir)
                 .WithStandardErrorPipe(PipeTarget.ToDelegate((line) =>
                 {
-                    progress.Report(line);
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        progress.Report(line);
+                    }
                 }))
                 .WithStandardOutputPipe(PipeTarget.ToDelegate((line) =>
                 {
-                    progress.Report(line);
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        progress.Report(line);
+                    }
                 })).ExecuteAsync(cancellationToken);
             await task.Task;
         }

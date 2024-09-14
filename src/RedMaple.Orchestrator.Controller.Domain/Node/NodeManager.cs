@@ -35,6 +35,32 @@ namespace RedMaple.Orchestrator.Controller.Domain.Node
             else
             {
                 _logger.LogInformation("Node already enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+                var changed = false;
+                if (existingNode.IsDnsEnabled != nodeInfo.IsDnsEnabled)
+                {
+                    existingNode.IsDnsEnabled = nodeInfo.IsDnsEnabled;
+                    changed = true;
+                }
+                if (existingNode.IsApplicationHostEnabled != nodeInfo.IsApplicationHostEnabled)
+                {
+                    existingNode.IsApplicationHostEnabled = nodeInfo.IsApplicationHostEnabled;
+                    changed = true;
+                }
+                if (existingNode.IsIngressEnabled != nodeInfo.IsIngressEnabled)
+                {
+                    existingNode.IsIngressEnabled = nodeInfo.IsIngressEnabled;
+                    changed = true;
+                }
+                if (existingNode.IsLoadBalancerEnabled != nodeInfo.IsLoadBalancerEnabled)
+                {
+                    existingNode.IsLoadBalancerEnabled = nodeInfo.IsLoadBalancerEnabled;
+                    changed = true;
+                }
+                if(changed)
+                {
+                    _logger.LogInformation("Node properties updated: {BaseUrl}", nodeInfo.BaseUrl);
+                    await _nodeRepository.UpdateNodeAsync(nodeInfo);
+                }
             }
         }
 

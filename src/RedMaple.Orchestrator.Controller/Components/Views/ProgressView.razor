@@ -54,6 +54,11 @@
 
     public void Report(string message)
     {
+        if(string.IsNullOrWhiteSpace(message))
+        {
+            return;
+        }
+
         var item = new HistoryItem
             {
                 Text = message

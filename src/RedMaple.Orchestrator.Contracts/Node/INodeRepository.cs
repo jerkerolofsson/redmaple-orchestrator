@@ -11,5 +11,6 @@ namespace RedMaple.Orchestrator.Contracts.Node
         IQueryable<NodeInfo> Nodes { get; }
 
         Task AddNodeAsync(NodeInfo nodeInfo);
+        Task UpdateNodeAsync(NodeInfo nodeInfo);
     }
 }

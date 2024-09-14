@@ -1,6 +1,7 @@
 ﻿@page "/create-deployment"
 @rendermode InteractiveServer
 @using RedMaple.Orchestrator.Contracts.Deployments
+@using RedMaple.Orchestrator.Contracts.Healthz
 @using RedMaple.Orchestrator.Controller.Components.Views
 @using RedMaple.Orchestrator.Controller.Domain.Deployments
 @using RedMaple.Orchestrator.Controller.Domain.Deployments.Templates
@@ -8,7 +9,7 @@
 @inject IDeploymentTemplateProvider _templateProvider
 @inject INodeManager _nodeManager
 @inject IDomainService domain
-@inject IDeplomentManager deploymentManager
+@inject IDeploymentManager deploymentManager
 @inject NavigationManager navigationManager
 
 <MudPopoverProvider />
@@ -196,6 +197,11 @@
 
         [Required]
         public NodeInfo? ApplicationNode { get; set; }
+
+        /// <summary>
+        /// Health check tests
+        /// </summary>
+        public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
     }
 
     [Parameter] public string Id { get; set; } = null!;
@@ -236,7 +242,8 @@
                 ApplicationServerIp = model.ApplicationNode?.IpAddress,
                 ApplicationServerPort = model.ApplicationPort,
                 ApplicationProtocol = model.ApplicationProtocol,
-                EnvironmentVariables = model.EnvironmentVariables ?? new()
+                EnvironmentVariables = model.EnvironmentVariables ?? new(),
+                HealthChecks = model.HealthChecks
             };
     }
 
@@ -269,10 +276,11 @@
     {
         model.Plan = template.Plan;
         model.DomainName = template.Name.ToLower().Replace(' ', '-') + "." + domain.DefaultDomain;
-        model.Name = model.DomainName;
+        model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
+        model.HealthChecks = template.HealthChecks;
 
         _wizardPage++;
         this.StateHasChanged();

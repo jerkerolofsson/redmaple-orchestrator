@@ -1,10 +1,12 @@
 ﻿using FluentValidation.Results;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Contracts.Node;
 using RedMaple.Orchestrator.Controller.Domain.Domain;
 using RedMaple.Orchestrator.Controller.Domain.GlobalDns;
+using RedMaple.Orchestrator.Controller.Domain.Healthz;
 using RedMaple.Orchestrator.Controller.Domain.Ingress;
 using RedMaple.Orchestrator.Controller.Domain.Node;
 using RedMaple.Orchestrator.DockerCompose;
@@ -12,14 +14,16 @@ using RedMaple.Orchestrator.Sdk;
 using RedMaple.Orchestrator.Security.Builder;
 using RedMaple.Orchestrator.Security.Serialization;
 using RedMaple.Orchestrator.Security.Services;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Cryptography;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
-    internal class DeplomentManager : IDeplomentManager
+    internal class DeploymentManager : IDeploymentManager
     {
+        private readonly IHealthzChecker _healthChecker;
         private readonly IGlobalDns _dns;
         private readonly IDomainService _domain;
         private readonly string mSecretCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
@@ -27,16 +31,17 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         private readonly INodeManager _nodeManager;
         private readonly ICertificateAuthority _ca;
         private readonly IDeploymentPlanRepository _deploymentPlanRepository;
-        private readonly ILogger<DeplomentManager> _logger;
+        private readonly ILogger<DeploymentManager> _logger;
 
-        public DeplomentManager(
-            IDomainService domain, 
-            IIngressManager ingressManager, 
-            INodeManager nodeManager, 
-            ICertificateAuthority certificateAuthority, 
-            IDeploymentPlanRepository deploymentPlanRepository, 
-            IGlobalDns dns, 
-            ILogger<DeplomentManager> logger)
+        public DeploymentManager(
+            IDomainService domain,
+            IIngressManager ingressManager,
+            INodeManager nodeManager,
+            ICertificateAuthority certificateAuthority,
+            IDeploymentPlanRepository deploymentPlanRepository,
+            IGlobalDns dns,
+            ILogger<DeploymentManager> logger,
+            IHealthzChecker healthChecker)
         {
             _domain = domain;
             _ingressManager = ingressManager;
@@ -45,6 +50,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             _deploymentPlanRepository = deploymentPlanRepository;
             _dns = dns;
             _logger = logger;
+            _healthChecker = healthChecker;
         }
 
         public ValidationResult ValidatePlan(DeploymentPlan plan)
@@ -197,11 +203,17 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             }
 
             await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+
+            // Save state
+            plan.Up = false;
+            await _deploymentPlanRepository.SaveDeploymentPlanAsync(plan);
         }
 
         public async Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
             ValidatePlan(plan);
+            plan.HealthStatus = HealthStatus.Degraded;
+
             ArgumentNullException.ThrowIfNull(plan.ApplicationServerIp);
             ArgumentNullException.ThrowIfNull(plan.ApplicationHttpsCertificatePassword);
             var targetNode = await _nodeManager.GetNodeByIpAddressAsync(plan.ApplicationServerIp);
@@ -228,7 +240,45 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
             await AddDeploymentOnTargetAsync(plan, progress, targetNode);
             await UpDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+
+            await WaitUntilReadyzAsync(plan, progress, cancellationToken);
+
+            // Save state
+            plan.Up = true;
+            plan.HealthStatus = HealthStatus.Healthy;
+            await _deploymentPlanRepository.SaveDeploymentPlanAsync(plan);
         }
+
+        private async Task WaitUntilReadyzAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
+        {
+            var readyz = plan.HealthChecks.Where(x => x.Type == Contracts.Healthz.HealthCheckType.Readyz).ToList();
+            if (readyz.Count == 0)
+            {
+                progress.Report("No readyz health checks");
+                return;
+            }
+
+            TimeSpan timeout = TimeSpan.FromSeconds(30);
+            var startTimestamp = Stopwatch.GetTimestamp();
+            while(timeout > Stopwatch.GetElapsedTime(startTimestamp))
+            {
+                foreach (var check in readyz)
+                {
+                    var status = await _healthChecker.CheckLivezAsync(plan, cancellationToken);
+                    progress.Report($"readyz check => {status}");
+                    if (status == HealthStatus.Healthy)
+                    {
+                        return;
+                    }
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+            }
+
+            progress.Report("Failed when waiting for readyz");
+            throw new Exception("Failed to verify that deployment is up (readyz health check)");
+        }
+
         private static async Task DeleteDeploymentFromTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
             progress.Report($"Deleting deployment from {targetNode.IpAddress}..");
@@ -244,6 +294,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         private static async Task DownDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
+            plan.HealthStatus = HealthStatus.Unhealthy;
+
             progress.Report($"Stopping deployment on {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
             await deploymentClient.DownAsync(plan.Slug, progress);

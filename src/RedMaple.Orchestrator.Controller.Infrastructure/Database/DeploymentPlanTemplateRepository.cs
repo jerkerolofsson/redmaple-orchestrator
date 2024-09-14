@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Contracts.Healthz;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -80,7 +81,31 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Name = "blazorapp1-http",
+                    Name = "Healthz Test",
+                    IconUrl = "/logo.png",
+                    ApplicationProtocol = "http",
+                    HealthChecks = new()
+                    {
+                        DeploymentHealthCheck.DefaultApplicationLivez,
+                        DeploymentHealthCheck.DefaultApplicationReadyz
+                    },
+                    Plan = """
+                    services:
+                      healthz:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "jerkerolofsson/redmaple-healthz-test"
+                        restart: unless-stopped
+                        environment:
+                          ASPNETCORE_URLS: http://+:14911
+                        ports:
+                        - target: 14911
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
+                    Name = "Blazor Sample HTTP",
                     IconUrl = "/blazor.png",
                     ApplicationProtocol = "http",
                     Plan = """
@@ -98,7 +123,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 },
                 new DeploymentPlanTemplate
                 {
-                    Name = "blazorapp1-https",
+                    Name = "Blazor Sample HTTPS",
                     IconUrl = "/blazor.png",
                     ApplicationProtocol = "https",
                     Plan = """

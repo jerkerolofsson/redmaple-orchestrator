@@ -15,6 +15,7 @@ builder.Services.AddMediatR(options =>
     options.RegisterServicesFromAssembly(typeof(EnrollAtStartup).Assembly);
 });
 
+builder.Services.AddTransient<RedMaple.Orchestrator.DockerCompose.IDockerCompose, RedMaple.Orchestrator.DockerCompose.DockerCompose>();
 builder.Services.AddSingleton<ILocalDeploymentService, LocalDeploymentService>();
 builder.Services.AddSingleton<INodeSettingsProvider, NodeSettingsProvider>();
 builder.Services.AddDns().AddIngress();

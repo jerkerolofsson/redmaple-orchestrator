@@ -8,5 +8,6 @@
         public string? State { get; set; }
         public bool IsRunning { get; set; }
         public List<ContainerPort> Ports { get; set; } = new();
+        public Dictionary<string, string> Labels { get; set; }
     }
 }

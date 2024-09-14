@@ -16,7 +16,13 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
         public Task AddNodeAsync(NodeInfo nodeInfo)
         {
             _nodes.RemoveAll(x => x.Id == nodeInfo.Id);
+            _nodes.Add(nodeInfo);
+            return Task.CompletedTask;
+        }
 
+        public Task UpdateNodeAsync(NodeInfo nodeInfo)
+        {
+            _nodes.RemoveAll(x => x.Id == nodeInfo.Id);
             _nodes.Add(nodeInfo);
             return Task.CompletedTask;
         }

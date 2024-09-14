@@ -1,0 +1,22 @@
+﻿@using Microsoft.Extensions.Diagnostics.HealthChecks
+<div class="badge health-@Status">
+    @if (Status == HealthStatus.Healthy)
+    {
+        <i class="fa-solid fa-heart"></i>
+    }
+    else if (Status == HealthStatus.Unhealthy)
+    {
+        <i class="fa-solid fa-heart-crack"></i>
+    }
+    else if (Status == HealthStatus.Degraded)
+    {
+        <i class="fa-regular fa-heart"></i>
+    }
+
+    @Status
+</div>
+
+@code {
+    [Parameter]
+    public HealthStatus Status { get; set; }
+}

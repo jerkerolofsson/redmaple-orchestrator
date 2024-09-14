@@ -4,6 +4,7 @@ using RedMaple.Orchestrator.Controller.Domain.Deployments;
 using RedMaple.Orchestrator.Controller.Domain.Deployments.Templates;
 using RedMaple.Orchestrator.Controller.Domain.Domain;
 using RedMaple.Orchestrator.Controller.Domain.GlobalDns;
+using RedMaple.Orchestrator.Controller.Domain.Healthz;
 using RedMaple.Orchestrator.Controller.Domain.Ingress;
 using RedMaple.Orchestrator.Controller.Domain.Node;
 using System;
@@ -25,7 +26,10 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IGlobalDns, GlobalDnsService>();
             services.AddSingleton<IIngressManager, IngressManager>();
             services.AddSingleton<IDomainService, DomainService>();
-            services.AddSingleton<IDeplomentManager, DeplomentManager>();
+            services.AddSingleton<IDeploymentManager, DeploymentManager>();
+            services.AddSingleton<IHealthzChecker, HealthzChecker>();
+            
+            services.AddHostedService<PeriodicDeploymentHealthzChecker>();
 
             services.AddSingleton<INodeManager, NodeManager>();
             services.AddSingleton<IDeploymentTemplateProvider, DeploymentTemplateProvider>();
