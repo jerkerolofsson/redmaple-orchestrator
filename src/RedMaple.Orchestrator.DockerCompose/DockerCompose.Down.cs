@@ -22,7 +22,14 @@ namespace RedMaple.Orchestrator.DockerCompose
             await DownContainersAsync(progress, plan, cancellationToken);
 
             progress.Report($"Deleting default docker network..");
-            await DeleteDefaultNetworkAsync(plan, cancellationToken);
+            try
+            {
+                await DeleteDefaultNetworkAsync(plan, cancellationToken);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Failed to delete the network");
+            }
         }
 
         private async Task DownContainersAsync(IProgress<string> progress, DockerComposePlan plan, CancellationToken cancellationToken)
