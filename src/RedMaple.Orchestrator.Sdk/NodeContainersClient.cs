@@ -22,6 +22,42 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
 
+
+        public Task StartReadStatsTaskAsync(string id, IProgress<string> callback, CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource();
+            string url = $"/api/containers/{id}/stats";
+            Task.Factory.StartNew(async () =>
+            {
+                try
+                {
+                    using var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    using var stream = response.Content.ReadAsStream();
+                    using var reader = new StreamReader(stream);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        var line = await reader.ReadLineAsync(cancellationToken);
+                        if (line is null)
+                        {
+                            break;
+                        }
+                        callback.Report(line);
+                    }
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+                finally
+                {
+                }
+            }, TaskCreationOptions.LongRunning);
+
+            return tcs.Task;
+        }
+
         public Task ReadLogsAsync(string id, string? tail, IProgress<string> callback, CancellationToken cancellationToken)
         {
             string url = $"/api/containers/{id}/logs";
@@ -49,7 +85,6 @@ namespace RedMaple.Orchestrator.Sdk
                 }
                 catch { }
             }, TaskCreationOptions.LongRunning);
-
         }
 
         public async Task StartAsync(string id)
@@ -81,6 +116,17 @@ namespace RedMaple.Orchestrator.Sdk
             {
                 ID = null
             };
+        }
+
+        public async Task<List<Container>> GetContainersForDeploymentAsync(string deployment)
+        {
+            string url = $"/api/containers?project={deployment}";
+            var containers = await _httpClient.GetFromJsonAsync<List<Container>>(url);
+            if (containers is null)
+            {
+                throw new Exception("null returned from GetContainers end-point");
+            }
+            return containers;
         }
 
         public async Task<List<Container>> GetContainersAsync()

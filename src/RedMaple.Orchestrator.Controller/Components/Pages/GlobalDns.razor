@@ -20,13 +20,13 @@
                     Items="@_entries"
                     SortMode="SortMode.Multiple">
         <Columns>
-            <TemplateColumn StickyLeft="true">
+            <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
                 <EditTemplate>
                     <img src="app-server.png" class="icon" />
                 </EditTemplate>
             </TemplateColumn>
 
-            <PropertyColumn Property="x => x.Hostname" Title="Name" />
+            <PropertyColumn Property="x => x.Hostname" Title="Name"/>
             <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
 
             <TemplateColumn StickyRight="true">

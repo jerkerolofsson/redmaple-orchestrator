@@ -18,6 +18,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IGlobalDnsRepository, GlobalDnsRepository>();
             services.AddSingleton<INodeRepository, InMemoryNodeRepository>();
             services.AddSingleton<IIngressRepository, FileSystemIngressRepository>();
+            services.AddSingleton<IApplicationDeploymentRepository, ApplicationDeploymentRepository>();
             services.AddSingleton<IDeploymentPlanRepository, DeploymentPlanRepository>();
             services.AddSingleton<IDeploymentPlanTemplateRepository, DeploymentPlanTemplateRepository>();
             return services;

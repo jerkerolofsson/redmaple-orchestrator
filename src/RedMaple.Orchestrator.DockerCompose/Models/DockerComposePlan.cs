@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -27,5 +28,17 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
         /// Keep the original yaml, as we will transform it with environment variables
         /// </summary>
         public string Yaml { get; set; } = "";
+
+        public string ProjectName
+        {
+            get
+            {
+                if (!Labels.TryGetValue(DockerComposeConstants.LABEL_PROJECT, out var planProject))
+                {
+                    throw new Exception("Plan label is missing: " + DockerComposeConstants.LABEL_PROJECT);
+                }
+                return planProject;
+            }
+        }
     }
 }

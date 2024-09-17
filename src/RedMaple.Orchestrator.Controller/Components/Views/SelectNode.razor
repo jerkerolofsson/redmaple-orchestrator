@@ -11,6 +11,18 @@
 
 @code {
     [Parameter]
+    public bool MustBeLoadBalancer { get; set; } = false;
+
+    [Parameter]
+    public bool MustBeApplicationHost { get; set; } = false;
+
+    [Parameter]
+    public bool MustBeIngress { get; set; } = false;
+
+    [Parameter]
+    public bool MustBeDns { get; set; } = false;
+
+    [Parameter]
     public string Label { get; set; } = "Node";
 
     [Parameter]
@@ -26,9 +38,31 @@
         await this.ValueChanged.InvokeAsync(node);
     }
 
-    protected override async Task OnInitializedAsync()
+    protected async override Task OnParametersSetAsync()
     {
-        _nodes = await nodeManager.GetNodesAsync();
+        IEnumerable<NodeInfo> nodes = await nodeManager.GetNodesAsync();
+        if (MustBeDns)
+        {
+            nodes = nodes.Where(x => x.IsDnsEnabled);
+        }
+        if (MustBeIngress)
+        {
+            nodes = nodes.Where(x => x.IsIngressEnabled);
+        }
+        if (MustBeApplicationHost)
+        {
+            nodes = nodes.Where(x => x.IsApplicationHostEnabled);
+        }
+        if (MustBeLoadBalancer)
+        {
+            nodes = nodes.Where(x => x.IsLoadBalancerEnabled);
+        }
+        _nodes = nodes.ToList();
+
+        if(Value is null && _nodes.Count > 0)
+        {
+            await ValueChanged.InvokeAsync(_nodes.First());
+        }
     }
 
 }

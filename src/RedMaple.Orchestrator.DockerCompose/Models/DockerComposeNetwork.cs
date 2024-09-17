@@ -8,5 +8,10 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
 {
     public class DockerComposeNetwork
     {
+        public string? driver { get; set; }
+        public string? scope { get; set; }
+
+        [YamlMember(Alias = "internal")]
+        public bool? Internal { get; set; }
     }
 }

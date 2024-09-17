@@ -1,3 +1,5 @@
+$DOCKER_REGISTRY = "192.168.0.241:5000"
+
 cd src
 
 echo "Building ${DOCKER_REGISTRY}/redmaple-node.."

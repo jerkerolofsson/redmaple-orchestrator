@@ -1,0 +1,45 @@
+﻿<div class="container">
+    <div class="lines">
+        @foreach (var line in _lines)
+        {
+            @(new MarkupString(line))
+        }
+    </div>
+</div>
+
+@code {
+    private ConcurrentStack<string> _lines = new ConcurrentStack<string>();
+
+    /// <summary>
+    /// Parses ANSI escape codes if true
+    /// </summary>
+    [Parameter] public bool ParseAnsiEscapeCodes { get; set; } = true;
+
+    /// <summary>
+    /// Parses log levels and colorizes it
+    /// </summary>
+    [Parameter] public bool ParseLogLevels { get; set; } = true;
+
+    public void AddLine(string line)
+    {
+        if (_lines.Count > 4000)
+        {
+            _lines.TryPop(out var _);
+        }
+        if (ParseAnsiEscapeCodes)
+        {
+            line = AnsiToHtml(line) + "<br/>";
+        }
+        if (ParseLogLevels)
+        {
+            line = ColorizeLogLevels(line);
+        }
+
+        _lines.Push(line);
+
+        InvokeAsync(() =>
+        {
+            this.StateHasChanged();
+        });
+    }
+}

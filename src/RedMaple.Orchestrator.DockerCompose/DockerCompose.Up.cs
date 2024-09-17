@@ -19,16 +19,58 @@ namespace RedMaple.Orchestrator.DockerCompose
             plan = TransformPlanWithEnvironmentVariables(plan, environmentFile);
 
             progress.Report($"Creating default docker network..");
-            var network = await CreateDefaultNetworkAsync(plan, cancellationToken);
-            if(network is null)
+            var defaultNetwork = await CreateDefaultNetworkAsync(plan, cancellationToken);
+            if(defaultNetwork is null)
             {
                 throw new Exception("Failed to create network");
             }
 
-            var containerIds = await CreateContainersAsync(plan, network, environmentFile);
-            foreach(var containerId in containerIds)
+            var containerIds = await CreateContainersAsync(plan, defaultNetwork, environmentFile);
+
+            // Create additional networks
+            progress.Report("Creating networks..");
+            var networks = await CreateNetworksAsync(plan, cancellationToken);
+            await ConnectContainersAsync(plan, networks, cancellationToken);
+
+            // Start the containers
+            foreach (var containerId in containerIds)
             {
                 await _docker.StartAsync(containerId, cancellationToken);
+            }
+        }
+
+        private async Task ConnectContainersAsync(DockerComposePlan plan, List<NetworkResponse> networks, CancellationToken cancellationToken)
+        {
+            if(plan.services is null)
+            {
+                return;
+            }
+            foreach(var service in plan.services.Values)
+            {
+                if(service.networks is null || service.container_name is null)
+                {
+                    continue;
+                }
+
+                // Find the container 
+                var container = await FindContainerAsync(plan, service.container_name, cancellationToken);
+                if(container is null)
+                {
+                    throw new Exception($"Internal Error, cannot find container '{service.container_name}'");
+                }
+
+                foreach (var networkName in service.networks)
+                {
+                    var network = networks.Where(x=>x.Name ==  networkName).FirstOrDefault();
+                    if(network is null)
+                    {
+                        throw new ArgumentException($"Network '{networkName}' was not found");
+                    }
+                    await _docker.ConnectNetworkAsync(network.ID, new NetworkConnectParameters
+                    {
+                        Container = container.Id
+                    }, cancellationToken);
+                }
             }
         }
 
@@ -45,7 +87,10 @@ namespace RedMaple.Orchestrator.DockerCompose
             return transformedPlan;
         }
 
-        private async Task<List<string>> CreateContainersAsync(DockerComposePlan plan, NetworkResponse network, string? environmentFile)
+        private async Task<List<string>> CreateContainersAsync(
+            DockerComposePlan plan, 
+            NetworkResponse network, 
+            string? environmentFile)
         {
             var containerIds = new List<string>();
 
@@ -59,6 +104,8 @@ namespace RedMaple.Orchestrator.DockerCompose
                 {
                     continue;
                 }
+
+                service.container_name ??= name;
 
                 Dictionary<string, string?> env = new();
                 if (plan.RequiredEnvironmentVariables is not null)
@@ -90,6 +137,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                     Hostname = service.hostname,
                     Domainname = service.domainname,
                     NetworkingConfig = networkingConfig,
+                    Volumes = MapVolumes(service),
                     ExposedPorts = GetExposedPorts(service),
                     HostConfig = CreateHostConfig(service),
                     Env = MapEnv(env),
@@ -99,6 +147,16 @@ namespace RedMaple.Orchestrator.DockerCompose
                 containerIds.Add(containerResponse.ID);
             }
             return containerIds;
+        }
+
+        private IDictionary<string, EmptyStruct> MapVolumes(DockerComposeService service)
+        {
+            Dictionary<string, EmptyStruct> volumes = new();
+            foreach (var volume in service.volumes)
+            {
+                volumes[volume.ToShortFormat()] = new EmptyStruct();
+            }
+            return volumes;
         }
 
         private IDictionary<string, EmptyStruct> GetExposedPorts(DockerComposeService service)

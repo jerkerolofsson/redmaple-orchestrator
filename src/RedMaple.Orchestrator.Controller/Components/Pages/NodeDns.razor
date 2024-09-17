@@ -28,10 +28,10 @@ else
                         Items="@_entries" 
                         SortMode="SortMode.Multiple">
             <Columns>
-                <TemplateColumn StickyLeft="true">
-                    <EditTemplate>
+                <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
+                    <CellTemplate>
                         <img src="app-server.png" class="icon" />
-                    </EditTemplate>
+                    </CellTemplate>
                 </TemplateColumn>
 
                 <PropertyColumn Property="x => x.Hostname" Title="Name"/>
@@ -64,13 +64,13 @@ else
                      Items="@_globalEntries"
                      SortMode="SortMode.Multiple">
             <Columns>
-                <TemplateColumn StickyLeft="true">
-                    <EditTemplate>
+                 <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
+                    <CellTemplate>
                         <img src="app-server.png" class="icon" />
-                    </EditTemplate>
+                    </CellTemplate>
                 </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Hostname" Title="Name" />
+                <PropertyColumn Property="x => x.Hostname" Title="Name"/>
                 <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
 
                 <TemplateColumn StickyRight="true">

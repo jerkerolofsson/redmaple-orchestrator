@@ -41,7 +41,7 @@ namespace RedMaple.Orchestrator.Node.Enrollment
                 ingressHttpsPort = 443;
             }
 
-            _logger.LogError("ENROLLING node with id={NodeId}, API Port={port}, Ingress Port={ingressHttpsPort}", settings.Id, port, ingressHttpsPort);
+            _logger.LogInformation("ENROLLING node with id={NodeId}, API Port={port}, Ingress Port={ingressHttpsPort}", settings.Id, port, ingressHttpsPort);
 
             await _settingsProvider.ApplySettingsAsync(settings);
 
@@ -66,7 +66,7 @@ namespace RedMaple.Orchestrator.Node.Enrollment
 
                     var nodeInfo = new EnrollmentRequest()
                     {
-                        Id = settings.Id,
+                        Id = settings.Id ?? throw new Exception("No Id specified"),
                         Schema = schema,
                         HostAddresses = hostAddresses, 
                         Port = port,

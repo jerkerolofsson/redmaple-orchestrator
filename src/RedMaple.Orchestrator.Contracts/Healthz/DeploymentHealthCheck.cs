@@ -17,6 +17,14 @@ namespace RedMaple.Orchestrator.Contracts.Healthz
     /// </summary>
     public class DeploymentHealthCheck
     {
+        public static DeploymentHealthCheck TcpLivez => new DeploymentHealthCheck()
+        {
+            RelativeUrl = "livez",
+            Method = HealthCheckMethod.TcpConnect,
+            Type = HealthCheckType.Livez,
+            Target = HealthCheckTarget.Application
+        };
+
         public static DeploymentHealthCheck DefaultApplicationLivez => new DeploymentHealthCheck()
         {
             RelativeUrl = "livez",

@@ -1,0 +1,26 @@
+﻿.container {
+    padding: 1rem;
+    height: 100%;
+}
+.container .lines {
+    padding: 1rem;
+    font-family: monospace;
+    background: #333;
+    color: #eee;
+    height: 100%;
+    max-height: 100%;
+    overflow: auto;
+}
+
+span.loglevel-info {
+    color: cyan;
+}
+.container .lines .loglevel-warn {
+    color: yellow;
+}
+.container .lines .loglevel-fail {
+    color: red;
+}
+.container .lines .loglevel-crit {
+    color: hotpink;
+}

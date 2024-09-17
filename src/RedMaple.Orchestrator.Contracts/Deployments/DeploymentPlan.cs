@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RedMaple.Orchestrator.Contracts.Healthz;
+using RedMaple.Orchestrator.Controller.Domain.Healthz.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -48,7 +49,9 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// <summary>
         /// IP address of node that will host the service
         /// </summary>
-        public string? ApplicationServerIp { get; set; }
+        //public string? ApplicationServerIp { get; set; }
+
+        public List<string> ApplicationServerIps { get; set; } = new();
 
         /// <summary>
         /// Application protocol
@@ -101,6 +104,10 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Health check tests
         /// </summary>
         public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
-        public HealthStatus HealthStatus { get; set; }
+
+        /// <summary>
+        /// Status for health check
+        /// </summary>
+        public ResourceHealthCheckResult? Health { get; set; }
     }
 }

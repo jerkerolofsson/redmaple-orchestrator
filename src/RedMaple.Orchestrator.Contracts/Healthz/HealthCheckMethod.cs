@@ -8,6 +8,7 @@ namespace RedMaple.Orchestrator.Contracts.Healthz
 {
     public enum HealthCheckMethod
     {
-        HttpGet
+        HttpGet,
+        TcpConnect,
     }
 }

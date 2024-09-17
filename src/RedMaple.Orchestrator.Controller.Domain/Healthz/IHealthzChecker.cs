@@ -6,10 +6,18 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
 {
     public interface IHealthzChecker
     {
-        Task<HealthStatus> CheckLivezAsync(DeploymentPlan deployment, CancellationToken cancellationToken);
-        Task<HealthStatus> CheckReadyzAsync(DeploymentPlan deployment, CancellationToken cancellationToken);
+        Task<HealthStatus> CheckLivezAsync(
+            ApplicationDeployment applicationDeployment,
+            DeploymentPlan deployment, 
+            CancellationToken cancellationToken);
+        Task<HealthStatus> CheckReadyzAsync(
+            ApplicationDeployment applicationDeployment,
+            DeploymentPlan deployment, CancellationToken cancellationToken);
 
-        Task<HealthStatus> CheckAsync(DeploymentPlan deployment, DeploymentHealthCheck check, CancellationToken cancellationToken);
-        Task<HealthStatus> CheckAsync(DeploymentPlan deployment, HealthCheckType type, CancellationToken cancellationToken);
+        Task<HealthStatus> CheckAsync(
+            ApplicationDeployment deployment,
+            DeploymentPlan deploymentPlan, 
+            DeploymentHealthCheck check, 
+            CancellationToken cancellationToken);
     }
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using RedMaple.Orchestrator.Contracts.Node;
+using RedMaple.Orchestrator.Controller.Domain.Cluster;
 using RedMaple.Orchestrator.Controller.Domain.Node;
 using RedMaple.Orchestrator.Sdk;
 using System.Net;
@@ -12,13 +13,16 @@ namespace RedMaple.Orchestrator.Controller.Controllers
     {
         private readonly ILogger<NodeController> _logger;
         private readonly INodeManager _repository;
+        private readonly IClusterService _clusterService;
 
         public NodeController(
             ILogger<NodeController> logger,
-            INodeManager repository)
+            INodeManager repository,
+            IClusterService clusterService)
         {
             _logger = logger;
             _repository = repository;
+            _clusterService = clusterService;
         }
 
         /// <summary>
@@ -39,64 +43,19 @@ namespace RedMaple.Orchestrator.Controller.Controllers
         [HttpPost]
         public async Task<ActionResult> EnrollAsync([FromBody] EnrollmentRequest request)
         {
-            _logger.LogInformation("Enrolling node...");
             var remoteIp = HttpContext.Connection.RemoteIpAddress?.ToString();
             if (remoteIp is null)
             {
                 return BadRequest();
             }
 
-            _logger.LogInformation("Enrolling node, remoteip={IP}", remoteIp);
-            string[] addresses = [..request.HostAddresses, remoteIp];
-
-            bool success = false;
-            foreach (var addr in addresses)
+            _logger.LogInformation("Enrolling node with IP: {remoteIp}", remoteIp);
+            if (!await _clusterService.OnEnrollAsync(request, remoteIp))
             {
-                // See where we can connect back
-                if (IPAddress.TryParse(addr, out var ipAddress))
-                {
-                    if (ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork &&
-                        !addr.StartsWith("::1"))
-                    {
-                        try
-                        {
-                            var url = $"{request.Schema}://{ipAddress}:{request.Port}";
-                            _logger.LogInformation("Testing node connection to {url}", url);
-                            using var client = new NodeContainersClient(url);
-                            var _ = await client.GetContainersAsync();
-                            remoteIp = ipAddress.ToString();
-                            success = true;
-                            break;
-                        }
-                        catch(Exception ex)
-                        {
-                            _logger.LogError(ex, "Failed to access node on that IP");
-                        }
-                    }
-                }
-            }
-
-            if(!success)
-            {
+                _logger.LogWarning("Failed to enroll node with IP: {remoteIp}", remoteIp);
                 return BadRequest();
             }
 
-            _logger.LogInformation("Enrolling node IP={IP}, Port={Port}, Schema={Schema}", remoteIp, request.Port, request.Schema);
-            var nodeInfo = new NodeInfo 
-            { 
-                Id = request.Id, 
-                HostAddresses = request.HostAddresses, 
-                IpAddress = remoteIp,
-                Port = request.Port,
-                Schema = request.Schema,
-                IngressHttpsPort = request.IngressHttpsPort,
-
-                IsDnsEnabled = request.IsDnsEnabled,
-                IsIngressEnabled = request.IsIngressEnabled,
-                IsLoadBalancerEnabled = request.IsLoadBalancerEnabled,
-                IsApplicationHostEnabled = request.IsApplicationHostEnabled,
-            };
-            await _repository.EnrollNodeAsync(nodeInfo);
             return Ok();
         }
     }

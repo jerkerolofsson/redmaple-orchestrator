@@ -1,24 +1,36 @@
 ﻿.badge {
-    padding: 0.35rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    border-radius: 3px;
-    border: solid 2px black;
+    justify-content: flex-start;
+    --border-radius: 3px;
+    --padding: 0.2rem;
+    border-radius: var(--border-radius);
+
+    font-size: 12px;
+    background: rgb(75,75,75);
+    background: linear-gradient(0deg, rgba(75,75,75,1) 0%, rgba(102,102,102,1) 100%);
+    color: white;
+
+    padding-right: var(--padding);
 }
 
-.badge.health-Healthy {
+.badge i {
+   padding: var(--padding);
+   border-radius: var(--border-radius);
+}
+
+.badge.health-Healthy i {
     border-color: lightseagreen;
     background: lightseagreen;
     color: white;
 }
 
-.badge.health-Degraded {
+.badge.health-Degraded i {
     border-color: lightcoral;
     background: lightcoral;
     color: white;
 }
-.badge.health-Unhealthy {
+.badge.health-Unhealthy i {
     border-color: firebrick;
     background: firebrick;
     color: white;

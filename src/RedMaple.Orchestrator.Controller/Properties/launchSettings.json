@@ -25,8 +25,8 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
-    "Container (Dockerfile)": {
-      "commandName": "Docker",
+    "Container (.NET SDK)": {
+      "commandName": "SdkContainer",
       "launchBrowser": true,
       "launchUrl": "{Scheme}://{ServiceHost}:{ServicePort}",
       "environmentVariables": {

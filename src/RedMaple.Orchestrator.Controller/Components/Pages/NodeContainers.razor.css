@@ -3,3 +3,7 @@
     display: flex;
     gap: 1rem;
 }
+
+td img {
+    width: 24px;
+}

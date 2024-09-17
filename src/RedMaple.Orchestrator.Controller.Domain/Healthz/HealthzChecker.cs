@@ -14,31 +14,33 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
     /// </summary>
     internal class HealthzChecker : IHealthzChecker
     {
-        public Task<HealthStatus> CheckReadyzAsync(DeploymentPlan deployment, CancellationToken cancellationToken) => 
-            CheckAsync(deployment, HealthCheckType.Readyz, cancellationToken);
-        public Task<HealthStatus> CheckLivezAsync(DeploymentPlan deployment, CancellationToken cancellationToken) => 
-            CheckAsync(deployment, HealthCheckType.Livez, cancellationToken);
+        public Task<HealthStatus> CheckReadyzAsync(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
+            CheckAsync(applicationDeployment, deployment, HealthCheckType.Readyz, cancellationToken);
+        public Task<HealthStatus> CheckLivezAsync(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
+            CheckAsync(applicationDeployment,deployment, HealthCheckType.Livez, cancellationToken);
 
         /// <summary>
         /// Checks health with checks of a specific kind
         /// </summary>
-        /// <param name="deployment"></param>
+        /// <param name="deployment">Information about the actual deployment</param>
+        /// <param name="deploymentPlan">Plan, including health checks</param>
         /// <param name="type"></param>
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<HealthStatus> CheckAsync(
-            DeploymentPlan deployment, 
+            ApplicationDeployment deployment,
+            DeploymentPlan deploymentPlan, 
             HealthCheckType type, 
             CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(deployment?.HealthChecks);
+            ArgumentNullException.ThrowIfNull(deploymentPlan?.HealthChecks);
 
-            var checksOfType = deployment.HealthChecks.Where(x => x.Type == type);
+            var checksOfType = deploymentPlan.HealthChecks.Where(x => x.Type == type);
 
             HealthStatus healthStatus = HealthStatus.Healthy;
             foreach (var check in checksOfType)
             {
-                var checkStatus = await CheckAsync(deployment, check, cancellationToken);
+                var checkStatus = await CheckAsync(deployment, deploymentPlan, check, cancellationToken);
                 if (checkStatus == HealthStatus.Unhealthy)
                 {
                     healthStatus = HealthStatus.Unhealthy;
@@ -55,17 +57,19 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
 
 
         public async Task<HealthStatus> CheckAsync(
-            DeploymentPlan deployment, 
+            ApplicationDeployment deployment, 
+            DeploymentPlan deploymentPlan,
             DeploymentHealthCheck check, 
             CancellationToken cancellationToken)
         {
             ArgumentNullException.ThrowIfNull(check?.RelativeUrl);
 
-            string absoluteUrl = GetHealthzEndPoint(deployment, check);
+            string absoluteUrl = GetHealthzEndPoint(deployment, deploymentPlan, check);
 
             IHealthzCheckerMethod checker = check.Method switch
             {
                 HealthCheckMethod.HttpGet => new HttpGetHealthzChecker(),
+                HealthCheckMethod.TcpConnect => new TcpConnectHealthzChecker(),
                 _ => throw new NotImplementedException()
             };
 
@@ -73,12 +77,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             return healthStatus;
         }
 
-        private static string GetHealthzEndPoint(DeploymentPlan deployment, DeploymentHealthCheck check)
+        private static string GetHealthzEndPoint(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, DeploymentHealthCheck check)
         {
             string baseUrl = check.Target switch
             {
-                HealthCheckTarget.Ingress => $"https://{deployment.IngressServerIp}",
-                HealthCheckTarget.Application => $"{deployment.ApplicationProtocol}://{deployment.ApplicationServerIp}:{deployment.ApplicationServerPort}",
+                HealthCheckTarget.Ingress => $"https://{deployment.IngressServerIp}:443",
+                HealthCheckTarget.Application => $"{deployment.ApplicationProtocol}://{applicationDeployment.ApplicationServerIp}:{applicationDeployment.ApplicationServerPort}",
                 _ => throw new NotImplementedException()
             };
             string absoluteUrl = baseUrl.TrimEnd('/') + '/' + check.RelativeUrl;

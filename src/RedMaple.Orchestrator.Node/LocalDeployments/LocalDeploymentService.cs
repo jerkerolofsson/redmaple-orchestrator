@@ -19,6 +19,10 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
 
         private string GetLocalConfigDir(string deployment)
         {
+            // Note: It is important that the folder name is the slug,
+            // as that will be the project name set for docker compose,
+            // which we need to find the containers when
+            // working with the deployments
             string path = $"/data/redmaple/node/deployments/{deployment}";
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
             if (isWindows)

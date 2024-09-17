@@ -1,0 +1,56 @@
+﻿@page "/resources/{id}"
+@rendermode InteractiveServer
+@inject IClusterResourceManager resourceManager
+@inject NavigationManager navigationManager
+
+<MudPopoverProvider />
+
+@if(model is not null)
+{
+    <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
+        <DataAnnotationsValidator />
+        <MudCard Class="pa-5 mt-5">
+            <MudItem>
+                <MudText Typo="Typo.h6">Resource Name</MudText>
+                <MudTextField Label="Name"
+                              Class="mt-5 pa-5"
+                              @bind-Value="model.Name"
+                              For="@(() => model.Name)" />
+
+                <MudText Typo="Typo.h6">Options</MudText>
+                <MudSwitch @bind-Value="model.IsGlobal"
+                           Label="Global Resource" Color="Color.Primary"/>
+            </MudItem>
+        </MudCard>
+        <MudCard Class="pa-5 mt-5">
+             <MudItem>
+                <MudText Typo="Typo.h6">Environment Variables</MudText>
+                <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables"/>
+            </MudItem>
+        </MudCard>
+
+        <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" Class="mr-auto mt-5">Save</MudButton>
+    </EditForm>
+}
+
+@code {
+    private ClusterResource? model = null!;
+
+    [Parameter]
+    public string Id { get; set; } = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await resourceManager.GetClusterResourceAsync(Id);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (model is not null)
+        {
+            await resourceManager.SaveResourceAsync(model);
+
+            navigationManager.NavigateTo("/resources");
+        }
+    }
+}

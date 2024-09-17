@@ -81,10 +81,11 @@ namespace RedMaple.Orchestrator.DockerCompose
                 .Build();
 
             var dockerComposePlan = deserializer.Deserialize<DockerComposePlan>(text);
-
-            dockerComposePlan.RequiredEnvironmentVariables = FindEnvironmentVariables(text);
-
-            return dockerComposePlan;
+            if (dockerComposePlan is not null)
+            { 
+                dockerComposePlan.RequiredEnvironmentVariables = FindEnvironmentVariables(text);
+            }
+            return dockerComposePlan ??new();
         }
     }
 }

@@ -17,9 +17,11 @@ namespace RedMaple.Orchestrator.Node.Controllers
         }
 
         [HttpGet()]
-        public async Task<List<Container>> GetContainersAsync()
+        public async Task<List<Container>> GetContainersAsync([FromQuery] string? project)
         {
-            return await _containersClient.GetContainersAsync();
+            var containers = await _containersClient.GetContainersAsync(project);
+
+            return containers;
         }
 
 

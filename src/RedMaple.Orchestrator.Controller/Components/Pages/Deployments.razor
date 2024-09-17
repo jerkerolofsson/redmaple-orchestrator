@@ -36,17 +36,11 @@ else if(!_loading)
                      Items="@_plans"
                      SortMode="SortMode.Multiple">
             <Columns>
-                <TemplateColumn StickyLeft="true">
-                    <EditTemplate>
-                        <img src="app-server.png" class="icon" />
-                    </EditTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="">
+                <TemplateColumn StickyLeft="true" HeaderStyle="width: 1rem">
                     <CellTemplate>
-                        @if(context.Item.IconUrl is not null)
+                        @if (context.Item.IconUrl is not null)
                         {
-                            <img src="@context.Item.IconUrl" class="deployment-icon" alt="logo"/>
+                            <img src="@context.Item.IconUrl" class="deployment-icon" alt="logo" />
                         }
                         else
                         {
@@ -55,14 +49,20 @@ else if(!_loading)
                     </CellTemplate>
                 </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Name" Title="Name" />
-
-                <TemplateColumn Title="Health">
+                <TemplateColumn Title="Name">
                     <CellTemplate>
-                        <HealthBadge Status="@context.Item.HealthStatus"/>
+                        @{
+                            string url = $"/deployments/{context.Item.Slug}";
+                        }
+                        <a href="@url">@context.Item.Name</a>
                     </CellTemplate>
                 </TemplateColumn>
 
+                <TemplateColumn Title="Health">
+                    <CellTemplate>
+                        <HealthBadge Health="@context.Item.Health" />
+                    </CellTemplate>
+                </TemplateColumn>
 
                 <TemplateColumn Title="Ingress">
                     <CellTemplate>
@@ -82,9 +82,9 @@ else if(!_loading)
                         }
                         else
                         {
-                            @if (context.Item.ApplicationServerIp is not null)
+                            @foreach (var appServerIp in context.Item.ApplicationServerIps)
                             {
-                                string url = $"{context.Item.ApplicationProtocol}://{context.Item.ApplicationServerIp}:{context.Item.ApplicationServerPort}";
+                                string url = $"{context.Item.ApplicationProtocol}://{appServerIp}:{context.Item.ApplicationServerPort}";
                                 if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
                                 {
                                     <a href="@url">@url</a>

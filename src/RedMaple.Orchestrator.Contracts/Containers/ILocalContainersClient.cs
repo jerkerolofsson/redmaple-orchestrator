@@ -11,7 +11,7 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task StopAsync(string id, CancellationToken cancellationToken = default);
         Task<CreateContainerResponse> CreateContainerAsync(CreateContainerParameters parameters, CancellationToken cancellationToken = default);
         Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken = default);
-        Task<List<Container>> GetContainersAsync(CancellationToken cancellationToken = default);
+        Task<List<Container>> GetContainersAsync(string? project, CancellationToken cancellationToken = default);
         Task<bool> HasContainerByNameAsync(string name, CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -48,5 +48,6 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task DeleteNetworkAsync(string id, ContainerRemoveParameters parameters, CancellationToken cancellationToken);
         Task<IList<NetworkResponse>> ListNetworksAsync(NetworksListParameters parameters, CancellationToken cancellationToken);
         Task DeleteContainerAsync(string id, CancellationToken cancellationToken);
+        Task ConnectNetworkAsync(string networkId, NetworkConnectParameters parameters, CancellationToken cancellationToken);
     }
 }

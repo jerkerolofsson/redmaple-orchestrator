@@ -1,0 +1,12 @@
+services:
+  prometheus:
+    container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+    image: "prom/prometheus"
+    restart: unless-stopped
+    volumes:
+    - prom_data:/prometheus
+    ports:
+    - target: 9090
+      published: ${REDMAPLE_APP_PORT}
+volumes:
+  prom_data:

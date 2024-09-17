@@ -1,5 +1,10 @@
 ﻿@page "/node/{id}/containers"
+@using RedMaple.Orchestrator.Controller.Domain.Aggregations
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
+@using RedMaple.Orchestrator.Controller.ViewModels
 @rendermode InteractiveServer
+@inject ContainerStatsAggregator containerStatsAggregator
 @inject INodeManager nodeManager
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
@@ -19,22 +24,48 @@
                  Items="@_containers"
                  SortMode="SortMode.Multiple">
         <Columns>
-            <PropertyColumn Property="x => x.Name" Title="Name" />
-            <PropertyColumn Property="x => x.Status" Title="Status" />
-            <PropertyColumn Property="x => x.State" Title="State" />
 
+            <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
+                <CellTemplate>
+                    @{
+                        string icon = GetContainerIcon(context.Item.Container);
+                    }
+                    <img src="@icon"/>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Container.Name" Title="Name" />
+
+            <PropertyColumn Property="x => x.Container.Image" Title="Image" />
+            <PropertyColumn Property="x => x.CpuUsageString" Title="CPU" />
+
+            <TemplateColumn Title="Ports">
+                <CellTemplate>
+                    @foreach (var port in context.Item.Container.Ports)
+                    {
+                        if (_nodeInfo is not null && port.PublicPort > 0)
+                        {
+                            string url = $"http://{_nodeInfo.IpAddress}:{port.PublicPort}";
+                            <div><a href="@url">@(port.PublicPort):@(port.PrivatePort)</a></div>
+                        }
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Container.State" Title="State" HeaderStyle="width: 1rem" />
+            <PropertyColumn Property="x => x.Container.Status" Title="Started" HeaderStyle="width: 1rem" />
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    @if(context.Item.State == "running")
+                    @if (context.Item.Container.IsRunning)
                     {
-                        <MudButton OnClick="async () => await StopContainerAsync(context.Item.Id)">Stop</MudButton>
-                    <MudButton OnClick="async () => await RestartContainerAsync(context.Item.Id)">Restart</MudButton>
+                        <MudButton OnClick="async () => await StopContainerAsync(context.Item.Container.Id)">Stop</MudButton>
+                        <MudButton OnClick="async () => await RestartContainerAsync(context.Item.Container.Id)">Restart</MudButton>
                     }
                     else
                     {
-                        <MudButton OnClick="async () => await StartContainerAsync(context.Item.Id)">Start</MudButton>
+                        <MudButton OnClick="async () => await StartContainerAsync(context.Item.Container.Id)">Start</MudButton>
                     }
-                    <MudButton OnClick="() => ReadLogs(context.Item.Id)">Logs</MudButton>
+                    <MudButton OnClick="() => ReadLogs(context.Item.Container.Id)">Logs</MudButton>
                 </CellTemplate>
             </TemplateColumn>
 
@@ -45,8 +76,17 @@
 @code {
     [Parameter] public string Id { get; set; } = null!;
 
-    private NodeInfo? _nodeInfo;
-    private List<Container> _containers = new();
+    private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
+    private NodeInfo? _nodeInfo = null;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+        }
+        return Task.CompletedTask;
+    }
+
     private void OnCreateContainer()
     {
         navigationManager.NavigateTo($"/node/{Id}/create-simple-container");
@@ -86,11 +126,43 @@
     {
         var nodes = await nodeManager.GetNodesAsync();
         _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
- 
+
         if (_nodeInfo is not null)
         {
-            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
-            _containers = await client.GetContainersAsync();
+            _containers = await containerStatsAggregator.GetNodeContainersAsync(Id);
         }
     }
+
+    private string GetContainerIcon(Container container)
+    {
+        if (container.Image is not null)
+        {
+            if(container.Image.Contains("nginx"))
+            {
+                return "brands/nginx.png";
+            }
+            if (container.Image.Contains("postgres"))
+            {
+                return "brands/postgres.png";
+            }
+            if (container.Image.Contains("mongo:"))
+            {
+                return "brands/mongodb.png";
+            }
+            if (container.Image.Contains("redis"))
+            {
+                return "brands/redis.png";
+            }
+            if (container.Image.Contains("rabbitmq"))
+            {
+                return "brands/rabbitmq.png";
+            }
+            if (container.Image.Contains("nodejs"))
+            {
+                return "brands/nodejs.png";
+            }
+        }
+        return "container.png";
+    }
+
 }

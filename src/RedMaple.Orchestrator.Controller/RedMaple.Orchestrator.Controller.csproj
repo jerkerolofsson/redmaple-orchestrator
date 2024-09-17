@@ -4,10 +4,13 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-	  <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-	  <DockerfileTag>redmaple-controller</DockerfileTag>
-	  <ContainerUser>root</ContainerUser>
-	  <UserSecretsId>c5aa11e5-7672-48cd-85b1-0cda823cae4d</UserSecretsId>
+	<UserSecretsId>c5aa11e5-7672-48cd-85b1-0cda823cae4d</UserSecretsId>
+	<DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+	<DockerfileTag>redmaple-controller</DockerfileTag>
+	<ContainerUser>root</ContainerUser>
+	<RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
+	<EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
+	<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:8.0</ContainerBaseImage>
 
   </PropertyGroup>
 
@@ -18,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\RedMaple.AnsiEscapeCodes\RedMaple.AnsiEscapeCodes.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Containers\RedMaple.Orchestrator.Containers.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Controller.Domain\RedMaple.Orchestrator.Controller.Domain.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Controller.Infrastructure\RedMaple.Orchestrator.Controller.Infrastructure.csproj" />

@@ -21,10 +21,9 @@ namespace RedMaple.Orchestrator.DockerCompose
             // Find containers
             await DownContainersAsync(progress, plan, cancellationToken);
 
-            progress.Report($"Deleting default docker network..");
             try
             {
-                await DeleteDefaultNetworkAsync(plan, cancellationToken);
+                await DeleteNetworksAsync(progress, plan, cancellationToken);
             }
             catch(Exception ex)
             {
@@ -40,18 +39,9 @@ namespace RedMaple.Orchestrator.DockerCompose
                 return;
             }
             List<string> containerIds = new List<string>();
-            foreach (var container in await _docker.GetContainersAsync(cancellationToken))
+            foreach (var container in await _docker.GetContainersAsync(plan.ProjectName, cancellationToken))
             {
-                if (container.Labels is not null)
-                {
-                    if (container.Labels.TryGetValue(DockerComposeConstants.LABEL_PROJECT, out var containerProject))
-                    {
-                        if (containerProject == planProject)
-                        {
-                            containerIds.Add(container.Id);
-                        }
-                    }
-                }
+                containerIds.Add(container.Id);
             }
 
             foreach (var containerId in containerIds)

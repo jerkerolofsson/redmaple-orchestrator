@@ -1,0 +1,111 @@
+﻿@page "/resources"
+@rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IClusterResourceManager resourceManager
+
+<MudThemeProvider />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<ProgressView Visible="_loading" @ref="_progress" />
+@if(_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if(!_loading)
+{
+
+    <div class="buttons">
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddDatabaseAsync()">Add Database</MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddOidcServerAsync()">Add OIDC Server</MudButton>
+    </div>
+
+
+    <MudCard Class="pa-5 mt-5">
+
+        <MudText Typo="Typo.h6">Resources</MudText>
+
+        <MudDataGrid Bordered="true" Dense="true"
+                     EditMode="DataGridEditMode.Cell"
+                     Items="@_resources"
+                     SortMode="SortMode.Multiple">
+            <Columns>
+
+                <TemplateColumn Title="Name">
+                    <CellTemplate>
+                        @{
+                            var url = $"/resources/{context.Item.Id}";
+                        }
+                        <a href="@url">@context.Item.Name</a>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn Property="x => x.Kind" Title="Kind" />
+            </Columns>
+        </MudDataGrid>
+
+        <MudCardActions>
+        </MudCardActions>
+    </MudCard>
+}
+@code {
+    private ProgressView _progress = null!;
+
+    private List<ClusterResource> _resources = new();
+    private bool _loading = false;
+    private string? _error = null;    
+    private CancellationTokenSource? _cancellationTokenSource = null;
+
+    private async Task AddOidcServerAsync()
+    {
+        var resource = new ClusterResource
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "Identity Provider",
+                Kind = ResourceKind.OidcServer,
+                EnvironmentVariables = new Dictionary<string, string>
+                {
+                    ["OIDC_AUTHORITY"] = "https://identityserver"
+                }
+            };
+        await resourceManager.AddResourceAsync(resource);
+        navigationManager.NavigateTo($"/resources/{resource.Id}");
+    }
+    private async Task AddDatabaseAsync()
+    {
+        var resource = new ClusterResource
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = "New Database",
+                Kind = ResourceKind.ConnectionString,
+                EnvironmentVariables = new Dictionary<string, string>
+                {
+                    ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
+                }
+            };
+            await resourceManager.AddResourceAsync(resource);
+        navigationManager.NavigateTo($"/resources/{resource.Id}");
+    }
+
+    private void Cancel()
+    {
+        _cancellationTokenSource?.Cancel();
+        _cancellationTokenSource = null;
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResourcesAsync();
+    }
+
+    private async Task LoadResourcesAsync()
+    {
+        _resources = await resourceManager.GetClusterResourcesAsync();
+    }
+}

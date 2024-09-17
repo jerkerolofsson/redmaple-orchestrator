@@ -1,4 +1,5 @@
 ﻿using FluentValidation.Results;
+using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using System;
 using System.Collections.Generic;
@@ -28,5 +29,23 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
+        Task<DeploymentPlan?> GetDeploymentBySlugAsync(string slug);
+
+        /// <summary>
+        /// Returns all deployed containers for a specific deployment plan as identified
+        /// by the slug
+        /// </summary>
+        /// <param name="slug"></param>
+        /// <returns></returns>
+        Task<List<DeployedContainer>> GetDeployedContainersAsync(string slug);
+
+        /// <summary>
+        /// Returns all deployed applications
+        /// </summary>
+        /// <param name="slug"></param>
+        /// <returns></returns>
+        Task<List<ApplicationDeployment>> GetApplicationDeploymentsAsync(string slug);
+        Task<List<DeployedContainer>> GetDeployedContainersAsync(ApplicationDeployment appDeployment);
+        Task WaitUntilReadyzAsync(DeploymentPlan plan, ApplicationDeployment applicationDeployment, IProgress<string> progress, CancellationToken cancellationToken);
     }
 }

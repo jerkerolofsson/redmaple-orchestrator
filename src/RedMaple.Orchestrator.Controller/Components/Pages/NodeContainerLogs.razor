@@ -1,59 +1,11 @@
 ﻿@page "/node/{id}/containers/{containerId}/logs"
-@using System.Collections.Concurrent
 @rendermode InteractiveServer
-@inject INodeManager nodeManager
-@inject NavigationManager navigationManager
-@implements IProgress<string>
-@implements IDisposable
-<MudPopoverProvider />
 
-<div>
-    <pre>
-        @foreach(var line in _lines)
-        {
-            <div>@line</div>
-        }
-    </pre>
+<div class="log-container">
+    <ContainerLogView NodeId="@Id" ContainerId="@ContainerId"/>
 </div>
 
 @code {
     [Parameter] public string Id { get; set; } = null!;
     [Parameter] public string ContainerId { get; set; } = null!;
-
-    private NodeInfo? _nodeInfo;
-    private NodeContainersClient? _client;
-    private Task? _logTask;
-    private CancellationTokenSource _cts = new();
-    private ConcurrentStack<string> _lines = new ConcurrentStack<string>();
-
-    public void Report(string line)
-    {
-        if (_lines.Count > 4000)
-        {
-            _lines.TryPop(out var _);
-        }
-        _lines.Push(line);
-
-        InvokeAsync(() =>
-        {
-            this.StateHasChanged();
-        });
-    }
-
-    protected override async Task OnInitializedAsync()
-    {
-        var nodes = await nodeManager.GetNodesAsync();
-        _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
-
-        if (_nodeInfo is not null)
-        {
-            _client = new NodeContainersClient(_nodeInfo.BaseUrl);
-            _logTask = _client.ReadLogsAsync(ContainerId, "3000", this, _cts.Token);
-        }
-    }
-
-    public void Dispose()
-    {
-        _cts.Cancel();
-    }
 }

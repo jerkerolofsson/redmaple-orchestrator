@@ -1,0 +1,30 @@
+﻿@page "/deployments/{slug}"
+@using RedMaple.Orchestrator.Controller.Domain.Deployments
+@inject IDeploymentManager deploymentManager
+@inject INodeManager nodeManager
+
+<h3>@Slug</h3>
+
+<div class="container-logs">
+    @foreach (var deployedContainer in _containers)
+    {
+        <div>
+            <div>@deployedContainer.Container.Name</div>
+            <ContainerLogView NodeId="@deployedContainer.Node.Id" ContainerId="@deployedContainer.Container.Id" />
+        </div>
+    }
+</div>
+
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = null!;
+
+    private List<DeployedContainer> _containers = new();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var deployment = await deploymentManager.GetDeploymentBySlugAsync(Slug);
+        _containers = await deploymentManager.GetDeployedContainersAsync(Slug);
+    }
+}

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using MudBlazor.Services;
+using RedMaple.Orchestrator.HealthTestService;
 using RedMaple.Orchestrator.HealthTestService.Components;
 using RedMaple.Orchestrator.HealthTestService.Services;
 
@@ -17,6 +18,8 @@ builder.Services.AddHealthChecks()
 builder.Services.AddSingleton<LiveHealthCheckService>();
 builder.Services.AddSingleton<NormalHealthCheckService>();
 builder.Services.AddSingleton<ReadyHealthCheckService>();
+
+builder.ConfigureOpenTelemetry();
 
 var app = builder.Build();
 

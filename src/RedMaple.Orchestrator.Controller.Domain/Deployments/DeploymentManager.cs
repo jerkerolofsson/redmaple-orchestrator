@@ -1,6 +1,8 @@
 ﻿using FluentValidation.Results;
+using MediatR;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Contracts.Node;
@@ -14,6 +16,7 @@ using RedMaple.Orchestrator.Sdk;
 using RedMaple.Orchestrator.Security.Builder;
 using RedMaple.Orchestrator.Security.Serialization;
 using RedMaple.Orchestrator.Security.Services;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
@@ -25,12 +28,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
     {
         private readonly IHealthzChecker _healthChecker;
         private readonly IGlobalDns _dns;
+        private readonly IMediator _mediator;
         private readonly IDomainService _domain;
-        private readonly string mSecretCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+        private readonly string _secretCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
         private readonly IIngressManager _ingressManager;
         private readonly INodeManager _nodeManager;
         private readonly ICertificateAuthority _ca;
         private readonly IDeploymentPlanRepository _deploymentPlanRepository;
+        private readonly IApplicationDeploymentRepository _appDeploymentRepository;
         private readonly ILogger<DeploymentManager> _logger;
 
         public DeploymentManager(
@@ -38,19 +43,91 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             IIngressManager ingressManager,
             INodeManager nodeManager,
             ICertificateAuthority certificateAuthority,
+            IApplicationDeploymentRepository appDeploymentRepository,
             IDeploymentPlanRepository deploymentPlanRepository,
             IGlobalDns dns,
+            IMediator mediator,
             ILogger<DeploymentManager> logger,
             IHealthzChecker healthChecker)
         {
+            _appDeploymentRepository = appDeploymentRepository;
             _domain = domain;
             _ingressManager = ingressManager;
             _nodeManager = nodeManager;
             _ca = certificateAuthority;
             _deploymentPlanRepository = deploymentPlanRepository;
             _dns = dns;
+            _mediator = mediator;
             _logger = logger;
             _healthChecker = healthChecker;
+        }
+
+        private async Task<NodeInfo?> GetApplicationHostAsync(ApplicationDeployment deployment)
+        {
+            if (deployment?.ApplicationServerIp is null)
+            {
+                return null;
+            }
+            return await _nodeManager.GetNodeByIpAddressAsync(deployment.ApplicationServerIp);
+        }
+
+        public async Task<List<DeployedContainer>> GetDeployedContainersAsync(string slug)
+        {
+            var deployment = await GetDeploymentBySlugAsync(slug);
+            return await GetDeployedContainersAsync(deployment);
+        }
+
+        /// <summary>
+        /// Returns actual application deployments
+        /// </summary>
+        /// <param name="slug"></param>
+        /// <returns></returns>
+        public async Task<List<ApplicationDeployment>> GetApplicationDeploymentsAsync(string slug)
+        {
+            var deployments = await _appDeploymentRepository.GetDeploymentsAsync();
+            return deployments.Where(x => x.Slug == slug).ToList();
+        }
+
+        public async Task<List<DeployedContainer>> GetDeployedContainersAsync(ApplicationDeployment appDeployment)
+        {
+            var containers = new List<DeployedContainer>();
+
+            var node = await GetApplicationHostAsync(appDeployment);
+            if (node is null)
+            {
+                return containers;
+            }
+            using var client = new NodeContainersClient(node.BaseUrl);
+            var nodeContainers = await client.GetContainersForDeploymentAsync(appDeployment.Slug);
+            foreach (var container in nodeContainers)
+            {
+                containers.Add(
+                    new DeployedContainer(
+                        node,
+                        appDeployment.ApplicationServerIp,
+                        appDeployment.ApplicationServerPort,
+                        container));
+            }
+            return containers;
+        }
+        
+        public async Task<List<DeployedContainer>> GetDeployedContainersAsync(DeploymentPlan? deployment)
+        {
+            var containers = new List<DeployedContainer>();
+            if (deployment?.Slug is not null)
+            {
+                foreach (var appDeployment in await GetApplicationDeploymentsAsync(deployment.Slug))
+                {
+                    containers.AddRange(await GetDeployedContainersAsync(appDeployment));
+                }
+            }
+            return containers;
+        }
+
+        public async Task<DeploymentPlan?> GetDeploymentBySlugAsync(string slug)
+        {
+            var plans = await GetDeploymentPlansAsync();
+            return plans.Where(x => x.Slug == slug).FirstOrDefault();
         }
 
         public ValidationResult ValidatePlan(DeploymentPlan plan)
@@ -106,7 +183,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     result.Errors.Add(new ValidationFailure("IngressServerIp", "IngressServerIp is required when CreateIngress is true"));
                 }
             }
-            if (string.IsNullOrEmpty(plan.ApplicationServerIp))
+            if (plan.ApplicationServerIps.Count == 0)
             {
                 result.Errors.Add(new ValidationFailure("ApplicationServerIp", "ApplicationServerIp is mandatory"));
             }
@@ -144,10 +221,13 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             environmentVariables["REDMAPLE_APP_PORT"] = plan.ApplicationServerPort?.ToString() ?? "";
 
             environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/https.pfx";
-            environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD"] = RandomNumberGenerator.GetString(mSecretCharacters, 32);
+            environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD"] = RandomNumberGenerator.GetString(_secretCharacters, 32);
 
             // Forward some system environment variables
-            environmentVariables["OIDC_AUTHORITY"] = System.Environment.GetEnvironmentVariable("OIDC_AUTHORITY") ?? "";
+            if (!string.IsNullOrEmpty(System.Environment.GetEnvironmentVariable("OIDC_AUTHORITY")))
+            {
+                environmentVariables["OIDC_AUTHORITY"] = System.Environment.GetEnvironmentVariable("OIDC_AUTHORITY") ?? "";
+            }
 
             if (plan.DomainName is not null)
             {
@@ -179,30 +259,42 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             await _deploymentPlanRepository.AddDeploymentPlanAsync(plan);
         }
 
-
         public async Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(plan.ApplicationServerIp);
-            var targetNode = await _nodeManager.GetNodeByIpAddressAsync(plan.ApplicationServerIp);
-            if (targetNode is null)
+            _logger.LogInformation("Deleting deployments for {DeploymentSlug}", plan.Slug);
+            foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
             {
-                throw new ArgumentException("Application node not found: " + plan.ApplicationServerIp);
-            }
+                var targetNode = await _nodeManager.GetNodeByIpAddressAsync(deployment.ApplicationServerIp);
+                if (targetNode is null)
+                {
+                    _logger.LogError("Cannot delete deployment {DeploymentSlug} as application node was not found", plan.Slug);
+                    throw new ArgumentException("Application node not found: " + deployment.ApplicationServerIp);
+                }
 
-            await DeleteDeploymentFromTargetAsync(plan, progress, targetNode, cancellationToken);
+                _logger.LogInformation("Deleting deployment at {IpAddress} for {DeploymentSlug}", targetNode.IpAddress, plan.Slug);
+                await DeleteDeploymentFromTargetAsync(plan, progress, targetNode, cancellationToken);
+           }
+
+            _logger.LogInformation("Deleting deployment plan for {DeploymentSlug}", plan.Slug);
             await _deploymentPlanRepository.DeleteDeploymentPlanAsync(plan.Id);
         }
 
         public async Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNull(plan.ApplicationServerIp);
-            var targetNode = await _nodeManager.GetNodeByIpAddressAsync(plan.ApplicationServerIp);
-            if (targetNode is null)
+            foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
             {
-                throw new ArgumentException("Application node not found: " + plan.ApplicationServerIp);
-            }
+                var targetNode = await GetApplicationHostAsync(deployment);
+                if (targetNode is null)
+                {
+                    throw new ArgumentException("Application node not found: " + deployment.ApplicationServerIp);
+                }
 
-            await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+                await _mediator.Publish(new AppDeploymentStoppingNotification(deployment));
+
+                await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+
+                await _appDeploymentRepository.DeleteDeploymentAsync(deployment.Id);
+            }
 
             // Save state
             plan.Up = false;
@@ -212,14 +304,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         public async Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
             ValidatePlan(plan);
-            plan.HealthStatus = HealthStatus.Degraded;
+            plan.Health = new Healthz.Models.ResourceHealthCheckResult { Status = HealthStatus.Degraded };
 
-            ArgumentNullException.ThrowIfNull(plan.ApplicationServerIp);
+            // Todo: find nodes
+
+            var applicationServerIp = plan.ApplicationServerIps.First();
             ArgumentNullException.ThrowIfNull(plan.ApplicationHttpsCertificatePassword);
-            var targetNode = await _nodeManager.GetNodeByIpAddressAsync(plan.ApplicationServerIp);
+            var targetNode = await _nodeManager.GetNodeByIpAddressAsync(applicationServerIp);
             if (targetNode is null)
             {
-                throw new ArgumentException("Application node not found: " + plan.ApplicationServerIp);
+                throw new ArgumentException("Application node not found: " + applicationServerIp);
             }
 
             if (plan.CreateDnsEntry)
@@ -231,6 +325,17 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 throw new InvalidDataException("CreateDnsEntry is false but CreateIngress is true. This combination is not valid.");
             }
 
+
+            // Record of deployment which is kept locally on controller
+            var deploymentId = plan.Slug + "-" + Guid.NewGuid().ToString();
+            var appDeployment = new ApplicationDeployment(
+                deploymentId,
+                plan.Slug,
+                applicationServerIp,
+                plan.ApplicationServerPort,
+                plan.ApplicationProtocol
+            );
+
             // Generate pfx certificate for the application server
             if (plan.ApplicationHttpsCertificatePfx is null || plan.ApplicationHttpsCertificatePfx.Length == 0)
             {
@@ -239,17 +344,23 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             }
 
             await AddDeploymentOnTargetAsync(plan, progress, targetNode);
+            await _mediator.Publish(new AppDeploymentStartingNotification(appDeployment));
             await UpDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+            await _appDeploymentRepository.SaveDeploymentAsync(appDeployment);
 
-            await WaitUntilReadyzAsync(plan, progress, cancellationToken);
+            await WaitUntilReadyzAsync(plan, appDeployment, progress, cancellationToken);
+            await _mediator.Publish(new AppDeploymentReadyNotification(appDeployment));
 
             // Save state
             plan.Up = true;
-            plan.HealthStatus = HealthStatus.Healthy;
+            plan.Health = new() { Status = HealthStatus.Healthy };
             await _deploymentPlanRepository.SaveDeploymentPlanAsync(plan);
         }
 
-        private async Task WaitUntilReadyzAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
+        public async Task WaitUntilReadyzAsync(
+            DeploymentPlan plan, 
+            ApplicationDeployment applicationDeployment,
+            IProgress<string> progress, CancellationToken cancellationToken)
         {
             var readyz = plan.HealthChecks.Where(x => x.Type == Contracts.Healthz.HealthCheckType.Readyz).ToList();
             if (readyz.Count == 0)
@@ -264,7 +375,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 foreach (var check in readyz)
                 {
-                    var status = await _healthChecker.CheckLivezAsync(plan, cancellationToken);
+                    var status = await _healthChecker.CheckLivezAsync(applicationDeployment, plan, cancellationToken);
                     progress.Report($"readyz check => {status}");
                     if (status == HealthStatus.Healthy)
                     {
@@ -294,7 +405,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         private static async Task DownDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
-            plan.HealthStatus = HealthStatus.Unhealthy;
+            plan.Health = new() { Status = HealthStatus.Unhealthy };
 
             progress.Report($"Stopping deployment on {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
@@ -319,7 +430,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         private async Task GenerateHttpsCertificateAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            ArgumentNullException.ThrowIfNullOrEmpty(plan.ApplicationServerIp);
             ArgumentNullException.ThrowIfNullOrEmpty(plan.ApplicationHttpsCertificatePassword);
 
             progress.Report("Generating HTTPS application certificate..");
@@ -335,10 +445,11 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 .WithOid(CertificateBuilder.OID_TLS_WEB_SERVER_AUTHENTICATION)
                 .WithSubjectAlternativeName((sanBuilder) =>
                 {
+                    /*
                     if (plan.ApplicationServerIp is not null)
                     { 
                         sanBuilder.AddIpAddress(IPAddress.Parse(plan.ApplicationServerIp));
-                    }
+                    }*/
                 });
 
             var password = plan.ApplicationHttpsCertificatePassword;
@@ -355,14 +466,15 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 throw new ArgumentException(nameof(plan.DomainName));
             }
-            if (string.IsNullOrEmpty(plan.ApplicationServerIp))
-            {
-                throw new ArgumentException(nameof(plan.ApplicationServerIp));
-            }
+
+            // Todo: LB: required if multiple ApplicationServerIps are set
+            // 
 
             // We have two scenarios here.
             // If we have an ingress node then we set the DNS to it
             // If not, we set the DNS directly to the application IP
+
+            var applicationServerIp = plan.ApplicationServerIps.First();
 
             if (!plan.CreateIngress)
             {
@@ -370,17 +482,17 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 var existingEntry = entries.FirstOrDefault(x => x.Hostname == plan.DomainName);
                 if(existingEntry is null)
                 {
-                    progress.Report($"Creating DNS entry {plan.Slug} for {plan.DomainName} to {plan.ApplicationServerIp}..");
-                    _logger.LogInformation("Deployment plan DNS entry creeated for {domainName}={new}", plan.DomainName, plan.ApplicationServerIp);
-                    entries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = plan.DomainName, IpAddress = plan.ApplicationServerIp});
+                    progress.Report($"Creating DNS entry {plan.Slug} for {plan.DomainName} to {applicationServerIp}..");
+                    _logger.LogInformation("Deployment plan DNS entry creeated for {domainName}={new}", plan.DomainName, applicationServerIp);
+                    entries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = plan.DomainName, IpAddress = applicationServerIp });
                     await _dns.SetDnsEntriesAsync(entries);
                 }
-                else if(existingEntry.IpAddress != plan.ApplicationServerIp)
+                else if(existingEntry.IpAddress != applicationServerIp)
                 {
-                    progress.Report($"Updating DNS for {plan.Slug} from {existingEntry.IpAddress} to {plan.ApplicationServerIp}..");
+                    progress.Report($"Updating DNS for {plan.Slug} from {existingEntry.IpAddress} to {applicationServerIp}..");
 
-                    _logger.LogWarning("Deployment plan DNS entry changed from {old} to {new}", existingEntry.IpAddress, plan.ApplicationServerIp);
-                    existingEntry.IpAddress = plan.ApplicationServerIp;
+                    _logger.LogWarning("Deployment plan DNS entry changed from {old} to {new}", existingEntry.IpAddress, applicationServerIp);
+                    existingEntry.IpAddress = applicationServerIp;
                     await _dns.SetDnsEntriesAsync(entries);
                 }
                 else
@@ -405,7 +517,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     IngressPort = 443,
                     Scheme = plan.ApplicationProtocol,
                     Id = plan.Slug + "-ingress",
-                    DestinationIp = plan.ApplicationServerIp,
+                    DestinationIp = applicationServerIp,
                     DestinationPort = plan.ApplicationServerPort.Value
                 }, progress);
             }

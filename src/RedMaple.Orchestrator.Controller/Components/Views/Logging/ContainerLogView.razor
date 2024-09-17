@@ -1,0 +1,41 @@
+﻿@rendermode InteractiveServer
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+@implements IProgress<string>
+@implements IDisposable
+
+<LogView @ref="_logView" />
+
+@code {
+    [Parameter] public string NodeId { get; set; } = null!;
+    [Parameter] public string ContainerId { get; set; } = null!;
+
+    private NodeInfo? _nodeInfo;
+    private NodeContainersClient? _client;
+    private Task? _logTask;
+    private CancellationTokenSource _cts = new();
+
+    private LogView _logView = null!;
+
+    public void Report(string line)
+    {
+        _logView.AddLine(line);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        _nodeInfo = nodes.FirstOrDefault(x => x.Id == NodeId);
+
+        if (_nodeInfo is not null)
+        {
+            _client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            _logTask = _client.ReadLogsAsync(ContainerId, "3000", this, _cts.Token);
+        }
+    }
+
+    public void Dispose()
+    {
+        _cts.Cancel();
+    }
+}

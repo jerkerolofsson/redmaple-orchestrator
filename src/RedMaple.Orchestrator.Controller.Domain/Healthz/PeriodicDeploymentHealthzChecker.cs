@@ -4,8 +4,10 @@ using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Healthz;
 using RedMaple.Orchestrator.Controller.Domain.Deployments;
+using RedMaple.Orchestrator.Controller.Domain.Healthz.Models;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -39,7 +41,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                 var deployments = await _deploymentManager.GetDeploymentPlansAsync();
                 foreach (var deployment in deployments)
                 {
-                    var deploymentHealthStatus = HealthStatus.Healthy;
+                    var deploymentHealth = new ResourceHealthCheckResult { Status = HealthStatus.Healthy };
                     for (int i=0;i<deployment.HealthChecks.Count; i++)
                     {
                         var check = deployment.HealthChecks[i];
@@ -52,8 +54,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                         TimeSpan timeSince = GetTimeSinceLastCheck(checkKey);
                         if(NeedCheck(check, timeSince))
                         {
+                            var startTimestamp = Stopwatch.GetTimestamp();
                             HealthStatus status = await CheckHealthAsync(deployment, check, stoppingToken);
-                            deploymentHealthStatus = status;
+                            deploymentHealth.Status = status;
+                            deploymentHealth.Duration = Stopwatch.GetElapsedTime(startTimestamp);
                         }
                         else
                         {
@@ -66,10 +70,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                         }
                     }
 
-                    if(deploymentHealthStatus != deployment.HealthStatus)
-                    {
-                        await UpdateHealthStatusAsync(deployment, deploymentHealthStatus);
-                    }
+                    await UpdateHealthStatusAsync(deployment, deploymentHealth);
                 }
 
                 if (sleepTime < TimeSpan.FromSeconds(1))
@@ -80,21 +81,24 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             }
         }
 
-        private async Task UpdateHealthStatusAsync(DeploymentPlan deployment, HealthStatus deploymentHealthStatus)
+        private async Task UpdateHealthStatusAsync(DeploymentPlan deployment, ResourceHealthCheckResult deploymentHealth)
         {
-            if (deploymentHealthStatus == HealthStatus.Healthy)
+            if (deploymentHealth.Status == HealthStatus.Healthy)
             {
-                _logger.LogInformation("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealthStatus);
+                _logger.LogInformation("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
             }
             else
             {
-                _logger.LogWarning("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealthStatus);
+                _logger.LogWarning("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
             }
-            deployment.HealthStatus = deploymentHealthStatus;
+            deployment.Health = deploymentHealth;
             await _deploymentManager.SaveAsync(deployment);
         }
 
-        private async Task<HealthStatus> CheckHealthAsync(DeploymentPlan deployment, DeploymentHealthCheck check, CancellationToken stoppingToken)
+        private async Task<HealthStatus> CheckHealthAsync(
+            DeploymentPlan deploymentPlan, 
+            DeploymentHealthCheck check, 
+            CancellationToken stoppingToken)
         {
             var status = HealthStatus.Healthy;
             var timeoutInSeconds = check.Timeout;
@@ -106,9 +110,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken, timeout.Token);
             try
             {
-                _logger.LogDebug("{DeploymentSlug}: Testing health (livez)..", deployment.Slug);
-                status = await _healthChecker.CheckAsync(deployment, check, cts.Token);
-                _logger.LogDebug("{DeploymentSlug}: Health (livez)={HealthStatus}", deployment.Slug, status);
+
+                _logger.LogDebug("{DeploymentSlug}: Testing health (livez)..", deploymentPlan.Slug);
+
+                var deployments = await _deploymentManager.GetApplicationDeploymentsAsync(deploymentPlan.Slug);
+
+                foreach (var appDeployment in deployments)
+                {
+                    status = await _healthChecker.CheckAsync(appDeployment, deploymentPlan, check, cts.Token);
+                }
+                _logger.LogDebug("{DeploymentSlug}: Health (livez)={HealthStatus}", deploymentPlan.Slug, status);
             }
             catch (Exception ex)
             {

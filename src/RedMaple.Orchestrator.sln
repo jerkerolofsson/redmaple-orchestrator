@@ -47,6 +47,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HealthCheckService", "Healt
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.HealthTestService", "RedMaple.Orchestrator.HealthTestService\RedMaple.Orchestrator.HealthTestService.csproj", "{FF30E80A-A592-4326-9690-FAEF44234171}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.AnsiEscapeCodes", "RedMaple.AnsiEscapeCodes\RedMaple.AnsiEscapeCodes.csproj", "{ADD31CCE-91B5-48F9-AF09-3A0452801730}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.AnsiEscapeCodes.Tests", "..\tests\RedMaple.AnsiEscapeCodes.Tests\RedMaple.AnsiEscapeCodes.Tests.csproj", "{CDDC9983-DCA8-47A4-A063-98D049A53532}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -117,6 +121,14 @@ Global
 		{FF30E80A-A592-4326-9690-FAEF44234171}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FF30E80A-A592-4326-9690-FAEF44234171}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FF30E80A-A592-4326-9690-FAEF44234171}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ADD31CCE-91B5-48F9-AF09-3A0452801730}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ADD31CCE-91B5-48F9-AF09-3A0452801730}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ADD31CCE-91B5-48F9-AF09-3A0452801730}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ADD31CCE-91B5-48F9-AF09-3A0452801730}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDDC9983-DCA8-47A4-A063-98D049A53532}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDDC9983-DCA8-47A4-A063-98D049A53532}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDDC9983-DCA8-47A4-A063-98D049A53532}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDDC9983-DCA8-47A4-A063-98D049A53532}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -139,6 +151,8 @@ Global
 		{36D332D9-62A7-4754-9441-2F1836FB4546} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 		{B80CB7B4-DD25-41B5-8D04-CBD8B4E2BACC} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 		{FF30E80A-A592-4326-9690-FAEF44234171} = {B80CB7B4-DD25-41B5-8D04-CBD8B4E2BACC}
+		{ADD31CCE-91B5-48F9-AF09-3A0452801730} = {CDA02E31-8892-4ED3-A50B-39C30D43FB1E}
+		{CDDC9983-DCA8-47A4-A063-98D049A53532} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0435B4F-ED5B-4352-8B77-B7BF67875B9C}

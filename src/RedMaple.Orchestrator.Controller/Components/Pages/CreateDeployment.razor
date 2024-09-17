@@ -79,12 +79,12 @@
                     @if (model.CreateIngress)
                     {
                         <MudItem xs="12" sm="6" md="4">
-                            <SelectNode @bind-Value="model.IngressNode" Label="Ingress Server" />
+                            <SelectNode MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
                         </MudItem>
                     }
 
                     <MudItem xs="12" sm="6" md="4" Class="mt-5">
-                        <SelectNode @bind-Value="model.ApplicationNode" Label="Application Server" />
+                        <SelectNode MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
                     </MudItem>
                 }
                 else if (_wizardPage == Pages.ConfigureEnvironmentVariables)
@@ -121,7 +121,7 @@
                                     Variant="Variant.Filled"
                                     Color="Color.Primary">Create</MudButton>
 
-                        <MudItem Class="ml-5">
+                        <MudItem Class="ml-5 mt-5">
                         <ol>
                             @if(model.CreateIngress)
                             {
@@ -193,7 +193,7 @@
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
         public string ApplicationProtocol { get; set; } = "https";
 
-        public string IconUrl{ get; set; }
+        public string? IconUrl{ get; set; }
 
         [Required]
         public NodeInfo? ApplicationNode { get; set; }
@@ -239,7 +239,7 @@
                 CreateIngress = model.CreateIngress,
                 CreateDnsEntry = true,
                 IngressServerIp = model.IngressNode?.IpAddress,
-                ApplicationServerIp = model.ApplicationNode?.IpAddress,
+                ApplicationServerIps = [model.ApplicationNode?.IpAddress],
                 ApplicationServerPort = model.ApplicationPort,
                 ApplicationProtocol = model.ApplicationProtocol,
                 EnvironmentVariables = model.EnvironmentVariables ?? new(),
@@ -267,6 +267,14 @@
         {
             return;
         }
+
+        var existing = await deploymentManager.GetDeploymentBySlugAsync(_workPlan.Slug);
+        if(existing is not null)
+        {
+            // Todo: show some error
+            return;
+        }
+
         await deploymentManager.SaveAsync(_workPlan);
 
         navigationManager.NavigateTo("/deployments");

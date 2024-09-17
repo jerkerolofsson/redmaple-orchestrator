@@ -61,7 +61,7 @@ namespace RedMaple.Orchestrator.Ingress
         private async Task CreateNginxMainConfAsync()
         {
             var path = GetLocalConfigPath();
-            _logger.LogInformation("Creationg nginx.conf @ {path}", path);
+            _logger.LogInformation("Creating nginx.conf @ {path}", path);
             var conf = new StringBuilder();
             conf.Append("""
                 user  nginx;

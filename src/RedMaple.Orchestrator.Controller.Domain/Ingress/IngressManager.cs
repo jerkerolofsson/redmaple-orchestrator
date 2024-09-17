@@ -62,7 +62,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             service.PemKey = await File.ReadAllBytesAsync(certificate.PemKeyPath);
 
             // Save the entry in db
-            progress.Report($"Saving changes..");
             await _repository.AddIngressServiceAsync(service);
 
             // Add DNS entry

@@ -33,13 +33,23 @@
                      Items="@_services"
                      SortMode="SortMode.Multiple">
             <Columns>
-                <PropertyColumn Property="x => x.DomainName" Title="Name" />
-                <PropertyColumn Property="x => x.IngressIp" Title="Ingress IP" />
-                <PropertyColumn Property="x => x.IngressPort" Title="Ingress Port" />
+                <TemplateColumn Title="Ingress">
+                    <CellTemplate>
+                        @{
+                            string url = $"https://{context.Item.DomainName}";
+                        }
+                        <a target="_blank" href="@url">@url</a>
+                    </CellTemplate>
+                </TemplateColumn>
 
-                <PropertyColumn Property="x => x.Scheme" Title="Scheme" />
-                <PropertyColumn Property="x => x.DestinationIp" Title="Destination IP" />
-                <PropertyColumn Property="x => x.DestinationPort" Title="Destination Port" />
+                <TemplateColumn Title="Application">
+                    <CellTemplate>
+                        @{
+                            string url = $"{context.Item.Scheme}://{context.Item.DestinationIp}:{context.Item.DestinationPort}";
+                        }
+                        <a target="_blank" href="@url">@url</a>
+                    </CellTemplate>
+                </TemplateColumn>
 
                 <TemplateColumn StickyRight="true">
                     <CellTemplate>

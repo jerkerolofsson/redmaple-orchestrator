@@ -14,6 +14,13 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public string ApplicationProtocol { get; set; } = "https";
 
         /// <summary>
+        /// Default suggested domain name prefix when adding through UI
+        /// </summary>
+        public string? DefaultDomainPrefix { get; set; }
+
+        public string? Description { get; set; }
+
+        /// <summary>
         /// Name of the deployment
         /// </summary>
         public required string Name { get; set; }

@@ -2,13 +2,18 @@
 using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Containers;
+using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json;
+using System.Threading;
 
 namespace RedMaple.Orchestrator.Containers
 {
     public class LocalContainersClient : ILocalContainersClient
     {
+        private const string LABEL_PROJECT = "com.docker.compose.project";
+
         private ILogger<LocalContainersClient> _logger;
 
         public LocalContainersClient(ILogger<LocalContainersClient> logger)
@@ -45,6 +50,14 @@ namespace RedMaple.Orchestrator.Containers
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             await client.Containers.RemoveContainerAsync(id, parameters, cancellationToken);
         }
+
+        public async Task ConnectNetworkAsync(string networkId, 
+            NetworkConnectParameters parameters,
+            CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            await client.Networks.ConnectNetworkAsync(networkId, parameters, cancellationToken);
+        }
         public async Task<CreateContainerResponse> CreateContainerAsync(CreateContainerParameters parameters, CancellationToken cancellationToken)
         {
             _logger.LogInformation("Creating container with image {ContainerImage}", parameters.Image);
@@ -77,16 +90,16 @@ namespace RedMaple.Orchestrator.Containers
 
         public async Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken)
         {
-            var containers = await GetContainersAsync(cancellationToken);
+            var containers = await GetContainersAsync(null, cancellationToken);
             return containers.Where(x => x.Name == name).FirstOrDefault();
         }
         public async Task<bool> HasContainerByNameAsync(string name, CancellationToken cancellationToken)
         {
-            var containers = await GetContainersAsync(cancellationToken);
+            var containers = await GetContainersAsync(null, cancellationToken);
             return containers.Where(x => x.Name == name).Any();
         }
 
-        public async Task<List<Container>> GetContainersAsync(CancellationToken cancellationToken)
+        public async Task<List<Container>> GetContainersAsync(string? project, CancellationToken cancellationToken)
         {
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             var contrainers = await client.Containers.ListContainersAsync(new Docker.DotNet.Models.ContainersListParameters
@@ -97,8 +110,18 @@ namespace RedMaple.Orchestrator.Containers
             List<Container> response = new();
             foreach (var container in contrainers)
             {
+                if(project is not null)
+                { 
+                    if (!container.Labels.TryGetValue(LABEL_PROJECT, out var containerProject) ||
+                        !containerProject.Equals(project, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
                 response.Add(ContainerMapping.Map(container));
             }
+
+
             return response;
         }
         private string GetDockerApiUri()
@@ -147,14 +170,39 @@ namespace RedMaple.Orchestrator.Containers
             }
         }
 
+        /// <summary>
+        /// Removes the header
+        /// </summary>
         private class LogsProgressCollector : IProgress<string>
         {
-            public List<string> Lines { get; } = new();
+            private IProgress<string> _callback;
+
+            public LogsProgressCollector(IProgress<string> callback)
+            {
+                _callback = callback;
+            }
 
             public void Report(string value)
             {
-                Lines.Add(value);
+                // Docker header
+                // header := [8]byte{STREAM_TYPE, 0, 0, 0, SIZE1, SIZE2, SIZE3, SIZE4} 
+                var bytes = Encoding.UTF8.GetBytes(value);
+                if (bytes.Length >= 8)
+                {
+                    var lineBytes = bytes[8..];
+                    string withoutHeader = DecodeString(lineBytes);
+                    _callback.Report(withoutHeader);
+                }
+                else
+                {
+                    _callback.Report(value);
+                }
             }
+        }
+        private static string DecodeString(byte[] lineBytes)
+        {
+            var text = Encoding.UTF8.GetString(lineBytes);
+            return text;
         }
         public Task GetLogsAsync(string id, 
             bool follow,
@@ -168,14 +216,14 @@ namespace RedMaple.Orchestrator.Containers
                 try
                 {
                     using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
-                    LogsProgressCollector progress = new();
+                    LogsProgressCollector progress = new(callback);
                     await client.Containers.GetContainerLogsAsync(id, new ContainerLogsParameters
                     {
                         ShowStdout = true,
                         ShowStderr = true,
                         Follow = follow,
                         Tail = tail
-                    }, cancellationToken, callback);
+                    }, cancellationToken, progress);
                 }
                 catch(Exception ex)
                 {
@@ -212,6 +260,7 @@ namespace RedMaple.Orchestrator.Containers
                     {
                     }, progress, cancellationToken);
                 }
+                catch (OperationCanceledException) { }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "GetStatsAsync stopped for container {ContainerId}", id);
