@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet.Models;
+using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.DockerCompose.Models;
 using System;
 using System.Collections.Generic;
@@ -66,9 +67,11 @@ namespace RedMaple.Orchestrator.DockerCompose
         private async Task<NetworkResponse?> CreateDefaultNetworkAsync(DockerComposePlan plan, CancellationToken cancellationToken)
         {
             var defaultNetworkName = plan.name + "_default";
+            _logger.LogInformation("Creating default network: {NetworkName}", defaultNetworkName);
             var existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken);
             if (existingNetwork is null)
             {
+                _logger.LogDebug("No existing network with name {NetworkName} was found, creating a new one..", defaultNetworkName);
                 await _docker.CreateNetworkAsync(new NetworksCreateParameters
                 {
                     Name = defaultNetworkName,
@@ -81,6 +84,10 @@ namespace RedMaple.Orchestrator.DockerCompose
 
                 existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken) 
                     ?? throw new Exception("Failed to find default network after creating it");
+            }
+            else
+            {
+                _logger.LogWarning("An existing network with name {NetworkName} was already found..", defaultNetworkName);
             }
 
             return existingNetwork;

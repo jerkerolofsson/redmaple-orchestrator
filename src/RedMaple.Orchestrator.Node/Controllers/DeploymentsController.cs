@@ -23,6 +23,8 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost()]
         public async Task<string> AddDeploymentAsync([FromBody] AddNodeDeploymentRequest plan)
         {
+            _logger.LogInformation("Adding deployment: {DeploymentSlug}", plan.Slug);
+
             var results = new ProgressResultBuilder();
             await _service.AddDeploymentAsync(plan, results);
             return results.ToString() ?? "";
@@ -32,6 +34,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpDelete("/api/deployments/{slug}")]
         public async Task<string> DeleteDeploymentAsync([FromRoute] string slug, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("Deleting deployment: {DeploymentSlug}", slug);
             var results = new ProgressResultBuilder();
             await _service.DeleteDeploymentAsync(slug, results, cancellationToken);
             return results.ToString() ?? "";
@@ -39,6 +42,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/deployments/{slug}/down")]
         public async Task<string> DownAsync([FromRoute] string slug, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("DOWN deployment: {DeploymentSlug}", slug);
             var results = new ProgressResultBuilder();
             await _service.DownAsync(slug, results, cancellationToken);
             return results.ToString() ?? "";
@@ -47,6 +51,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/deployments/{slug}/up")]
         public async Task<string> UpAsync([FromRoute] string slug, CancellationToken cancellationToken)
         {
+            _logger.LogInformation("UP deployment: {DeploymentSlug}", slug);
             var results = new ProgressResultBuilder();
             await _service.UpAsync(slug, results, cancellationToken);
             return results.ToString() ?? "";

@@ -1,5 +1,6 @@
 using Docker.DotNet.Models;
 using Microsoft.AspNetCore.Mvc;
+using System.Net;
 
 namespace RedMaple.Orchestrator.Node.Controllers
 {
@@ -39,6 +40,31 @@ namespace RedMaple.Orchestrator.Node.Controllers
         {
             var result = new ContentStreamingResult(cancellationToken);
             await _containersClient.GetLogsAsync(id, follow:true, tail, result, result.CancellationTokenSource, cancellationToken);
+            return result;
+        }
+
+
+        [HttpGet("/api/images/{image}/pull")]
+        public IActionResult PullImages(
+            [FromRoute] string image,
+            CancellationToken cancellationToken)
+        {
+            var result = new ContentStreamingResult(cancellationToken);
+            var _ = Task.Factory.StartNew(async (object ? state) =>
+            {
+                try
+                {
+                    await _containersClient.PullImageAsync(WebUtility.UrlDecode(image), result, result.CancellationTokenSource, cancellationToken);
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(ex, "Error pulling images");
+                    result.Report(new JSONMessage
+                    {
+                        ErrorMessage = ex.ToString()
+                    });
+                }
+            }, TaskCreationOptions.LongRunning, cancellationToken);
             return result;
         }
 

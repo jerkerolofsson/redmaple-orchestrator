@@ -1,4 +1,5 @@
 ﻿using Docker.DotNet.Models;
+using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.DockerCompose.Models;
 using System;
 using System.Collections.Generic;
@@ -14,16 +15,31 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         public async Task UpAsync(IProgress<string> progress, DockerComposePlan plan, string? environmentFile, CancellationToken cancellationToken)
         {
-            await DownContainersAsync(progress, plan, cancellationToken);
+            if(string.IsNullOrWhiteSpace(plan.name))
+            {
+                throw new ArgumentException("Plan name is missing", nameof(plan.name));
+            }
+
+            try
+            {
+                await DownContainersAsync(progress, plan, cancellationToken);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Error tearing down containers when up:ing plan: {DockerComposePlanName}", plan.name);
+            }
 
             plan = TransformPlanWithEnvironmentVariables(plan, environmentFile);
 
-            progress.Report($"Creating default docker network..");
+            progress.Report($"Creating default network: {plan.name}_default..");
             var defaultNetwork = await CreateDefaultNetworkAsync(plan, cancellationToken);
             if(defaultNetwork is null)
             {
                 throw new Exception("Failed to create network");
             }
+
+            progress.Report("Creating volumes..");
+            await CreateVolumesAsync(plan, cancellationToken);
 
             var containerIds = await CreateContainersAsync(plan, defaultNetwork, environmentFile);
 
@@ -36,6 +52,32 @@ namespace RedMaple.Orchestrator.DockerCompose
             foreach (var containerId in containerIds)
             {
                 await _docker.StartAsync(containerId, cancellationToken);
+            }
+        }
+
+        private async Task CreateVolumesAsync(DockerComposePlan plan, CancellationToken cancellationToken)
+        {
+            foreach(var pair in plan.volumes)
+            {
+                var name = pair.Key;
+                var volume = pair.Value;
+
+                var existingVolumes = await _docker.ListVolumesAsync(cancellationToken);
+                var existingVolume = existingVolumes.Volumes.Where(x => x.Name == name).FirstOrDefault();
+                if (existingVolume is null)
+                {
+                    var driverName = volume.driver ?? "local";
+                    var response = await _docker.CreateVolumeAsync(new VolumesCreateParameters
+                    {
+                        Name = name,
+                        Driver = driverName,
+                        DriverOpts = volume.driver_opts,
+                        Labels = new Dictionary<string, string>
+                        {
+                            [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
+                        }
+                    }, cancellationToken);
+                }
             }
         }
 
@@ -84,6 +126,7 @@ namespace RedMaple.Orchestrator.DockerCompose
             var transformedPlan = DockerComposeParser.ParseYaml(transformedYaml);
             transformedPlan.RequiredEnvironmentVariables = plan.RequiredEnvironmentVariables;
             transformedPlan.Labels = plan.Labels;
+            transformedPlan.name = plan.name;
             return transformedPlan;
         }
 
@@ -154,7 +197,7 @@ namespace RedMaple.Orchestrator.DockerCompose
             Dictionary<string, EmptyStruct> volumes = new();
             foreach (var volume in service.volumes)
             {
-                volumes[volume.ToShortFormat()] = new EmptyStruct();
+                volumes[volume.ToShortFormat(includeAccessMode:false)] = new EmptyStruct();
             }
             return volumes;
         }

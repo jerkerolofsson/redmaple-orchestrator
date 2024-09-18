@@ -21,7 +21,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
         {
             if (_stats.TryGetValue(containerId, out var stats))
             {
-                stats.CpuUsage = cpuUsage;
+                stats.SetCpuUsage(cpuUsage);
             }
             else
             {

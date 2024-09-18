@@ -4,6 +4,8 @@ using System.Net.Http;
 using System;
 using System.Net.Http.Json;
 using RedMaple.Orchestrator.Contracts.Containers;
+using System.Text.Json;
+using System.Net;
 
 namespace RedMaple.Orchestrator.Sdk
 {
@@ -14,6 +16,7 @@ namespace RedMaple.Orchestrator.Sdk
         public NodeContainersClient(string baseUrl)
         {
             _httpClient = new HttpClient();
+            _httpClient.Timeout = TimeSpan.FromMinutes(30);
             _httpClient.BaseAddress = new Uri(baseUrl);
         }
 
@@ -22,6 +25,52 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
 
+        public Task PullImageAsync(string id, IProgress<JSONMessage> progress, CancellationToken cancellationToken)
+        {
+            var tcs = new TaskCompletionSource();
+            string url = $"/api/images/{WebUtility.UrlEncode(id)}/pull";
+            Task.Factory.StartNew(async () =>
+            {
+                try
+                {
+                    using var response = await _httpClient.SendAsync(new HttpRequestMessage(HttpMethod.Get, url), HttpCompletionOption.ResponseHeadersRead);
+                    response.EnsureSuccessStatusCode();
+                    using var stream = response.Content.ReadAsStream();
+                    using var reader = new StreamReader(stream);
+                    while (!cancellationToken.IsCancellationRequested)
+                    {
+                        var line = await reader.ReadLineAsync(cancellationToken);
+                        if (line is null)
+                        {
+                            break;
+                        }
+
+                        try
+                        {
+                            JSONMessage? message = JsonSerializer.Deserialize<JSONMessage>(line);
+                            if (message is not null)
+                            {
+                                progress.Report(message);
+                            }
+                        }
+                        catch
+                        {
+
+                        }
+                    }
+                    tcs.SetResult();
+                }
+                catch (Exception ex)
+                {
+                    tcs.SetException(ex);
+                }
+                finally
+                {
+                }
+            }, TaskCreationOptions.LongRunning);
+
+            return tcs.Task;
+        }
 
         public Task StartReadStatsTaskAsync(string id, IProgress<string> callback, CancellationToken cancellationToken)
         {

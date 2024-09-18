@@ -137,9 +137,25 @@
     {
         if (container.Image is not null)
         {
-            if(container.Image.Contains("nginx"))
+            if (container.Image.StartsWith("nginx"))
             {
                 return "brands/nginx.png";
+            }
+            if (container.Image.Contains("redmaple-node"))
+            {
+                return "logo.png";
+            }
+            if (container.Image.Contains("redmaple-controller"))
+            {
+                return "logo.png";
+            }
+            if (container.Image.Contains("docker-registry-browser"))
+            {
+                return "brands/docker.png";
+            }
+            if (container.Image.StartsWith("registry:2"))
+            {
+                return "brands/docker.png";
             }
             if (container.Image.Contains("postgres"))
             {

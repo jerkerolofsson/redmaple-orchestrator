@@ -1,10 +1,18 @@
 ﻿@page "/deployments/{slug}"
+@using RedMaple.Orchestrator.Controller.Domain.Aggregations
 @using RedMaple.Orchestrator.Controller.Domain.Deployments
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
+@using RedMaple.Orchestrator.Controller.ViewModels
 @inject IDeploymentManager deploymentManager
-@inject INodeManager nodeManager
+@inject IContainerStatsUpdateProvider containerStatsUpdateProvider
+@inject ContainerStatsAggregator containerStatsAggregator
+@implements IDisposable
+@rendermode InteractiveServer
 
-<h3>@Slug</h3>
+<MudText Typo="Typo.h3">@Slug</MudText>
 
+<MudText Typo="Typo.h6">Logs</MudText>
 <div class="container-logs">
     @foreach (var deployedContainer in _containers)
     {
@@ -15,16 +23,71 @@
     }
 </div>
 
+<div class="container-charts">
+    <MudCard Class="pa-3">
+        <MudText Typo="Typo.caption">CPU</MudText>
+        <ContainerStatsChart Data="@_cpuStats"></ContainerStatsChart>
+    </MudCard>
+
+    <MudCard Class="pa-3">
+        <MudText Typo="Typo.caption">Memory</MudText>
+        <ContainerStatsChart Data="@_cpuStats"></ContainerStatsChart>
+    </MudCard>
+</div>
+
 
 @code {
     [Parameter]
     public string Slug { get; set; } = null!;
 
-    private List<DeployedContainer> _containers = new();
+    private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
+    private IReadOnlyCollection<DoubleTime> _cpuStats = Array.Empty<DoubleTime>();
+    private string? _monitorContainerId = null;
 
     protected override async Task OnParametersSetAsync()
     {
-        var deployment = await deploymentManager.GetDeploymentBySlugAsync(Slug);
-        _containers = await deploymentManager.GetDeployedContainersAsync(Slug);
+        //var deployment = await deploymentManager.GetDeploymentBySlugAsync(Slug);
+        await RefreshStatsAsync();
+    }
+
+    private async Task RefreshStatsAsync()
+    {
+        _containers = await containerStatsAggregator.GetDeployedContainersAsync(Slug);
+        if (_containers.Count > 0)
+        {
+            var cpuHistory = _containers[0].Stats?.CpuHistory;
+            _monitorContainerId = _containers[0].Container.Id;
+            if (cpuHistory is not null)
+            {
+                _cpuStats = cpuHistory;
+            }
+        }
+    }
+
+    private async void OnContainerStatsUpdated(object? sender, string containerId)
+    {
+        if(_monitorContainerId == containerId)
+        {
+            try
+            {
+                await RefreshStatsAsync();
+                await InvokeAsync(() =>
+                {
+                    this.StateHasChanged();
+                });
+            }
+            catch { }
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        containerStatsUpdateProvider.ContainerStatsUpdated += OnContainerStatsUpdated;
+        base.OnInitialized();
+    }
+
+    public void Dispose()
+    {
+        containerStatsUpdateProvider.ContainerStatsUpdated -= OnContainerStatsUpdated;
     }
 }

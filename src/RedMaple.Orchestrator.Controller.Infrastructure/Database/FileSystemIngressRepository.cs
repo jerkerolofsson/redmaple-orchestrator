@@ -78,7 +78,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             var path = GetConfigFilePath();
             try
             {
-                _logger.LogInformation("Loading service configuration from {path}", path);
+                _logger.LogDebug("Loading service configuration from {path}", path);
                 var json = await File.ReadAllTextAsync(path);
                 var services = JsonSerializer.Deserialize<List<IngressServiceDescription>>(json);
                 return services ?? new();
@@ -91,7 +91,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             var json = JsonSerializer.Serialize(services);
             var path = GetConfigFilePath();
 
-            _logger.LogInformation("Writing service configuration to {path}", path);
+            _logger.LogDebug("Writing service configuration to {path}", path);
             await File.WriteAllTextAsync(path, json);
         }
 

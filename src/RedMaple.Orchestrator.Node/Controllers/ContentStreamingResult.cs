@@ -1,11 +1,12 @@
 ﻿
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks.Dataflow;
 
 namespace RedMaple.Orchestrator.Node.Controllers
 {
-    public class ContentStreamingResult : ActionResult, IProgress<string>
+    public class ContentStreamingResult : ActionResult, IProgress<string>, IProgress<JSONMessage>
     {
         private readonly BufferBlock<string> _pipe = new BufferBlock<string>();
         private readonly CancellationToken _cancellationToken;
@@ -40,6 +41,11 @@ namespace RedMaple.Orchestrator.Node.Controllers
         public void Report(string value)
         {
             _pipe.Post(value);
+        }
+
+        public void Report(JSONMessage value)
+        {
+            _pipe.Post(JsonSerializer.Serialize(value));
         }
     }
 }

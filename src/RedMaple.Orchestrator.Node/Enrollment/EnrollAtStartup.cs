@@ -16,7 +16,11 @@ namespace RedMaple.Orchestrator.Node.Enrollment
         private ILogger<EnrollAtStartup> _logger;
         private INodeSettingsProvider _settingsProvider;
 
-        public EnrollAtStartup(IServer server, HttpClient httpClient, ILogger<EnrollAtStartup> logger, INodeSettingsProvider settingsProvider)
+        public EnrollAtStartup(
+            IServer server, 
+            HttpClient httpClient, 
+            ILogger<EnrollAtStartup> logger, 
+            INodeSettingsProvider settingsProvider)
         {
             _server = server;
             _httpClient = httpClient;

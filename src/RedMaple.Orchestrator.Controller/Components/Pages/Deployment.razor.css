@@ -1,9 +1,21 @@
 ﻿.container-logs {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 1rem;
 }
 
 .container-logs > * {
     height: 30vh;
+}
+
+.container-charts {
+
+    margin-top: 2rem;
+
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+.container-charts > * {
 }

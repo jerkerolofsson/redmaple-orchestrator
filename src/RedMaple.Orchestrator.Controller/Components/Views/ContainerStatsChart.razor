@@ -1,0 +1,56 @@
+﻿@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
+@using Humanizer
+
+<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" Height="200px" ChartOptions="@Options" />
+
+@code {
+
+    private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
+    public ChartOptions Options = new ChartOptions()
+    {
+    };
+
+    public List<ChartSeries> Series = new List<ChartSeries>()
+    {
+        new ChartSeries() { Name = "CPU %", Data = Array.Empty<double>() },
+    };
+    public string[] XAxisLabels = Array.Empty<string>();
+
+
+    [Parameter]
+    public IReadOnlyCollection<DoubleTime> Data { get; set; } = Array.Empty<DoubleTime>();
+
+    private string FormatXLabel(DateTime now, DateTime time)
+    {
+        var elapsed = time - now;
+        return time.Humanize();
+    }
+
+    protected override void OnParametersSet()
+    {
+        var now = DateTime.Now;
+        XAxisLabels = Data.Select(x => FormatXLabel(now, x.Time)).ToArray();
+        if (Data.Count > 4)
+        {
+            for(int i=1; i<XAxisLabels.Length-1; i++)
+            {
+                if (i == XAxisLabels.Length * 3 / 4)
+                {
+                    continue;
+                }
+                if (i == XAxisLabels.Length / 4)
+                {
+                    continue;
+                }
+                if (i == XAxisLabels.Length / 2)
+                {
+                    continue;
+                }
+                XAxisLabels[i] = "";
+            }
+        }
+        Series[0].Data = Data.Select(x => x.Value).ToArray();
+
+        base.OnParametersSet();
+    }
+}

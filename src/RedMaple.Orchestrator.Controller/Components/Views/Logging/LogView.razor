@@ -1,4 +1,6 @@
-﻿<div class="container">
+﻿@inject IJSRuntime _js
+
+<div class="container" id="@_linesId">
     <div class="lines">
         @foreach (var line in _lines)
         {
@@ -8,7 +10,11 @@
 </div>
 
 @code {
-    private ConcurrentStack<string> _lines = new ConcurrentStack<string>();
+
+    private string _linesId = "invalid";
+    private IJSObjectReference? _module;
+
+    private LinkedList<string> _lines = new LinkedList<string>();
 
     /// <summary>
     /// Parses ANSI escape codes if true
@@ -20,12 +26,23 @@
     /// </summary>
     [Parameter] public bool ParseLogLevels { get; set; } = true;
 
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+            await _js.InvokeVoidAsync("initializeContinuousScroll", _linesId);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        _linesId = "dt" + Guid.NewGuid().ToString();
+        base.OnInitialized();
+    }
+
     public void AddLine(string line)
     {
-        if (_lines.Count > 4000)
-        {
-            _lines.TryPop(out var _);
-        }
         if (ParseAnsiEscapeCodes)
         {
             line = AnsiToHtml(line) + "<br/>";
@@ -35,10 +52,14 @@
             line = ColorizeLogLevels(line);
         }
 
-        _lines.Push(line);
-
         InvokeAsync(() =>
         {
+            if (_lines.Count > 4000)
+            {
+                _lines.RemoveFirst();
+            }
+            _lines.AddLast(line);
+
             this.StateHasChanged();
         });
     }

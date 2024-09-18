@@ -9,6 +9,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
     internal class DeploymentPlanTemplateRepository : IDeploymentPlanTemplateRepository
     {
         private readonly ILogger _logger;
+        private bool _isInitialized = false;
 
         public DeploymentPlanTemplateRepository(ILogger<DeploymentPlanTemplateRepository> logger)
         {
@@ -61,12 +62,17 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         public async Task<List<DeploymentPlanTemplate>> GetDeploymentPlansAsync()
         {
-            var templates = await LoadDataAsync();
-
-            if (templates.Count > 0)
+            if (!_isInitialized)
             {
-                return templates;
+                _isInitialized = true;
+                await InitializeAsync();
             }
+            var templates = await LoadDataAsync();
+            return templates;
+        }
+
+        private async Task InitializeAsync() 
+        {
             List<DeploymentPlanTemplate> defaultTemplates = 
                 [
 
@@ -75,6 +81,20 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     Name = "Blank",
                     IconUrl = "/logo.png",
                     Plan = ""
+                },
+
+                new DeploymentPlanTemplate
+                {
+                    Name = "Busybox",
+                    IconUrl = "/container.png",
+                    CreateIngress = false,
+                    Plan = """
+                    services:
+                      healthz:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "busybox"
+                        restart: unless-stopped
+                    """
                 },
 
                 new DeploymentPlanTemplate
@@ -365,7 +385,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 await AddDeploymentPlanAsync(template);
             }
-            return await LoadDataAsync();
         }
 
         public Task DeleteDeploymentPlanAsync(string name)

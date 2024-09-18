@@ -12,11 +12,11 @@ namespace RedMaple.Orchestrator.Controller.Components.Views.Logging
 
         protected string ColorizeLogLevels(string html)
         {
-            html = _regexInfo.Replace(html, $"<span style='color: cyan'>info</span>");
-            html = _regexCrit.Replace(html, $"<span style='color: hotpink'>crit</span>");
-            html = _regexWarn.Replace(html, $"<span style='color: orange'>warn</span>");
-            html = _regexFail.Replace(html, $"<span style='color: red'>fail</span>");
-            html = _regexDbug.Replace(html, $"<span>dbug</span>");
+            html = _regexInfo.Replace(html, $"<span style='color: cyan'>info:</span>");
+            html = _regexCrit.Replace(html, $"<span style='background: hotpink'>crit:</span>");
+            html = _regexWarn.Replace(html, $"<span style='color: orange'>warn:</span>");
+            html = _regexFail.Replace(html, $"<span style='background: firebrick; color: black;'>fail:</span>");
+            html = _regexDbug.Replace(html, $"<span style='color: #ccc'>dbug:</span>");
             return html;
         }
     }

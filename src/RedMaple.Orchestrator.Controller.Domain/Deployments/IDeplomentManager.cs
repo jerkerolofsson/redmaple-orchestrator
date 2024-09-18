@@ -1,4 +1,5 @@
-﻿using FluentValidation.Results;
+﻿using Docker.DotNet.Models;
+using FluentValidation.Results;
 using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using System;
@@ -26,6 +27,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         ValidationResult ValidatePlan(DeploymentPlan plan);
 
         Task<List<DeploymentPlan>> GetDeploymentPlansAsync();
+        Task PullImagesAsync(DeploymentPlan plan, IProgress<string> progress, IProgress<JSONMessage> pullProgress, CancellationToken cancellationToken);
         Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);

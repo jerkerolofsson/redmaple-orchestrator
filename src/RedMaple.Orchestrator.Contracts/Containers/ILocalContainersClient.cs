@@ -1,4 +1,5 @@
-﻿using Docker.DotNet.Models;
+﻿using Docker.DotNet;
+using Docker.DotNet.Models;
 
 namespace RedMaple.Orchestrator.Contracts.Containers
 {
@@ -49,5 +50,11 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task<IList<NetworkResponse>> ListNetworksAsync(NetworksListParameters parameters, CancellationToken cancellationToken);
         Task DeleteContainerAsync(string id, CancellationToken cancellationToken);
         Task ConnectNetworkAsync(string networkId, NetworkConnectParameters parameters, CancellationToken cancellationToken);
+        Task<VolumesListResponse> ListVolumesAsync(CancellationToken cancellationToken);
+        Task DeleteVolumeAsync(string name, bool force, CancellationToken cancellationToken);
+        Task<VolumeResponse> CreateVolumeAsync(VolumesCreateParameters parameters, CancellationToken cancellationToken);
+        Task PullImageAsync(string imageName, IProgress<JSONMessage> progress, CancellationTokenSource? cts,
+            CancellationToken cancellationToken);
+
     }
 }

@@ -18,13 +18,13 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
         public string? Consistency { get; internal set; }
         public string? AccessMode { get; internal set; }
 
-        public string ToShortFormat()
+        public string ToShortFormat(bool includeAccessMode = true)
         {
             var sb = new StringBuilder();
             sb.Append(Source);
             sb.Append(":");
             sb.Append(Target);
-            if(AccessMode != null)
+            if(AccessMode != null && includeAccessMode)
             {
                 sb.Append(":");
                 sb.Append(AccessMode);

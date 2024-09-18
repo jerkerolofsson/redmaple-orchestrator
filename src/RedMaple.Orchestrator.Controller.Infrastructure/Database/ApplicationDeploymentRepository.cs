@@ -51,7 +51,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         public async Task SaveDeploymentAsync(ApplicationDeployment service)
         {
-            _logger.LogInformation("Saving deployment plan with ID {id}..", service.Id);
+            _logger.LogDebug("Saving deployment plan with ID {id}..", service.Id);
             var services = await LoadDataAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
@@ -84,7 +84,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             var path = GetConfigFilePath();
             try
             {
-                _logger.LogInformation("Loading deployment from {path}", path);
+                _logger.LogDebug("Loading deployment from {path}", path);
                 var json = await File.ReadAllTextAsync(path);
                 var services = JsonSerializer.Deserialize<List<ApplicationDeployment>>(json);
                 return services ?? new();
@@ -100,7 +100,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             var json = JsonSerializer.Serialize(services, _jsonSerializerOptions);
             var path = GetConfigFilePath();
 
-            _logger.LogInformation("Writing deployments to {path}", path);
+            _logger.LogDebug("Writing deployments to {path}", path);
             await File.WriteAllTextAsync(path, json);
         }
 

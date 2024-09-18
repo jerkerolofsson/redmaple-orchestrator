@@ -47,12 +47,13 @@ namespace RedMaple.Orchestrator.DockerCompose
             foreach (var containerId in containerIds)
             {
                 progress.Report($"Stopping {containerId}..");
+                _logger.LogInformation("DOWN: Stopping container {ContainerId}", containerId);
                 await _docker.StopAsync(containerId, cancellationToken);
             }
 
             foreach (var containerId in containerIds)
             {
-                progress.Report($"Deleting {containerId}..");
+                progress.Report($"DOWN: Deleting {containerId}..");
                 await _docker.DeleteContainerAsync(containerId, cancellationToken);
             }
         }

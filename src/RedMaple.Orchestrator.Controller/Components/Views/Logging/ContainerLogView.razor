@@ -19,7 +19,10 @@
 
     public void Report(string line)
     {
-        _logView.AddLine(line);
+        if (_logView is not null)
+        {
+            _logView.AddLine(line);
+        }
     }
 
     protected override async Task OnInitializedAsync()

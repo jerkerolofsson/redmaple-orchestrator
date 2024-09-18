@@ -143,13 +143,21 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
 
         public async Task DownAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            var dir = GetLocalConfigDir(slug);
-            var composePath = Path.Combine(dir, "docker-compose.yaml");
-            var envPath = Path.Combine(dir, "plan.env");
+            try
+            {
+                var dir = GetLocalConfigDir(slug);
+                var composePath = Path.Combine(dir, "docker-compose.yaml");
+                var envPath = Path.Combine(dir, "plan.env");
 
-            var plan = DockerComposeParser.ParseFile(composePath);
-
-            await _compose.DownAsync(progress, plan, envPath, cancellationToken);
+                var plan = DockerComposeParser.ParseFile(composePath);
+                _logger.LogInformation("DOWN: {DockerComposePlanName}", plan.name);
+                await _compose.DownAsync(progress, plan, envPath, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to bring down deployment {DeploymentSlug}", slug);
+                throw;
+            }
         }
 
         public async Task UpAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)
@@ -159,7 +167,16 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             var envPath = Path.Combine(dir, "plan.env");
 
             var plan = DockerComposeParser.ParseFile(composePath);
-            await _compose.UpAsync(progress, plan, envPath, cancellationToken);
+            try
+            {
+                _logger.LogInformation("UP: {DockerComposePlanName}", plan.name);
+                await _compose.UpAsync(progress, plan, envPath, cancellationToken);
+            }
+            catch(Exception ex)
+            {
+                _logger.LogError(ex, "Failed to bring up deployment {DeploymentSlug}", slug);
+                throw;
+            }
         }
 
         private async Task DownCliAsync(string slug, IProgress<string> progress, CancellationToken cancellationToken)

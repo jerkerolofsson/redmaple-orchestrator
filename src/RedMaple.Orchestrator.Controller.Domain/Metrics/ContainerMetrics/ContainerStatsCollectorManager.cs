@@ -19,10 +19,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
     /// <param name="Node"></param>
     /// <param name="ContainerId"></param>
     internal record class ContainerStatsCollector(
-        ILogger Logger, 
-        IContainerStatsManager 
-        StatsManager, 
-        NodeInfo Node, 
+        ContainerStatsCollectorManager Owner,
+        ILogger Logger,
+        IContainerStatsManager StatsManager,
+        NodeInfo Node,
         string ContainerId) : IProgress<string>, IDisposable
     {
         private CancellationTokenSource? _cancellationTokenSource;
@@ -78,26 +78,31 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
                     {
                         cpuPercent = (cpuDelta.Value / systemDelta.Value) * numCores * 100.0;
                     }
-                    Logger.LogTrace("Container: {ContainerId} CPU: {cpuPercent}%", ContainerId, Math.Round(cpuPercent,2));
+                    Logger.LogTrace("Container: {ContainerId} CPU: {cpuPercent}%", ContainerId, Math.Round(cpuPercent, 2));
+                    cpuPercent = Math.Min(0, cpuPercent);
                     StatsManager.ReportCpuUsage(ContainerId, cpuPercent);
+
+                    Owner.OnContainerStatsUpdated(ContainerId);
                 }
 
                 _prev = response;
             }
-            catch(Exception)
+            catch (Exception)
             {
 
             }
         }
     }
 
-    internal class ContainerStatsCollectorManager : IContainerStatsCollectorManager
+    internal class ContainerStatsCollectorManager : IContainerStatsCollectorManager, IContainerStatsUpdateProvider
     {
         private readonly IContainerStatsManager _statsManager;
         private readonly INodeManager _nodeManager;
         private readonly IDeploymentManager _deploymentManager;
         private readonly ILogger<ContainerStatsCollectorManager> _logger;
         private readonly ConcurrentDictionary<string, ContainerStatsCollector> _collectors = new();
+
+        public event EventHandler<string>? ContainerStatsUpdated;
 
         public ContainerStatsCollectorManager(
             ILogger<ContainerStatsCollectorManager> logger,
@@ -155,7 +160,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
             {
                 // Start a new one
                 _logger.LogInformation("Starting collection on container {ContainerId}", container.Id);
-                var collector = new ContainerStatsCollector(_logger, _statsManager, node, container.Id);
+                var collector = new ContainerStatsCollector(this,_logger, _statsManager, node, container.Id);
                 _collectors[container.Id] = collector;
                 collector.Start(client);
             }
@@ -178,6 +183,11 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
             {
                 await UpdateCollectorsForNodeAsync(node);
             }
+        }
+
+        internal void OnContainerStatsUpdated(string containerId)
+        {
+            ContainerStatsUpdated?.Invoke(this, containerId);
         }
     }
 }

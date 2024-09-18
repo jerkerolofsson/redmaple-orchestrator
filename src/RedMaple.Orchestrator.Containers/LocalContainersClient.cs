@@ -70,7 +70,7 @@ namespace RedMaple.Orchestrator.Containers
             catch (Docker.DotNet.DockerImageNotFoundException)
             {
                 string imageName = parameters.Image;
-                await PullImageAsync(client, imageName, cancellationToken);
+                await PullImageAsync(imageName, new Progress<JSONMessage>(), null,cancellationToken);
 
                 _logger.LogInformation("Creating container with image {ContainerImage}", parameters.Image);
                 var response = await client.Containers.CreateContainerAsync(parameters, cancellationToken);
@@ -78,15 +78,6 @@ namespace RedMaple.Orchestrator.Containers
             }
         }
 
-        private async Task PullImageAsync(DockerClient client, string imageName, CancellationToken cancellationToken)
-        {
-            _logger.LogInformation("Pulling image {ContainerImage}", imageName);
-            var createParameters = new ImagesCreateParameters
-            {
-                FromImage = imageName
-            };
-            await client.Images.CreateImageAsync(createParameters, null, new Progress<JSONMessage>(), cancellationToken);
-        }
 
         public async Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken)
         {
@@ -204,6 +195,41 @@ namespace RedMaple.Orchestrator.Containers
             var text = Encoding.UTF8.GetString(lineBytes);
             return text;
         }
+
+
+        public async Task<VolumeResponse> CreateVolumeAsync(VolumesCreateParameters parameters, CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            return await client.Volumes.CreateAsync(parameters, cancellationToken);
+        }
+
+        public async Task DeleteVolumeAsync(string name, bool force, CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            await client.Volumes.RemoveAsync(name, force, cancellationToken);
+        }
+
+        public async Task<VolumesListResponse> ListVolumesAsync(CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            return await client.Volumes.ListAsync(new VolumesListParameters { }, cancellationToken);
+        }
+
+
+
+        public async Task PullImageAsync(string imageName, IProgress<JSONMessage> progress,
+            CancellationTokenSource? cts,
+            CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            _logger.LogInformation("Pulling image {ImageName}", imageName);
+            var createParameters = new ImagesCreateParameters
+            {
+                FromImage = imageName
+            };
+            await client.Images.CreateImageAsync(createParameters, null, progress, cancellationToken);
+            cts?.Cancel();
+        }
         public Task GetLogsAsync(string id, 
             bool follow,
             string? tail,
@@ -225,7 +251,8 @@ namespace RedMaple.Orchestrator.Containers
                         Tail = tail
                     }, cancellationToken, progress);
                 }
-                catch(Exception ex)
+                catch (OperationCanceledException) { }
+                catch (Exception ex)
                 {
                     _logger.LogError(ex, "GetContainerLogsAsync stopped for container {ContainerId}", id);
                 }

@@ -52,7 +52,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             _logger.LogInformation("Adding ingress-service {ServiceId}", service.Id);
 
             progress.Report($"Generating HTTPS ingress certificate for {service.DomainName}..");
-            _logger.LogInformation("Generating certificate for ingress-service {ServiceId}", service.Id);
+            _logger.LogDebug("Generating certificate for ingress-service {ServiceId}", service.Id);
             var certificate = await _certificateAuthority.GetOrCreateCertificateAsync(service.DomainName);
             if (certificate?.PemCertPath is null || certificate?.PemKeyPath is null)
             {
@@ -93,7 +93,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             if (existingEntry is null)
             {
                 progress.Report($"Creating DNS entry {service.DomainName} to {service.IngressIp}..");
-                _logger.LogWarning("Deployment plan DNS entry creeated for {domainName}={new}", service.DomainName, service.IngressIp);
+                _logger.LogWarning("Deployment plan DNS entry creeated for {DomainName}={IpAddress}", service.DomainName, service.IngressIp);
                 dnsEntries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = service.DomainName, IpAddress = service.IngressIp });
                 await _globalDns.SetDnsEntriesAsync(dnsEntries);
             }
@@ -101,13 +101,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             {
                 progress.Report($"Updating DNS for {service.DomainName} from {existingEntry.IpAddress} to {service.IngressIp}..");
 
-                _logger.LogWarning("Deployment plan DNS entry changed from {old} to {new}", existingEntry.IpAddress, service.IngressIp);
+                _logger.LogWarning("Deployment plan DNS entry changed from {old} to {IpAddress}", existingEntry.IpAddress, service.IngressIp);
                 existingEntry.IpAddress = service.IngressIp;
                 await _globalDns.SetDnsEntriesAsync(dnsEntries);
             }
             else
             {
-                _logger.LogDebug("DNS entry already exists");
+                _logger.LogDebug("DNS entry already exists,{DomainName}={IpAddress}", service.DomainName, service.IngressIp);
+                await _globalDns.SetDnsEntriesAsync(dnsEntries);
             }
 
             /*

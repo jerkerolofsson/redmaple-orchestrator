@@ -1,5 +1,7 @@
-﻿@implements IProgress<string>
-@if(Visible)
+﻿@using Docker.DotNet.Models
+@implements IProgress<string>
+@implements IProgress<JSONMessage>
+@if (Visible)
 {
     <MudCard Elevation="5" Class="pa-5">
         <div class="current">
@@ -8,6 +10,18 @@
                 @_message?.Text
             </div>
         </div>
+
+        @if (_jsonMessage is not null)
+        {
+            <div>@_jsonMessage.Status</div>
+            <div>@_jsonMessage.ProgressMessage</div>
+            @if(_jsonMessage.Progress is not null)
+            {
+                <MudProgressLinear Value="@_jsonMessage.Progress.Current" Max="@_jsonMessage.Progress.Total"/>
+                <div>@_jsonMessage.Progress.Units</div>
+            }
+        }
+
         <table class="completed">
             <thead>
                 <tr>
@@ -42,16 +56,34 @@
         public DateTime Completed { get; set; }
     }
 
+    private JSONMessage? _jsonMessage = null;
+
     [Parameter]
     public bool Visible { get; set; }
 
     public void Begin()
     {
         _message = null;
+        _jsonMessage = null;
         _completed.Clear();
         this.StateHasChanged();
     }
 
+    public void Report(JSONMessage message)
+    {
+        /*
+        if(_message is not null && _message.Text != message.ProgressMessage && !string.IsNullOrEmpty(message.ProgressMessage))
+        {
+            Report(message.ProgressMessage);
+        }
+        */
+
+        InvokeAsync(() =>
+        {
+            _jsonMessage = message;
+            this.StateHasChanged();
+        });
+    }
     public void Report(string message)
     {
         if(string.IsNullOrWhiteSpace(message))

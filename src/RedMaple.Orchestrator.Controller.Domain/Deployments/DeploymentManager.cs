@@ -1,4 +1,5 @@
-﻿using FluentValidation.Results;
+﻿using Docker.DotNet.Models;
+using FluentValidation.Results;
 using MediatR;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Cryptography;
+using System.Xml.Linq;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
@@ -62,6 +64,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             _healthChecker = healthChecker;
         }
 
+        private async Task<NodeInfo?> GetApplicationHostAsync(string applicationServerIp)
+        {
+            return await _nodeManager.GetNodeByIpAddressAsync(applicationServerIp);
+        }
         private async Task<NodeInfo?> GetApplicationHostAsync(ApplicationDeployment deployment)
         {
             if (deployment?.ApplicationServerIp is null)
@@ -279,6 +285,29 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             await _deploymentPlanRepository.DeleteDeploymentPlanAsync(plan.Id);
         }
 
+        public async Task PullImagesAsync(
+            DeploymentPlan plan,
+            IProgress<string> progress, 
+            IProgress<JSONMessage> pullProgress, CancellationToken cancellationToken)
+        {
+            foreach(var applicationServerIp in plan.ApplicationServerIps)
+            {
+                var targetNode = await GetApplicationHostAsync(applicationServerIp);
+                if (targetNode is null)
+                {
+                    continue;
+                }
+
+                foreach(var containerImage in plan.ContainerImages)
+                {
+                    progress.Report($"Pulling {containerImage} on {applicationServerIp}..");
+
+                    using var client = new NodeContainersClient(targetNode.BaseUrl);
+                    await client.PullImageAsync(containerImage, pullProgress, cancellationToken);
+                }
+            }
+        }
+
         public async Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
             foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
@@ -291,7 +320,15 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
                 await _mediator.Publish(new AppDeploymentStoppingNotification(deployment));
 
-                await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+                try
+                {
+                    await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to bring down deployment {DeploymentSlug} on node: {Node}", deployment.Slug, targetNode.IpAddress);
+                    throw;
+                }
 
                 await _appDeploymentRepository.DeleteDeploymentAsync(deployment.Id);
             }
@@ -445,11 +482,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 .WithOid(CertificateBuilder.OID_TLS_WEB_SERVER_AUTHENTICATION)
                 .WithSubjectAlternativeName((sanBuilder) =>
                 {
-                    /*
-                    if (plan.ApplicationServerIp is not null)
+                    foreach(var ip in plan.ApplicationServerIps)
                     { 
-                        sanBuilder.AddIpAddress(IPAddress.Parse(plan.ApplicationServerIp));
-                    }*/
+                        sanBuilder.AddIpAddress(IPAddress.Parse(ip));
+                    }
                 });
 
             var password = plan.ApplicationHttpsCertificatePassword;
@@ -483,7 +519,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 if(existingEntry is null)
                 {
                     progress.Report($"Creating DNS entry {plan.Slug} for {plan.DomainName} to {applicationServerIp}..");
-                    _logger.LogInformation("Deployment plan DNS entry creeated for {domainName}={new}", plan.DomainName, applicationServerIp);
+                    _logger.LogInformation("Deployment plan DNS entry created for {domainName}={new}", plan.DomainName, applicationServerIp);
                     entries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = plan.DomainName, IpAddress = applicationServerIp });
                     await _dns.SetDnsEntriesAsync(entries);
                 }

@@ -12,19 +12,28 @@ namespace RedMaple.Orchestrator.Node.Enrollment
 {
     public class StartIngressAtStartup : BackgroundService
     {
-        private ILogger _logger;
-        private LocalIngressServiceController _ingress;
+        private readonly ILogger _logger;
+        private readonly LocalIngressServiceController _ingress;
+        private readonly INodeSettingsProvider _settingsProvider;
 
-        public StartIngressAtStartup(ILogger<StartIngressAtStartup> logger, LocalIngressServiceController ingress)
+        public StartIngressAtStartup(
+            ILogger<StartIngressAtStartup> logger, 
+            LocalIngressServiceController ingress, 
+            INodeSettingsProvider settingsProvider)
         {
             _logger = logger;
             _ingress = ingress;
+            _settingsProvider = settingsProvider;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("Starting ingress..");
-            await _ingress.StartAsync();
+            var settings = await _settingsProvider.GetSettingsAsync();
+            if (settings.IngressHost)
+            {
+                _logger.LogInformation("Starting ingress..");
+                await _ingress.StartAsync();
+            }
         }
     }
 }

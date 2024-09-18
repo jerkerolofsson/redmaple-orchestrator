@@ -54,7 +54,7 @@ else if(!_loading)
                         @{
                             string url = $"/deployments/{context.Item.Slug}";
                         }
-                        <a href="@url">@context.Item.Name</a>
+                        <a target="_blank" href="@url">@context.Item.Name</a>
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -69,7 +69,7 @@ else if(!_loading)
                         @if (context.Item.DomainName is not null && context.Item.CreateIngress)
                         {
                             string url = $"https://{context.Item.DomainName}";
-                            <a href="@url">@url</a>
+                            <a target="_blank" href="@url">@url</a>
                         }
                     </CellTemplate>
                 </TemplateColumn>
@@ -110,20 +110,28 @@ else if(!_loading)
                                 <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
                             }
 
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert" Color="Color.Primary">
+                            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                <MudMenuItem OnClick="async() => await PullImagesAsync(context.Item)">
+                                    Pull Images
+                                </MudMenuItem>
+
+                                <MudMenuItem OnClick="async() => await RestartAsync(context.Item)">
+                                    Restart
+                                </MudMenuItem>
+
                                 <MudMenuItem OnClick="async() => await DeleteAsync(context.Item)">
                                     Delete
                                 </MudMenuItem>
+
                             </MudMenu>
                         </div>
                     </CellTemplate>
                 </TemplateColumn>
             </Columns>
         </MudDataGrid>
-
-        <MudCardActions>
-        </MudCardActions>
     </MudCard>
+
+    <div>@_plans.Count deployment plans</div>
 }
 @code {
     private ProgressView _progress = null!;
@@ -142,6 +150,50 @@ else if(!_loading)
     {
         _cancellationTokenSource?.Cancel();
         _cancellationTokenSource = null;
+    }
+
+    private async Task RestartAsync(DeploymentPlan plan)
+    {
+        await PullImagesAsync(plan);
+
+        await TakeDownAsync(plan);
+        await BringUpAsync(plan);
+    }
+
+    private async Task PullImagesAsync(DeploymentPlan plan)
+    {
+        _loading = true;
+        _error = null;
+        _progress.Begin();
+        this.StateHasChanged();
+
+        _cancellationTokenSource = new();
+        var token = _cancellationTokenSource.Token;
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await deploymentManager.PullImagesAsync(plan, _progress, _progress, token);
+            }
+            catch (Exception ex)
+            {
+                _error = ex.ToString();
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+                await Task.Delay(TimeSpan.FromSeconds(10));
+            }
+            finally
+            {
+                _loading = false;
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+
+            }
+        });
     }
 
     private async Task BringUpAsync(DeploymentPlan plan)

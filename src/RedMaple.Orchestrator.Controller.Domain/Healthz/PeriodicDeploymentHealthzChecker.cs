@@ -38,39 +38,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             {
                 TimeSpan sleepTime = TimeSpan.FromSeconds(5);
 
-                var deployments = await _deploymentManager.GetDeploymentPlansAsync();
-                foreach (var deployment in deployments)
+                try
                 {
-                    var deploymentHealth = new ResourceHealthCheckResult { Status = HealthStatus.Healthy };
-                    for (int i=0;i<deployment.HealthChecks.Count; i++)
-                    {
-                        var check = deployment.HealthChecks[i];
-                        if(check.Type != HealthCheckType.Livez)
-                        {
-                            continue;
-                        }
-
-                        var checkKey = deployment.Slug + i;
-                        TimeSpan timeSince = GetTimeSinceLastCheck(checkKey);
-                        if(NeedCheck(check, timeSince))
-                        {
-                            var startTimestamp = Stopwatch.GetTimestamp();
-                            HealthStatus status = await CheckHealthAsync(deployment, check, stoppingToken);
-                            deploymentHealth.Status = status;
-                            deploymentHealth.Duration = Stopwatch.GetElapsedTime(startTimestamp);
-                        }
-                        else
-                        {
-                            TimeSpan checkInterval = TimeSpan.FromSeconds(check.Interval);
-                            TimeSpan timeUntilCheck = checkInterval - timeSince;
-                            if(timeUntilCheck < sleepTime)
-                            {
-                                sleepTime = timeUntilCheck;
-                            }
-                        }
-                    }
-
-                    await UpdateHealthStatusAsync(deployment, deploymentHealth);
+                    var deployments = await _deploymentManager.GetDeploymentPlansAsync();
+                    sleepTime = await RunTestsAsync(sleepTime, deployments, stoppingToken);
+                }
+                catch(Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to run tests");
                 }
 
                 if (sleepTime < TimeSpan.FromSeconds(1))
@@ -81,15 +56,54 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             }
         }
 
+        private async Task<TimeSpan> RunTestsAsync(TimeSpan sleepTime, List<DeploymentPlan> deployments, CancellationToken stoppingToken)
+        {
+            foreach (var deployment in deployments)
+            {
+                var deploymentHealth = new ResourceHealthCheckResult { Status = HealthStatus.Healthy };
+                for (int i = 0; i < deployment.HealthChecks.Count; i++)
+                {
+                    var check = deployment.HealthChecks[i];
+                    if (check.Type != HealthCheckType.Livez)
+                    {
+                        continue;
+                    }
+
+                    var checkKey = deployment.Slug + i;
+                    TimeSpan timeSince = GetTimeSinceLastCheck(checkKey);
+                    if (NeedCheck(check, timeSince))
+                    {
+                        var startTimestamp = Stopwatch.GetTimestamp();
+                        HealthStatus status = await CheckHealthAsync(deployment, check, stoppingToken);
+                        deploymentHealth.Status = status;
+                        deploymentHealth.Duration = Stopwatch.GetElapsedTime(startTimestamp);
+                    }
+                    else
+                    {
+                        TimeSpan checkInterval = TimeSpan.FromSeconds(check.Interval);
+                        TimeSpan timeUntilCheck = checkInterval - timeSince;
+                        if (timeUntilCheck < sleepTime)
+                        {
+                            sleepTime = timeUntilCheck;
+                        }
+                    }
+                }
+
+                await UpdateHealthStatusAsync(deployment, deploymentHealth);
+            }
+
+            return sleepTime;
+        }
+
         private async Task UpdateHealthStatusAsync(DeploymentPlan deployment, ResourceHealthCheckResult deploymentHealth)
         {
             if (deploymentHealth.Status == HealthStatus.Healthy)
             {
-                _logger.LogInformation("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
+                _logger.LogDebug("{DeploymentSlug} health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
             }
             else
             {
-                _logger.LogWarning("{DeploymentSlug} is health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
+                _logger.LogWarning("{DeploymentSlug} health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
             }
             deployment.Health = deploymentHealth;
             await _deploymentManager.SaveAsync(deployment);

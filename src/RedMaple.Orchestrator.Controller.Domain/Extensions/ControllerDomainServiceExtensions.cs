@@ -37,7 +37,10 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IClusterService, ClusterService>();
             services.AddSingleton<IClusterResourceManager, ClusterResourceManager>();
 
-            services.AddSingleton<IContainerStatsCollectorManager, ContainerStatsCollectorManager>();
+            services.AddSingleton<ContainerStatsCollectorManager>();
+            services.AddSingleton<IContainerStatsCollectorManager>(x => x.GetRequiredService<ContainerStatsCollectorManager>());
+            services.AddSingleton<IContainerStatsUpdateProvider>(x => x.GetRequiredService<ContainerStatsCollectorManager>());
+
             services.AddSingleton<IContainerStatsManager, ContainerStatsManager>();
             services.AddSingleton<ContainerStatsAggregator>();
 
