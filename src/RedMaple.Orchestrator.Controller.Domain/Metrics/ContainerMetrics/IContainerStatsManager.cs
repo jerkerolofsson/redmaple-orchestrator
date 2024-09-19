@@ -4,8 +4,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 {
     public interface IContainerStatsManager
     {
-        event EventHandler<ContainerStats>? StatsUpdated;
         ContainerStats? GetContainerStats(string containerId);
         void ReportCpuUsage(string containerId, double cpuUsage);
+        void ReportMemoryUsage(string containerId, long usage, long? limit);
     }
 }

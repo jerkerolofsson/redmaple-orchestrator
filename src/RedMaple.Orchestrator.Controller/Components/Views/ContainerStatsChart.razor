@@ -12,10 +12,12 @@
 
     public List<ChartSeries> Series = new List<ChartSeries>()
     {
-        new ChartSeries() { Name = "CPU %", Data = Array.Empty<double>() },
+        new ChartSeries() { Name = "", Data = Array.Empty<double>() },
     };
     public string[] XAxisLabels = Array.Empty<string>();
 
+    [Parameter]
+    public string SeriesName { get; set; } = "";
 
     [Parameter]
     public IReadOnlyCollection<DoubleTime> Data { get; set; } = Array.Empty<DoubleTime>();
@@ -49,6 +51,7 @@
                 XAxisLabels[i] = "";
             }
         }
+        Series[0].Name = SeriesName;
         Series[0].Data = Data.Select(x => x.Value).ToArray();
 
         base.OnParametersSet();

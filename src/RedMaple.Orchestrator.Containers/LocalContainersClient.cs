@@ -64,6 +64,8 @@ namespace RedMaple.Orchestrator.Containers
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             try
             {
+                await TryDeleteContainerByNameAsync(parameters.Name);
+
                 var response = await client.Containers.CreateContainerAsync(parameters);
                 return response;
             }
@@ -78,6 +80,16 @@ namespace RedMaple.Orchestrator.Containers
             }
         }
 
+        private async Task<bool> TryDeleteContainerByNameAsync(string name, CancellationToken cancellationToken = default)
+        {
+            var container = await GetContainerByNameAsync(name, cancellationToken);
+            if(container is not null)
+            {
+                await DeleteContainerAsync(container.Id, cancellationToken);
+                return true;
+            }
+            return false;
+        }
 
         public async Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken)
         {

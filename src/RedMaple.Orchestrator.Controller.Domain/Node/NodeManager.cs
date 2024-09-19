@@ -56,6 +56,25 @@ namespace RedMaple.Orchestrator.Controller.Domain.Node
                     existingNode.IsLoadBalancerEnabled = nodeInfo.IsLoadBalancerEnabled;
                     changed = true;
                 }
+                if (existingNode.Name != nodeInfo.Name)
+                {
+                    existingNode.Name = nodeInfo.Name;
+                    changed = true;
+                }
+                if (existingNode.Region != nodeInfo.Region)
+                {
+                    existingNode.Region = nodeInfo.Region;
+                    changed = true;
+                }
+
+                var nodeTags = string.Join(' ', nodeInfo.Tags);
+                var existingNodeTags = string.Join(' ', existingNode.Tags);
+                if (nodeTags != existingNodeTags)
+                {
+                    existingNode.Tags = nodeInfo.Tags;
+                    changed = true;
+                }
+
                 if(changed)
                 {
                     _logger.LogInformation("Node properties updated: {BaseUrl}", nodeInfo.BaseUrl);

@@ -1,9 +1,11 @@
 ﻿@page "/deployments/{slug}"
+@using Humanizer
 @using RedMaple.Orchestrator.Controller.Domain.Aggregations
 @using RedMaple.Orchestrator.Controller.Domain.Deployments
 @using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 @using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
 @using RedMaple.Orchestrator.Controller.ViewModels
+@using System.Globalization
 @inject IDeploymentManager deploymentManager
 @inject IContainerStatsUpdateProvider containerStatsUpdateProvider
 @inject ContainerStatsAggregator containerStatsAggregator
@@ -25,13 +27,13 @@
 
 <div class="container-charts">
     <MudCard Class="pa-3">
-        <MudText Typo="Typo.caption">CPU</MudText>
-        <ContainerStatsChart Data="@_cpuStats"></ContainerStatsChart>
+        <MudText Typo="Typo.caption">@_cpuHeader</MudText>
+        <ContainerStatsChart SeriesName="CPU (%)" Data="@_cpuStats"></ContainerStatsChart>
     </MudCard>
 
     <MudCard Class="pa-3">
-        <MudText Typo="Typo.caption">Memory</MudText>
-        <ContainerStatsChart Data="@_cpuStats"></ContainerStatsChart>
+        <MudText Typo="Typo.caption">@_memoryHeader</MudText>
+        <ContainerStatsChart SeriesName="Memory (MB)" Data="@_memoryUsage"></ContainerStatsChart>
     </MudCard>
 </div>
 
@@ -42,7 +44,10 @@
 
     private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
     private IReadOnlyCollection<DoubleTime> _cpuStats = Array.Empty<DoubleTime>();
+    private IReadOnlyCollection<DoubleTime> _memoryUsage = Array.Empty<DoubleTime>();
     private string? _monitorContainerId = null;
+    private string _memoryHeader = "Memory Usage";
+    private string _cpuHeader = "CPU (%)";
 
     protected override async Task OnParametersSetAsync()
     {
@@ -55,11 +60,26 @@
         _containers = await containerStatsAggregator.GetDeployedContainersAsync(Slug);
         if (_containers.Count > 0)
         {
-            var cpuHistory = _containers[0].Stats?.CpuHistory;
-            _monitorContainerId = _containers[0].Container.Id;
+            var container = _containers[0];
+            _monitorContainerId = container.Container.Id;
+            if(container.Stats is null)
+            {
+                return;
+            }
+
+            var cpuHistory = container.Stats.CpuPercentHistory;
             if (cpuHistory is not null)
             {
                 _cpuStats = cpuHistory;
+                _cpuHeader = $"CPU {Math.Round(container.Stats.CpuPercent)}%";
+
+            }
+
+            var memoryUsageHistory = _containers[0].Stats?.MemoryUsageHistory;
+            if (memoryUsageHistory is not null)
+            {
+                _memoryUsage = memoryUsageHistory.Select(x=>new DoubleTime(x.Time, x.Value / (1024.0*1024.0))).ToList();
+                _memoryHeader = "Memory Usage " + container.Stats.MemoryUsage.Bytes().Humanize(CultureInfo.InvariantCulture);
             }
         }
     }

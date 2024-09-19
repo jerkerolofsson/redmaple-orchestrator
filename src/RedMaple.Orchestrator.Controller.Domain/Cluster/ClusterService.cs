@@ -75,11 +75,13 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster
                 Port = request.Port,
                 Schema = request.Schema,
                 IngressHttpsPort = request.IngressHttpsPort,
-
+                Tags = request.Tags.Split(' ').ToList(),
                 IsDnsEnabled = request.IsDnsEnabled,
                 IsIngressEnabled = request.IsIngressEnabled,
                 IsLoadBalancerEnabled = request.IsLoadBalancerEnabled,
                 IsApplicationHostEnabled = request.IsApplicationHostEnabled,
+                Name = request.Name,
+                Region = request.Region
             };
             await _repository.EnrollNodeAsync(nodeInfo);
 

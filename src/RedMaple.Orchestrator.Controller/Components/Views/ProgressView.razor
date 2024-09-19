@@ -1,4 +1,5 @@
 ﻿@using Docker.DotNet.Models
+@using Humanizer
 @implements IProgress<string>
 @implements IProgress<JSONMessage>
 @if (Visible)
@@ -26,9 +27,8 @@
             <thead>
                 <tr>
                     <th></th>
-                    <th>Started</th>
-                    <th>Completed</th>
                     <th>Message</th>
+                    <th>Elapsed</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,9 +36,8 @@
                 {
                     <tr>
                         <td>✓</td>
-                        <td>@line.Started</td>
-                        <td>@line.Completed</td>
                         <td>@line.Text</td>
+                        <td>@line.Elapsed</td>
                     </tr>
                 }
             </tbody>
@@ -54,6 +53,15 @@
         public required string Text {get;set;}
         public DateTime Started { get; set; } = DateTime.Now;
         public DateTime Completed { get; set; }
+
+        public string Elapsed
+        {
+            get
+            {
+                var elapsed = Completed - Started;
+                return elapsed.Humanize();
+            }
+        }
     }
 
     private JSONMessage? _jsonMessage = null;

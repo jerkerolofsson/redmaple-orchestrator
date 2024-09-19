@@ -14,9 +14,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
     /// </summary>
     internal class HealthzChecker : IHealthzChecker
     {
-        public Task<HealthStatus> CheckReadyzAsync(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
+        public Task<HealthStatus> CheckReadyzAsync(Deployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
             CheckAsync(applicationDeployment, deployment, HealthCheckType.Readyz, cancellationToken);
-        public Task<HealthStatus> CheckLivezAsync(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
+        public Task<HealthStatus> CheckLivezAsync(Deployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
             CheckAsync(applicationDeployment,deployment, HealthCheckType.Livez, cancellationToken);
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
         /// <param name="cancellationToken"></param>
         /// <returns></returns>
         public async Task<HealthStatus> CheckAsync(
-            ApplicationDeployment deployment,
+            Deployment deployment,
             DeploymentPlan deploymentPlan, 
             HealthCheckType type, 
             CancellationToken cancellationToken)
@@ -57,7 +57,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
 
 
         public async Task<HealthStatus> CheckAsync(
-            ApplicationDeployment deployment, 
+            Deployment deployment, 
             DeploymentPlan deploymentPlan,
             DeploymentHealthCheck check, 
             CancellationToken cancellationToken)
@@ -77,7 +77,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             return healthStatus;
         }
 
-        private static string GetHealthzEndPoint(ApplicationDeployment applicationDeployment, DeploymentPlan deployment, DeploymentHealthCheck check)
+        private static string GetHealthzEndPoint(Deployment applicationDeployment, DeploymentPlan deployment, DeploymentHealthCheck check)
         {
             string baseUrl = check.Target switch
             {

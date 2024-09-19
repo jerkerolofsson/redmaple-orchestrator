@@ -1,5 +1,6 @@
 ﻿@page "/node/{id}/ingress"
 @using MudBlazor
+@using MudExtensions
 @using RedMaple.Orchestrator.Contracts.Ingress
 @using RedMaple.Orchestrator.Controller.Domain;
 @using RedMaple.Orchestrator.Controller.Domain.Ingress;
@@ -36,7 +37,7 @@
                 <TemplateColumn Title="Ingress">
                     <CellTemplate>
                         @{
-                            string url = $"https://{context.Item.DomainName}";
+                            string url = $"https://{context.Item.Service.DomainName}";
                         }
                         <a target="_blank" href="@url">@url</a>
                     </CellTemplate>
@@ -45,7 +46,7 @@
                 <TemplateColumn Title="Application">
                     <CellTemplate>
                         @{
-                            string url = $"{context.Item.Scheme}://{context.Item.DestinationIp}:{context.Item.DestinationPort}";
+                            string url = $"{context.Item.Service.Scheme}://{context.Item.Service.DestinationIp}:{context.Item.Service.DestinationPort}";
                         }
                         <a target="_blank" href="@url">@url</a>
                     </CellTemplate>
@@ -53,7 +54,18 @@
 
                 <TemplateColumn StickyRight="true">
                     <CellTemplate>
-                        <MudButton OnClick="async () => await DeleteAsync(context.Item)">Delete</MudButton>
+                          <MudLoadingButton 
+                              ButtonVariant="ButtonVariant.Button"
+                                          @bind-Loading="@context.Item.IsLoading"
+                                          LoadingCircularColor="Color.Primary" 
+                                          OnClick="async () => await DeleteAsync(context.Item)">
+                            <ChildContent>
+                                DELETE
+                            </ChildContent>
+                            <LoadingContent>
+                                LOADING
+                            </LoadingContent>
+                        </MudLoadingButton>
                     </CellTemplate>
                 </TemplateColumn>
 
@@ -63,14 +75,29 @@
 </MudPaper>
 
 @code {
-    private List<IngressServiceDescription> _services = new();
+
+    internal class Model
+    {
+        public required IngressServiceDescription Service { get; set; }
+        public bool IsLoading {get;set;}
+    }
+
+
+    private List<Model> _services = new();
 
     [Parameter] public string Id { get; set; } = null!;
 
-    private async Task DeleteAsync(IngressServiceDescription service)
+
+    private async Task DeleteAsync(Model model)
     {
+        var service = model.Service;
+        model.IsLoading = true;
+        this.StateHasChanged();
+
         await ingressManager.DeleteIngressServiceAsync(service.Id);
         await LoadServicesAsync();
+            model.IsLoading = false;
+        this.StateHasChanged();
     }
 
     private void OnCreate()
@@ -89,7 +116,7 @@
 
         // Add a services
         var services = await ingressManager.GetServicesAsync();
-        _services = services.Where(x => x.IngressIp == node.IpAddress).ToList();
+        _services = services.Where(x => x.IngressIp == node.IpAddress).Select(x=>new Model() { Service = x}).ToList();
     }
 
     protected override async Task OnInitializedAsync()

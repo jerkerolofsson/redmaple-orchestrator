@@ -109,5 +109,13 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Status for health check
         /// </summary>
         public ResourceHealthCheckResult? Health { get; set; }
+
+        public ResourceCreationOptions Resource { get; set; } = new ResourceCreationOptions();
+
+        /// <summary>
+        /// This is variables that are assigned from a depdendency (resource)
+        /// Key is the environment variable name, and value is the resource id
+        /// </summary>
+        public Dictionary<string, string> ResourceVariableMap { get; set; } = new();
     }
 }

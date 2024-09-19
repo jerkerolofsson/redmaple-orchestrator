@@ -1,5 +1,6 @@
 ﻿using MediatR;
 using RedMaple.Orchestrator.Contracts.Resources;
+using RedMaple.Orchestrator.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,6 +25,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                 var dnsResource = new ClusterResource
                 {
                     Id = "dns__" + notification.Node.IpAddress,
+                    Slug = SlugGenerator.Generate("dns__" + notification.Node.IpAddress),
                     Kind = ResourceKind.Dns,
                     Name = notification.Node.IpAddress,
                     IsGlobal = true,

@@ -4,6 +4,7 @@
 @inject INodeManager _nodeManager
 @inject NavigationManager _navigationManager
 @using System.ComponentModel.DataAnnotations
+@using MudExtensions
 @using RedMaple.Orchestrator.Controller.Components.Views
 @using RedMaple.Orchestrator.Controller.Domain.Ingress
 
@@ -44,10 +45,19 @@
 
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton 
-                        ButtonType="ButtonType.Submit" 
-                        Variant="Variant.Filled" 
-                        Color="Color.Primary" >Create</MudButton>
+                    <MudLoadingButton 
+                        ButtonType="ButtonType.Submit"
+                        Variant="Variant.Filled"
+                        Color="Color.Primary"
+                        @bind-Loading="@_isLoading"
+                        LoadingCircularColor="Color.Primary" >
+                            <ChildContent>
+                                Create
+                            </ChildContent>
+                            <LoadingContent>
+                                Creating..
+                            </LoadingContent>
+                        </MudLoadingButton>
                 </MudCardActions>
 
                 <MudAlert Class="ml-5 mr-5 mb-5" Severity="Severity.Normal">
@@ -61,6 +71,7 @@
 
 @code {
     CreateIngressServiceModel model = new CreateIngressServiceModel();
+    private bool _isLoading = false;
 
     public class CreateIngressServiceModel
     {
@@ -77,6 +88,9 @@
 
     private async Task OnValidSubmitAsync()
     {
+        _isLoading = true;
+        this.StateHasChanged();
+
         var nodes = await _nodeManager.GetNodesAsync();
         var node = nodes.Where(x=>x.Id == Id).FirstOrDefault();
         _progress.Begin();
@@ -101,5 +115,4 @@
                 _navigationManager.NavigateTo($"/node/{Id}/ingress");
         }
     }
-
 }

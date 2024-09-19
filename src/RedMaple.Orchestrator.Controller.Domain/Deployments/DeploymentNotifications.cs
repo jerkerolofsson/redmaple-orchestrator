@@ -8,17 +8,17 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
-    public record class AppDeploymentReadyNotification(ApplicationDeployment Deployment) : INotification;
+    public record class AppDeploymentReadyNotification(Deployment Deployment) : INotification;
 
     /// <summary>
     /// Raised when the deployment is starting (up)
     /// </summary>
     /// <param name="Deployment"></param>
-    public record class AppDeploymentStartingNotification(ApplicationDeployment Deployment) : INotification;
+    public record class AppDeploymentStartingNotification(Deployment Deployment) : INotification;
 
     /// <summary>
     /// Raised when the deployment is stopping (down)
     /// </summary>
     /// <param name="Deployment"></param>
-    public record class AppDeploymentStoppingNotification(ApplicationDeployment Deployment) : INotification;
+    public record class AppDeploymentStoppingNotification(Deployment Deployment) : INotification;
 }

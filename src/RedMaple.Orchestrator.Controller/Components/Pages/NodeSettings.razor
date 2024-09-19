@@ -12,9 +12,31 @@
 
 @if (_nodeSettings is not null)
 {
-    <MudCard Class="pa-5">
-        <h1>Settings</h1>
+    <MudCard Class="pa-5 mt-5">
+        <h1>General</h1>
+        <MudCardContent>
+            <MudForm Spacing="2" Model="@_nodeSettings">
+                <MudTextField @bind-Value="_nodeSettings.Name"
+                              Label="Name"/>
 
+                <MudTextField @bind-Value="_nodeSettings.Region"
+                              Label="Region" />
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
+
+    <MudCard Class="pa-5 mt-5">
+        <h1>Tags</h1>
+        <MudCardContent>
+            <MudForm Spacing="2" Model="@_nodeSettings">
+                <MudTextField @bind-Value="_nodeSettings.Tags"
+                              Label="Tags" HelperText="Separate with space" />
+            </MudForm>
+        </MudCardContent>
+    </MudCard>
+
+    <MudCard Class="pa-5 mt-5">
+        <h1>Host</h1>
         <MudCardContent>
             <MudForm Spacing="2" Model="@_nodeSettings">
                 <MudSwitch @bind-Value="_nodeSettings.EnableDns"
@@ -30,12 +52,10 @@
                            Label="Application Host" Color="Color.Primary" />
             </MudForm>
         </MudCardContent>
-
-        <MudCardActions>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto" 
-            OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
-        </MudCardActions>
     </MudCard>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-5"
+               OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
 }
 
 @code {

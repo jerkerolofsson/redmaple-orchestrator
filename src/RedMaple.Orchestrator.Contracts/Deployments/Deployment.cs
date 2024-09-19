@@ -6,9 +6,10 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Contracts.Deployments
 {
-    public record class ApplicationDeployment(
+    public record class Deployment(
         string Id,
-        string Slug, 
+        string Slug,
+        ResourceCreationOptions Resource,
         string ApplicationServerIp, 
         int? ApplicationServerPort,
         string? ApplicationProtocol);

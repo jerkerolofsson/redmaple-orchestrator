@@ -1,0 +1,17 @@
+﻿body {
+}
+
+.name {
+    font-weight: bold;
+}
+
+.tags {
+    display: flex;
+    gap: 4px;
+}
+
+.tag {
+    padding: 2px;
+    background: lightyellow;
+    font-size: 75%;
+}

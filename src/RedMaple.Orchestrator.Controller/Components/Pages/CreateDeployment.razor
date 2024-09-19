@@ -10,6 +10,7 @@
 @inject INodeManager _nodeManager
 @inject IDomainService domain
 @inject IDeploymentManager deploymentManager
+@inject IClusterResourceManager clusterResourceManager
 @inject NavigationManager navigationManager
 
 <MudPopoverProvider />
@@ -25,14 +26,14 @@
                 {
                     <MudButton OnClick="PrevPage"
                                ButtonType="ButtonType.Submit"
-                               Variant="Variant.Filled"
+                               Variant="Variant.Outlined"
                                Color="Color.Primary">Back</MudButton>
                 }
 
                 @if (_wizardPage != Pages.ValidateAndConfirm)
                 {
                     <MudButton Class="ml-auto"
-                               OnClick="NextPage"
+                               OnClick="async ()  => await NextPageAsync()"
                                ButtonType="ButtonType.Submit"
                                Variant="Variant.Filled"
                                Color="Color.Primary">Next</MudButton>
@@ -42,11 +43,18 @@
 
                 @if (_wizardPage == Pages.SelectDomainName)
                 {
+                    <MudText Typo="Typo.h6">Define deployment</MudText>
+
                     <MudTextField Label="Deployment Name" Class="mt-5"
                                   @bind-Value="model.Name" For="@(() => model.Name)" />
 
                     <MudTextField Label="Domain Name" Class="mt-5"
                                   @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+
+                    <MudText Typo="Typo.h6" Class="mt-10">Dependencies</MudText>
+                    <DependencyEditor 
+                        @bind-Dependencies="@model.Resources"
+                        EnvironmentVariables="@model.EnvironmentVariables"/>
                 }
                 else if (_wizardPage == Pages.SelectTemplate)
                 {
@@ -54,7 +62,7 @@
                     <div class="templates mt-5">
                         @foreach(var template in _templates)
                         {
-                            <MudPaper Class="pa-4 hover-elevation" @onclick="() => ApplyTemplate(template)">
+                            <MudPaper Class="pa-4 hover-elevation" @onclick="async () => await ApplyTemplateAsync(template)">
                                 <div class="template">
                                     <img src="@template.IconUrl" />
                                     <div>@template.Name</div>
@@ -78,7 +86,7 @@
 
                     @if (model.CreateIngress)
                     {
-                        <MudItem xs="12" sm="6" md="4">
+                        <MudItem xs="12" sm="6" md="4" Class="mt-5">
                             <SelectNode MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
                         </MudItem>
                     }
@@ -96,6 +104,7 @@
                 {
                     @if(!_validationResult.IsValid)
                     {
+                        <MudStack Spacing="2">
                         @foreach(var error in _validationResult.Errors)
                         {
                             if(error.Severity == FluentValidation.Severity.Error)
@@ -111,6 +120,7 @@
                                 <MudAlert Severity="Severity.Info">@error.ErrorMessage</MudAlert>
                             }
                         }
+                        </MudStack>
                     }
                     else
                     {
@@ -157,7 +167,10 @@
 
 
 @code {
-    private CreateDeploymentModel model = new();
+    private CreateDeploymentModel model = new()
+        {
+            Resources = new()
+        };
     private List<DeploymentPlanTemplate> _templates = new();
     private Pages _wizardPage = Pages.SelectTemplate;
 
@@ -179,16 +192,33 @@
         [Required]
         public string DomainName { get; set; } = "";
 
+        ///<summary>
+        /// Type of deployment
+        /// </summary>
         public DeploymentKind Kind { get; set; } = DeploymentKind.DockerCompose;
+
+        /// <summary>
+        /// Assigned resources 
+        /// </summary>
+        public List<ClusterResource>? Resources { get; set; }
 
         [Required]
         public string? Plan { get; set; }
 
+        /// <summary>
+        /// All environment variables
+        /// </summary>
         public Dictionary<string, string>? EnvironmentVariables = null;
+
+        /// <summary>
+        /// Key is the environment variable which is assigned from the resource, value is the resource Id
+        /// </summary>
+        public Dictionary<string,string> ResourceVariableMap = new();
 
         public bool CreateIngress { get; set; }
 
         public NodeInfo? IngressNode { get; set; }
+        public List<string>? RequiredEnvironmentVariables = null;
 
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
         public string ApplicationProtocol { get; set; } = "https";
@@ -219,20 +249,24 @@
     private DeploymentPlan? _workPlan = null;
     private FluentValidation.Results.ValidationResult _validationResult = new FluentValidation.Results.ValidationResult();
 
-    private void OnLeavingPage(Pages page)
+    private async Task OnLeavingPageAsync(Pages page)
     {
         this._workPlan = CreatePlan();
-        _validationResult = deploymentManager.ValidatePlan(this._workPlan);
+        _validationResult = await deploymentManager.ValidatePlanAsync(this._workPlan);
     }
 
     private DeploymentPlan CreatePlan()
     {
-        return new DeploymentPlan
+        model.RequiredEnvironmentVariables ??= new();
+
+        model.EnvironmentVariables ??= new();
+
+        var plan = new DeploymentPlan
             {
                 Id = "0",
                 Name = model.Name,
+                Slug = deploymentManager.CreateSlug(model.Name),
                 IconUrl = model.IconUrl,
-                Slug = new Slugify.SlugHelper().GenerateSlug(model.Name),
                 Plan = model.Plan ?? "",
                 DomainName = model.DomainName,
                 Kind = model.Kind,
@@ -242,14 +276,56 @@
                 ApplicationServerIps = [model.ApplicationNode?.IpAddress],
                 ApplicationServerPort = model.ApplicationPort,
                 ApplicationProtocol = model.ApplicationProtocol,
-                EnvironmentVariables = model.EnvironmentVariables ?? new(),
-                HealthChecks = model.HealthChecks
+                EnvironmentVariables = model.EnvironmentVariables,
+                HealthChecks = model.HealthChecks,
             };
+
+        // Add defaults (like domain name)
+        foreach(var pair in deploymentManager.GetDefaultEnvironmentVariables(plan))
+        {
+            model.EnvironmentVariables[pair.Key] = pair.Value;
+        }
+
+
+        // Assign values from dependent resources here
+        if (model.Resources is not null)
+        {
+            // Remove all old assignments (if a dependency is removed)
+            foreach(var key in model.ResourceVariableMap.Keys.ToList())
+            {
+                model.ResourceVariableMap.Remove(key);
+                model.EnvironmentVariables.Remove(key);
+            }
+
+            foreach (var resource in model.Resources)
+            {
+                foreach (var environmentVariable in resource.EnvironmentVariables)
+                {
+                    if (!model.EnvironmentVariables.TryGetValue(environmentVariable.Key, out var val) || string.IsNullOrEmpty(val))
+                    {
+                        model.EnvironmentVariables[environmentVariable.Key] = environmentVariable.Value;
+                        model.ResourceVariableMap[environmentVariable.Key] = resource.Id;
+                    }
+                }
+            }
+        }
+
+        // Make sure that the required envionrment variables are set
+        foreach (string name in model.RequiredEnvironmentVariables)
+        {
+            if (!model.EnvironmentVariables.ContainsKey(name))
+            {
+                model.EnvironmentVariables[name] = "";
+            }
+        }
+        plan.EnvironmentVariables = model.EnvironmentVariables;
+
+        return plan;
     }
 
-    private void NextPage()
+    private async Task NextPageAsync()
     {
-        OnLeavingPage(_wizardPage);
+        await OnLeavingPageAsync(_wizardPage);
 
         int pageNum = (int)_wizardPage;
         pageNum++;
@@ -257,8 +333,8 @@
 
         if(_wizardPage == Pages.ConfigureEnvironmentVariables && _workPlan is not null)
         {
-            model.EnvironmentVariables = deploymentManager.GetDefaultEnvironmentVariables(_workPlan);
         }
+        this.StateHasChanged();
     }
 
     private async Task CreateDeploymentAsync()
@@ -280,7 +356,7 @@
         navigationManager.NavigateTo("/deployments");
     }
 
-    private void ApplyTemplate(DeploymentPlanTemplate template)
+    private async Task ApplyTemplateAsync(DeploymentPlanTemplate template)
     {
         model.Plan = template.Plan;
         model.DomainName = template.Name.ToLower().Replace(' ', '-') + "." + domain.DefaultDomain;
@@ -289,9 +365,16 @@
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
         model.HealthChecks = template.HealthChecks;
+        model.RequiredEnvironmentVariables = template.RequiresEnvironment;
+        model.Resources = new();
+        model.EnvironmentVariables = new();
 
-        _wizardPage++;
-        this.StateHasChanged();
+        await NextPageAsync();
+
+        // Auto assign resources to the deployment based on missing environment variables
+        model.Resources = await clusterResourceManager.GetClusterResourcesAsync(model.EnvironmentVariables);
+
+        _workPlan = CreatePlan();
     }
 
     protected override async Task OnInitializedAsync()

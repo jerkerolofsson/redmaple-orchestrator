@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 {
-    internal class DeploymentPlanRepository : IDeploymentPlanRepository
+    internal class DeploymentPlanRepository : DocumentStore<DeploymentPlan>, IDeploymentPlanRepository
     {
         private readonly ILogger _logger;
 
@@ -19,6 +20,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
         {
             _logger = logger;
         }
+        protected override string SaveFilePath => GetConfigFilePath();
 
         private string GetLocalConfigDir()
         {
@@ -55,10 +57,10 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 service.Id = Guid.NewGuid().ToString();
             }
             _logger.LogDebug("Saving deployment plan with ID {id}..", service.Id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
         public async Task AddDeploymentPlanAsync(DeploymentPlan service)
         {
@@ -67,49 +69,25 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 service.Id = Guid.NewGuid().ToString();
             }
             _logger.LogInformation("Adding deployment plan with ID {id}..", service.Id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
 
         public async Task<List<DeploymentPlan>> GetDeploymentPlansAsync()
         {
-            return await LoadDataAsync();
+            return await LoadAsync();
         }
 
         public async Task DeleteDeploymentPlanAsync(string id)
         {
             _logger.LogInformation("Removing deployment plan with ID {id}..", id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == id);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
 
-        private async Task<List<DeploymentPlan>> LoadDataAsync()
-        {
-            var path = GetConfigFilePath();
-            try
-            {
-                _logger.LogDebug("Loading deployment plans from {path}", path);
-                var json = await File.ReadAllTextAsync(path);
-                var services = JsonSerializer.Deserialize<List<DeploymentPlan>>(json);
-                return services ?? new();
-            }
-            catch (Exception) { }
-            return new List<DeploymentPlan>();
-        }
-
-        private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { WriteIndented = true };
-
-        private async Task WriteDataAsync(List<DeploymentPlan> services)
-        {
-            var json = JsonSerializer.Serialize(services, _jsonSerializerOptions);
-            var path = GetConfigFilePath();
-
-            _logger.LogDebug("Writing deployment plans to {path}", path);
-            await File.WriteAllTextAsync(path, json);
-        }
 
     }
 }

@@ -9,5 +9,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
         Task<ClusterResource?> GetClusterResourceAsync(string id);
         Task<List<ClusterResource>> GetClusterResourcesAsync();
         Task RemoveResourceAsync(ClusterResource resource);
+        Task<List<ClusterResource>> GetClusterResourcesAsync(Dictionary<string, string> environmentVariables);
     }
 }

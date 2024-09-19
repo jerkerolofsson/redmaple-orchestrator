@@ -15,6 +15,24 @@ namespace RedMaple.Orchestrator.Contracts.Node
 
         public string Schema { get; set; } = "http";
 
+        private string _name = "";
+
+        public string Name
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_name))
+                {
+                    return IpAddress ?? "-";
+                }
+                return _name;
+            }
+            set
+            {
+                _name = value;
+            }
+        }
+
         public string BaseUrl => $"{Schema}://{IpAddress}:{Port}";
 
         /// <summary>
@@ -40,14 +58,39 @@ namespace RedMaple.Orchestrator.Contracts.Node
         /// </summary>
         public string? IpAddress { get; set; }
 
+        /// <summary>
+        /// True if the node can host DNS
+        /// </summary>
         public bool IsDnsEnabled { get; set; }
+
+        /// <summary>
+        /// True if the node can host ingress services
+        /// </summary>
         public bool IsIngressEnabled { get; set; }
+
+        /// <summary>
+        /// True if the node can host load balancer services
+        /// </summary>
         public bool IsLoadBalancerEnabled { get; set; }
+
+        /// <summary>
+        /// True if the node can be used to host application services
+        /// </summary>
         public bool IsApplicationHostEnabled { get; set; }
+
+        /// <summary>
+        /// Tags that can be used as filter when selecting nodes
+        /// </summary>
+        public List<string> Tags { get; set; } = new();
+
+        /// <summary>
+        /// Gegraphical region of node
+        /// </summary>
+        public string Region { get; set; } = "";
 
         public override string ToString()
         {
-            return IpAddress ?? base.ToString() ?? "NodeInfo";
+            return Name ?? IpAddress ?? base.ToString() ?? "NodeInfo";
         }
     }
 }

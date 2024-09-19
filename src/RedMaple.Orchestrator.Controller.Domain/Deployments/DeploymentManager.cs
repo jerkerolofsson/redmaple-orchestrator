@@ -17,12 +17,10 @@ using RedMaple.Orchestrator.Sdk;
 using RedMaple.Orchestrator.Security.Builder;
 using RedMaple.Orchestrator.Security.Serialization;
 using RedMaple.Orchestrator.Security.Services;
-using System.Collections.Generic;
+using RedMaple.Orchestrator.Utilities;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Security.Cryptography;
-using System.Xml.Linq;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
@@ -68,7 +66,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         {
             return await _nodeManager.GetNodeByIpAddressAsync(applicationServerIp);
         }
-        private async Task<NodeInfo?> GetApplicationHostAsync(ApplicationDeployment deployment)
+        private async Task<NodeInfo?> GetApplicationHostAsync(Deployment deployment)
         {
             if (deployment?.ApplicationServerIp is null)
             {
@@ -88,13 +86,18 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         /// </summary>
         /// <param name="slug"></param>
         /// <returns></returns>
-        public async Task<List<ApplicationDeployment>> GetApplicationDeploymentsAsync(string slug)
+        public async Task<List<Deployment>> GetApplicationDeploymentsAsync(string slug)
         {
             var deployments = await _appDeploymentRepository.GetDeploymentsAsync();
             return deployments.Where(x => x.Slug == slug).ToList();
         }
 
-        public async Task<List<DeployedContainer>> GetDeployedContainersAsync(ApplicationDeployment appDeployment)
+        public string CreateSlug(string deploymentName)
+        {
+            return SlugGenerator.Generate(deploymentName);
+        }
+
+        public async Task<List<DeployedContainer>> GetDeployedContainersAsync(Deployment appDeployment)
         {
             var containers = new List<DeployedContainer>();
 
@@ -136,11 +139,35 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             return plans.Where(x => x.Slug == slug).FirstOrDefault();
         }
 
-        public ValidationResult ValidatePlan(DeploymentPlan plan)
+        public async Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan)
         {
+            var plans = await GetDeploymentPlansAsync();
+            var planNames = plans.Select(x => x.Name).ToHashSet();
+            var planSlugs = plans.Select(x => x.Slug).ToHashSet();
+            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Select(x => x.Hostname).ToHashSet();
             var result = new ValidationResult();
 
-            foreach(var env in plan.EnvironmentVariables)
+            if (plan.CreateDnsEntry || plan.CreateIngress)
+            {
+                if (string.IsNullOrWhiteSpace(plan.DomainName))
+                {
+                    result.Errors.Add(new ValidationFailure("DomainName", $"Domain name is missing"));
+                }
+                else if (dnsEntries.Contains(plan.DomainName))
+                {
+                    result.Errors.Add(new ValidationFailure("DomainName", $"The domain name is already in use"));
+                }
+            }
+            if (planNames.Contains(plan.Name))
+            {
+                result.Errors.Add(new ValidationFailure("Name", $"The name is already in use"));
+            }
+            if (planSlugs.Contains(plan.Slug))
+            {
+                result.Errors.Add(new ValidationFailure("Name", $"The name (slug) is already in use"));
+            }
+
+            foreach (var env in plan.EnvironmentVariables)
             {
                 if(string.IsNullOrEmpty(env.Value))
                 {
@@ -310,6 +337,15 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
+            if (plan.CreateIngress)
+            {
+                await _ingressManager.TryDeleteIngressServiceByDomainNameAsync(plan.DomainName);
+            }
+            else if(plan.CreateDnsEntry)
+            {
+                await _dns.TryDeleteDnsEntryByDomainNameAsync(plan.DomainName);
+            }
+
             foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
             {
                 var targetNode = await GetApplicationHostAsync(deployment);
@@ -340,7 +376,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            ValidatePlan(plan);
+            await ValidatePlanAsync(plan);
             plan.Health = new Healthz.Models.ResourceHealthCheckResult { Status = HealthStatus.Degraded };
 
             // Todo: find nodes
@@ -362,12 +398,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 throw new InvalidDataException("CreateDnsEntry is false but CreateIngress is true. This combination is not valid.");
             }
 
-
             // Record of deployment which is kept locally on controller
             var deploymentId = plan.Slug + "-" + Guid.NewGuid().ToString();
-            var appDeployment = new ApplicationDeployment(
+            var appDeployment = new Deployment(
                 deploymentId,
                 plan.Slug,
+                plan.Resource,
                 applicationServerIp,
                 plan.ApplicationServerPort,
                 plan.ApplicationProtocol
@@ -395,8 +431,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         }
 
         public async Task WaitUntilReadyzAsync(
-            DeploymentPlan plan, 
-            ApplicationDeployment applicationDeployment,
+            DeploymentPlan plan,
+            Deployment applicationDeployment,
             IProgress<string> progress, CancellationToken cancellationToken)
         {
             var readyz = plan.HealthChecks.Where(x => x.Type == Contracts.Healthz.HealthCheckType.Readyz).ToList();

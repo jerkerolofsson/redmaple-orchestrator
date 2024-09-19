@@ -1,4 +1,5 @@
 using MudBlazor.Services;
+using MudExtensions.Services;
 using RedMaple.Orchestrator.Controller.Components;
 using RedMaple.Orchestrator.Controller.Controllers;
 
@@ -13,7 +14,7 @@ builder.Services.AddContainerServices()
 
 builder.Services.AddControllers(options =>
         options.InputFormatters.Add(new ByteArrayInputFormatter()));
-builder.Services.AddMudServices();
+builder.Services.AddMudServices().AddMudExtensions();
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
 builder.Services.AddSwaggerGen();

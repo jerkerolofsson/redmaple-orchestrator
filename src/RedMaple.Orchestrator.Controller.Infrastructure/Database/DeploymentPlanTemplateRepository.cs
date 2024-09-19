@@ -99,6 +99,45 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
+                    Name = "Ollama",
+                    IconUrl = "/container.png",
+                    CreateIngress = true,
+                    ApplicationProtocol = "http",
+                    Plan = """
+                    services:
+                      libetranslate:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "ollama/ollama:latest"
+                        restart: unless-stopped
+                        environment:
+                          LT_LOAD_ONLY: en,zh,zt,ja,ko,sv,de,fr
+                        ports:
+                        - target: 11434
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
+                new DeploymentPlanTemplate
+                {
+                    Name = "Libretranslate",
+                    IconUrl = "/container.png",
+                    CreateIngress = true,
+                    ApplicationProtocol = "http",
+                    Plan = """
+                    services:
+                      libetranslate:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "libretranslate/libretranslate:latest"
+                        restart: unless-stopped
+                        environment:
+                          LT_LOAD_ONLY: en,zh,zt,ja,ko,sv,de,fr
+                        ports:
+                        - target: 5000
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
                     Name = "Healthz Test",
                     IconUrl = "/logo.png",
                     ApplicationProtocol = "http",

@@ -54,42 +54,59 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
             {
                 var response = JsonSerializer.Deserialize<ContainerStatsResponse>(value);
 
-                int numCores = 1;
-                if (response?.CPUStats?.CPUUsage?.PercpuUsage is not null)
-                {
-                    numCores = response.CPUStats.CPUUsage.PercpuUsage.Length;
-                }
-                double? cpuDelta = null;
-                double? systemDelta = null;
-                if (_prev?.CPUStats?.CPUUsage?.TotalUsage is not null &&
-                    response?.CPUStats?.CPUUsage?.TotalUsage is not null)
-                {
-                    cpuDelta = (double)response.CPUStats.CPUUsage.TotalUsage.Value - (double)_prev.CPUStats.CPUUsage.TotalUsage.Value;
-                }
-                if (_prev?.CPUStats?.SystemUsage is not null &&
-                    response?.CPUStats?.SystemUsage is not null)
-                {
-                    systemDelta = (double)response.CPUStats.SystemUsage.Value - (double)_prev.CPUStats.SystemUsage.Value;
-                }
-                if (cpuDelta is not null && systemDelta is not null)
-                {
-                    double cpuPercent = 0;
-                    if (systemDelta > 0)
-                    {
-                        cpuPercent = (cpuDelta.Value / systemDelta.Value) * numCores * 100.0;
-                    }
-                    Logger.LogTrace("Container: {ContainerId} CPU: {cpuPercent}%", ContainerId, Math.Round(cpuPercent, 2));
-                    cpuPercent = Math.Min(0, cpuPercent);
-                    StatsManager.ReportCpuUsage(ContainerId, cpuPercent);
+                ReportCpuUsage(response);
+                ReportMemoryUsage(response);
 
-                    Owner.OnContainerStatsUpdated(ContainerId);
-                }
-
+                Owner.OnContainerStatsUpdated(ContainerId);
                 _prev = response;
             }
             catch (Exception)
             {
 
+            }
+        }
+
+        private void ReportMemoryUsage(ContainerStatsResponse? response)
+        {
+            if (response?.MemoryStats?.Stats is not null)
+            {
+                var usage = response.MemoryStats.Usage;
+                var limit = response.MemoryStats.Limit;
+                if (usage is not null)
+                {
+                    StatsManager.ReportMemoryUsage(ContainerId, usage.Value, limit);
+                }
+            }
+        }
+        private void ReportCpuUsage(ContainerStatsResponse? response)
+        {
+            int numCores = 1;
+            if (response?.CPUStats?.CPUUsage?.PercpuUsage is not null)
+            {
+                numCores = response.CPUStats.CPUUsage.PercpuUsage.Length;
+            }
+            double? cpuDelta = null;
+            double? systemDelta = null;
+            if (_prev?.CPUStats?.CPUUsage?.TotalUsage is not null &&
+                response?.CPUStats?.CPUUsage?.TotalUsage is not null)
+            {
+                cpuDelta = (double)response.CPUStats.CPUUsage.TotalUsage.Value - (double)_prev.CPUStats.CPUUsage.TotalUsage.Value;
+            }
+            if (_prev?.CPUStats?.SystemUsage is not null &&
+                response?.CPUStats?.SystemUsage is not null)
+            {
+                systemDelta = (double)response.CPUStats.SystemUsage.Value - (double)_prev.CPUStats.SystemUsage.Value;
+            }
+            if (cpuDelta is not null && systemDelta is not null)
+            {
+                double cpuPercent = 0;
+                if (systemDelta > 0)
+                {
+                    cpuPercent = (cpuDelta.Value / systemDelta.Value) * numCores * 100.0;
+                }
+                Logger.LogTrace("Container: {ContainerId} CPU: {cpuPercent}%", ContainerId, Math.Round(cpuPercent, 2));
+                cpuPercent = Math.Min(0, cpuPercent);
+                StatsManager.ReportCpuUsage(ContainerId, cpuPercent);
             }
         }
     }
@@ -176,7 +193,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
             }
         }
 
-        public async Task UpdateCollectorsForDeploymentAsync(ApplicationDeployment deployment)
+        public async Task UpdateCollectorsForDeploymentAsync(Deployment deployment)
         {
             var node = await _nodeManager.GetNodeByIpAddressAsync(deployment.ApplicationServerIp);
             if(node is not null)

@@ -1,0 +1,53 @@
+﻿@inject IClusterResourceManager clusterResourceManager
+
+@if (Dependencies is not null)
+{
+    foreach (var dependency in Dependencies)
+    {
+        <MudChip OnClose="async () => await RemoveDependencyAsync(dependency)" Color="Color.Tertiary" T="ClusterResource">@dependency.Slug</MudChip>
+    }
+    
+    <MudButton>Add Dependency</MudButton>
+}
+
+@if(_missingEnvironmentVariables.Count == 0)
+{
+    <div>No missing variables</div>
+}
+else
+{
+    <div>Missing variables:</div>
+    @foreach (var name in _missingEnvironmentVariables)
+    {
+        <MudChip Color="Color.Secondary" T=string>@name</MudChip>
+    }
+}
+
+@code {
+    /// <summary>
+    /// Environment variables required
+    /// </summary>
+    [Parameter]
+    public Dictionary<string, string>? EnvironmentVariables { get; set; }
+
+    [Parameter] public List<ClusterResource> Dependencies { get; set; } = new();
+    [Parameter] public EventCallback<List<ClusterResource>> DependenciesChanged { get; set; }
+
+    private List<string> _missingEnvironmentVariables = new();
+
+    private async Task RemoveDependencyAsync(ClusterResource resource)
+    {
+        Dependencies.Remove(resource);
+        await DependenciesChanged.InvokeAsync(Dependencies);
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (EnvironmentVariables is not null)
+        {
+            _missingEnvironmentVariables = EnvironmentVariables.Where(x => string.IsNullOrEmpty(x.Value)).Select(x => x.Key).ToList();
+        }
+
+    }
+
+}

@@ -5,7 +5,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 {
     public interface IContainerStatsCollectorManager
     {
-        Task UpdateCollectorsForDeploymentAsync(ApplicationDeployment deployment);
+        Task UpdateCollectorsForDeploymentAsync(Deployment deployment);
 
         /// <summary>
         /// Updates the list of containers from the node

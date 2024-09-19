@@ -28,5 +28,21 @@ namespace RedMaple.Orchestrator.Contracts.Node
         /// Can the node host application services
         /// </summary>
         public bool ApplicationHost { get; set; }
+
+        /// <summary>
+        /// Tags set for the node
+        /// </summary>
+        public string Tags { get; set; } = "";
+
+        /// <summary>
+        /// Name of the node
+        /// </summary>
+        public string Name { get; set; } = "";
+
+        /// <summary>
+        /// Geographical region
+        /// Can be used to determine as a filter when selecting nodes from
+        /// </summary>
+        public string Region { get; set; } = "";
     }
 }

@@ -20,5 +20,8 @@ namespace RedMaple.Orchestrator.Contracts.Node
         public bool IsIngressEnabled { get; set; }
         public bool IsLoadBalancerEnabled { get; set; }
         public bool IsApplicationHostEnabled { get; set; }
+        public required string Tags { get; set; }
+        public required string Name { get; set; }
+        public required string Region { get; set; }
     }
 }

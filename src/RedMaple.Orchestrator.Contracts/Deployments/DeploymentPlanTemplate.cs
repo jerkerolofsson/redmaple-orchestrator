@@ -18,6 +18,9 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public string? DefaultDomainPrefix { get; set; }
 
+        /// <summary>
+        /// Textual description of the deployment
+        /// </summary>
         public string? Description { get; set; }
 
         /// <summary>
@@ -45,5 +48,10 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Health check tests
         /// </summary>
         public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
+
+        /// <summary>
+        /// Required environment variables
+        /// </summary>
+        public List<string> RequiresEnvironment { get; set; } = new();
     }
 }

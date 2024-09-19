@@ -20,6 +20,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
         private readonly IGlobalDns _globalDns;
         private readonly IIngressRepository _repository;
         private readonly INodeManager _nodeManager;
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1);
 
         public IngressManager(
             ILogger<IngressManager> logger,
@@ -37,41 +38,50 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress)
         {
-            // Validate
-            var node = await _nodeManager.GetNodeByIpAddressAsync(service.IngressIp);
-            if (node is null)
-            {
-                var error = $"Ingress node not found at the specified IP";
-                _logger.LogError(error);
-                progress.Report(error);
-                throw new Exception(error);
+            await _lock.WaitAsync();
+            try 
+            { 
+
+                // Validate
+                var node = await _nodeManager.GetNodeByIpAddressAsync(service.IngressIp);
+                if (node is null)
+                {
+                    var error = $"Ingress node not found at the specified IP";
+                    _logger.LogError(error);
+                    progress.Report(error);
+                    throw new Exception(error);
+                }
+
+                await DeleteExistingIngressServicesWithSameDomainName(service);
+
+                _logger.LogInformation("Adding ingress-service {ServiceId}", service.Id);
+
+                progress.Report($"Generating HTTPS ingress certificate for {service.DomainName}..");
+                _logger.LogDebug("Generating certificate for ingress-service {ServiceId}", service.Id);
+                var certificate = await _certificateAuthority.GetOrCreateCertificateAsync(service.DomainName);
+                if (certificate?.PemCertPath is null || certificate?.PemKeyPath is null)
+                {
+                    throw new Exception($"CA error");
+                }
+                service.PemCert = await File.ReadAllBytesAsync(certificate.PemCertPath);
+                service.PemKey = await File.ReadAllBytesAsync(certificate.PemKeyPath);
+
+                // Save the entry in db
+                await _repository.AddIngressServiceAsync(service);
+
+                // Add DNS entry
+                await UpdateDnsServersAsync(service, progress);
+
+                // Create reverse proxy
+                _logger.LogInformation("Provisioning {BaseUrl} with ingress service {ServiceId}", node.BaseUrl, service.Id);
+                progress.Report($"Provisioning ingress service {node.IpAddress}..");
+                using var ingressClient = new NodeIngressClient(node.BaseUrl);
+                await ingressClient.AddIngressServiceAsync(service, progress);
             }
-
-            await DeleteExistingIngressServicesWithSameDomainName(service);
-
-            _logger.LogInformation("Adding ingress-service {ServiceId}", service.Id);
-
-            progress.Report($"Generating HTTPS ingress certificate for {service.DomainName}..");
-            _logger.LogDebug("Generating certificate for ingress-service {ServiceId}", service.Id);
-            var certificate = await _certificateAuthority.GetOrCreateCertificateAsync(service.DomainName);
-            if (certificate?.PemCertPath is null || certificate?.PemKeyPath is null)
+            finally
             {
-                throw new Exception($"CA error");
+                _lock.Release();
             }
-            service.PemCert = await File.ReadAllBytesAsync(certificate.PemCertPath);
-            service.PemKey = await File.ReadAllBytesAsync(certificate.PemKeyPath);
-
-            // Save the entry in db
-            await _repository.AddIngressServiceAsync(service);
-
-            // Add DNS entry
-            await UpdateDnsServersAsync(service, progress);
-
-            // Create reverse proxy
-            _logger.LogInformation("Provisioning {BaseUrl} with ingress service {ServiceId}", node.BaseUrl, service.Id);
-            progress.Report($"Provisioning ingress service {node.IpAddress}..");
-            using var ingressClient = new NodeIngressClient(node.BaseUrl);
-            await ingressClient.AddIngressServiceAsync(service, progress);
         }
 
         private async Task DeleteExistingIngressServicesWithSameDomainName(IngressServiceDescription service)
@@ -120,21 +130,35 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         public async Task DeleteIngressServiceAsync(string id)
         {
-            var services = await _repository.GetServicesAsync();
-            var service = services.FirstOrDefault(x => x.Id == id);
-
-            await _repository.DeleteIngressServiceAsync(id);
-
-            // Remove DNS entry
-            if (service is not null)
+            await _lock.WaitAsync();
+            try
             {
-                await RemoveDnsEntryAsync(service);
-                await RemoveReverseProxyAsync(service);
+
+                var services = await _repository.GetServicesAsync();
+                var service = services.FirstOrDefault(x => x.Id == id);
+
+                await _repository.DeleteIngressServiceAsync(id);
+
+                // Remove DNS entry
+                if (service is not null)
+                {
+                    await RemoveDnsEntryAsync(service);
+                    await RemoveReverseProxyAsync(service);
+                }
             }
+            finally
+            {
+                _lock.Release();
+            }
+
         }
 
         private async Task RemoveReverseProxyAsync(IngressServiceDescription? service)
         {
+            if(service is null)
+            {
+                return;
+            }
             var node = await _nodeManager.GetNodeByIpAddressAsync(service.IngressIp);
             if (node is not null)
             {
@@ -145,18 +169,42 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         private async Task RemoveDnsEntryAsync(IngressServiceDescription service)
         {
+            var entries = await _globalDns.GetDnsEntriesAsync();
+            entries.RemoveAll(x => x.Hostname == service.DomainName);
+            await _globalDns.SetDnsEntriesAsync(entries);
+            /*
             foreach (var dnsNode in await _nodeManager.GetNodesAsync())
             {
                 using var dnsClient = new NodeDnsClient(dnsNode.BaseUrl);
                 var entries = await dnsClient.GetDnsEntriesAsync();
                 entries.RemoveAll(x => x.Hostname == service.DomainName);
                 await dnsClient.SetDnsEntriesAsync(entries);
-            }
+            }*/
         }
 
         public async Task<List<IngressServiceDescription>> GetServicesAsync()
         {
             return await _repository.GetServicesAsync();
+        }
+
+        public async Task<bool> TryDeleteIngressServiceByDomainNameAsync(string? domainName)
+        {
+            if(domainName is null)
+            {
+                return false;
+            }
+
+            var services = await GetServicesAsync();
+            var result = false;
+            foreach (var service in await GetServicesAsync())
+            {
+                if (service.DomainName == domainName)
+                {
+                    await DeleteIngressServiceAsync(service.Id);
+                    result = true;
+                }
+            }
+            return result;
         }
     }
 }

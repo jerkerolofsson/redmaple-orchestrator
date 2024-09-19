@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,7 +12,7 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 {
-    internal class ApplicationDeploymentRepository : IApplicationDeploymentRepository
+    internal class ApplicationDeploymentRepository : DocumentStore<Deployment>, IApplicationDeploymentRepository
     {
         private readonly ILogger _logger;
 
@@ -20,6 +21,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
         {
             _logger = logger;
         }
+        protected override string SaveFilePath => GetConfigFilePath();
 
         private string GetLocalConfigDir()
         {
@@ -36,6 +38,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             return path;
         }
 
+
         private string GetConfigFilePath()
         {
             string path = GetLocalConfigDir();
@@ -44,65 +47,39 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             if (!File.Exists(filePath))
             {
                 // Create empty
-                File.WriteAllText(filePath, JsonSerializer.Serialize(new List<ApplicationDeployment>()));
+                File.WriteAllText(filePath, JsonSerializer.Serialize(new List<Deployment>()));
             }
             return filePath;
         }
 
-        public async Task SaveDeploymentAsync(ApplicationDeployment service)
+        public async Task SaveDeploymentAsync(Deployment service)
         {
             _logger.LogDebug("Saving deployment plan with ID {id}..", service.Id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
-        public async Task AddDeploymentAsync(ApplicationDeployment service)
+        public async Task AddDeploymentAsync(Deployment service)
         {
             _logger.LogInformation("Adding deployment plan with ID {id}..", service.Id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
 
-        public async Task<List<ApplicationDeployment>> GetDeploymentsAsync()
+        public async Task<List<Deployment>> GetDeploymentsAsync()
         {
-            return await LoadDataAsync();
+            return await LoadAsync();
         }
 
         public async Task DeleteDeploymentAsync(string id)
         {
             _logger.LogInformation("Removing deployment with ID {id}..", id);
-            var services = await LoadDataAsync();
+            var services = await LoadAsync();
             services.RemoveAll(x => x.Id == id);
-            await WriteDataAsync(services);
+            await CommitAsync(services);
         }
-
-        private async Task<List<ApplicationDeployment>> LoadDataAsync()
-        {
-            var path = GetConfigFilePath();
-            try
-            {
-                _logger.LogDebug("Loading deployment from {path}", path);
-                var json = await File.ReadAllTextAsync(path);
-                var services = JsonSerializer.Deserialize<List<ApplicationDeployment>>(json);
-                return services ?? new();
-            }
-            catch (Exception) { }
-            return new List<ApplicationDeployment>();
-        }
-
-        private JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { WriteIndented = true };
-
-        private async Task WriteDataAsync(List<ApplicationDeployment> services)
-        {
-            var json = JsonSerializer.Serialize(services, _jsonSerializerOptions);
-            var path = GetConfigFilePath();
-
-            _logger.LogDebug("Writing deployments to {path}", path);
-            await File.WriteAllTextAsync(path, json);
-        }
-
     }
 }

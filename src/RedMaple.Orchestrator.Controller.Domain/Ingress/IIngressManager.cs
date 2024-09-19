@@ -9,5 +9,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 {
     public interface IIngressManager : IIngressServiceController
     {
+        Task<bool> TryDeleteIngressServiceByDomainNameAsync(string? domainName);
     }
 }

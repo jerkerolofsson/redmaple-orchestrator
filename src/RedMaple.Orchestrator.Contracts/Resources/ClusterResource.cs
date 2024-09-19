@@ -15,7 +15,15 @@ namespace RedMaple.Orchestrator.Contracts.Resources
     {
         public required string Id { get; set; }
 
+        /// <summary>
+        /// Name of the resource, descriptive
+        /// </summary>
         public required string Name { get; set; }
+
+        /// <summary>
+        /// Slug of the resource
+        /// </summary>
+        public required string Slug { get; set; }
 
         /// <summary>
         /// A global resource is applied to all deployments

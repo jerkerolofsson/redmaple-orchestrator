@@ -1,13 +1,39 @@
 ﻿@using MudBlazor
+@using MudExtensions
 @inject INodeManager nodeManager
 
-    <MudSelect T="NodeInfo" Label="@Label" HelperText="Select node" Value="@Value" ValueChanged="OnValueChanged">
-        @foreach (var part in _nodes)
-        {
-            <MudSelectItem T="NodeInfo" Value=@part>@part.IpAddress</MudSelectItem>
+    <MudSelectExtended  T="NodeInfo"
+        ItemCollection="_nodes"
+        Label="@Label" HelperText="" Value="@Value" ValueChanged="OnValueChanged">
 
-        }
-    </MudSelect>
+        <ItemTemplate>
+            <MudStack Class="mud-width-full" Justify="Justify.SpaceBetween">
+                <MudText><b>@context.Value?.Name</b></MudText>
+                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+                <MudStack Row="true">
+                    <MudIcon Icon="@Icons.Material.Outlined.Computer" />
+                    <MudText>@(context.Value?.IpAddress)</MudText>
+                </MudStack>
+                @if (!string.IsNullOrEmpty(context.Value?.Region))
+                {
+                    <MudStack Row="true">
+                        <MudIcon Icon="@Icons.Material.Outlined.Map" />
+                    <MudText>@(context.Value?.Region)</MudText>
+                </MudStack>
+                }
+                <MudChipSet T="string">
+                    @if (context.Value?.Tags is not null)
+                    {
+                        foreach (var tag in context.Value.Tags)
+                        {
+                            <MudChip>@tag</MudChip>
+                        }
+                    }
+                </MudChipSet>
+            </MudStack>
+            </MudStack>
+        </ItemTemplate>
+    </MudSelectExtended>
 
 @code {
     [Parameter]

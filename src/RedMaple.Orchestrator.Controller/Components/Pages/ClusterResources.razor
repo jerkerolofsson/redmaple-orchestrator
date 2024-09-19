@@ -1,4 +1,5 @@
 ﻿@page "/resources"
+@using RedMaple.Orchestrator.Utilities
 @rendermode InteractiveServer
 @inject NavigationManager navigationManager
 @inject IClusterResourceManager resourceManager
@@ -63,10 +64,13 @@ else if(!_loading)
 
     private async Task AddOidcServerAsync()
     {
+        var name = "Identity Provider";
         var resource = new ClusterResource
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = "Identity Provider",
+                Name = name,
+                Persist = true,
+                Slug = SlugGenerator.Generate(name),
                 Kind = ResourceKind.OidcServer,
                 EnvironmentVariables = new Dictionary<string, string>
                 {
@@ -78,10 +82,13 @@ else if(!_loading)
     }
     private async Task AddDatabaseAsync()
     {
+        var name = "New Database";
         var resource = new ClusterResource
             {
                 Id = Guid.NewGuid().ToString(),
-                Name = "New Database",
+                Name = name,
+                Slug = SlugGenerator.Generate(name),
+                Persist = true,
                 Kind = ResourceKind.ConnectionString,
                 EnvironmentVariables = new Dictionary<string, string>
                 {

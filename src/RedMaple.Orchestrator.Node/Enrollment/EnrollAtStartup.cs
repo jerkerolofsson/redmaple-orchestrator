@@ -75,11 +75,13 @@ namespace RedMaple.Orchestrator.Node.Enrollment
                         HostAddresses = hostAddresses, 
                         Port = port,
                         IngressHttpsPort = ingressHttpsPort,
-
+                        Name = settings.Name,
+                        Region =settings.Region,
                         IsDnsEnabled = settings.EnableDns,
                         IsIngressEnabled = settings.IngressHost,
                         IsLoadBalancerEnabled = settings.LoadBalancerHost,
                         IsApplicationHostEnabled = settings.ApplicationHost,
+                        Tags = settings.Tags
                     };
 
                     using var response = await _httpClient.PostAsJsonAsync("http://controller/api/nodes", nodeInfo);

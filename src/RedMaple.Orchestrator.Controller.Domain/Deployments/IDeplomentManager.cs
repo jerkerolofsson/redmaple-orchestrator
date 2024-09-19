@@ -19,12 +19,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         Dictionary<string, string> GetDefaultEnvironmentVariables(DeploymentPlan plan);
 
         /// <summary>
-        /// Saves a deployment
+        /// Saves a deployment plan
         /// </summary>
         /// <param name="plan"></param>
         /// <returns></returns>
         Task SaveAsync(DeploymentPlan plan);
-        ValidationResult ValidatePlan(DeploymentPlan plan);
+        Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan);
 
         Task<List<DeploymentPlan>> GetDeploymentPlansAsync();
         Task PullImagesAsync(DeploymentPlan plan, IProgress<string> progress, IProgress<JSONMessage> pullProgress, CancellationToken cancellationToken);
@@ -46,8 +46,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         /// </summary>
         /// <param name="slug"></param>
         /// <returns></returns>
-        Task<List<ApplicationDeployment>> GetApplicationDeploymentsAsync(string slug);
-        Task<List<DeployedContainer>> GetDeployedContainersAsync(ApplicationDeployment appDeployment);
-        Task WaitUntilReadyzAsync(DeploymentPlan plan, ApplicationDeployment applicationDeployment, IProgress<string> progress, CancellationToken cancellationToken);
+        Task<List<Deployment>> GetApplicationDeploymentsAsync(string slug);
+        Task<List<DeployedContainer>> GetDeployedContainersAsync(Deployment appDeployment);
+        Task WaitUntilReadyzAsync(DeploymentPlan plan, Deployment applicationDeployment, IProgress<string> progress, CancellationToken cancellationToken);
+        string CreateSlug(string deploymentName);
     }
 }

@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Contracts\RedMaple.Orchestrator.Contracts.csproj" />
+    <ProjectReference Include="..\RedMaple.Orchestrator.Infrastructure\RedMaple.Orchestrator.Infrastructure.csproj" />
 	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
 	  <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
   </ItemGroup>
