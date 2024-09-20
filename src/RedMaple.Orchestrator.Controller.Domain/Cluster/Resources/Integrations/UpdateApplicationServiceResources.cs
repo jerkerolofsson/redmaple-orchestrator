@@ -51,6 +51,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                 env[key] = $"{protocol}://{notification.Deployment.ApplicationServerIp}:{port}";
             }
 
+            foreach(var exportEnv in notification.Deployment.Resource.Exported)
+            {
+                if(notification.Deployment.EnvironmentVariables.TryGetValue(exportEnv, out var value))
+                {
+                    env[exportEnv] = value;
+                }
+            }
+
             var resourceId = "app__" + notification.Deployment.Id;
             var slug = notification.Deployment.Slug;
             var resource = new ClusterResource

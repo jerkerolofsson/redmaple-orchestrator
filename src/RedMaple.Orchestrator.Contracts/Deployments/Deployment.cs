@@ -12,5 +12,6 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         ResourceCreationOptions Resource,
         string ApplicationServerIp, 
         int? ApplicationServerPort,
-        string? ApplicationProtocol);
+        string? ApplicationProtocol,
+        Dictionary<string,string> EnvironmentVariables);
 }

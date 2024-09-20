@@ -13,6 +13,6 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// <summary>
         /// Environment variables that are exported to the resource from the plan
         /// </summary>
-        public Dictionary<string, string> Export { get; set; } = new();
+        public List<string> Exported { get; set; } = new();
     }
 }

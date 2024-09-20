@@ -59,18 +59,25 @@
                 else if (_wizardPage == Pages.SelectTemplate)
                 {
                     <MudText Typo="Typo.h6">Select template</MudText>
-                    <div class="templates mt-5">
-                        @foreach(var template in _templates)
-                        {
-                            <MudPaper Class="pa-4 hover-elevation" @onclick="async () => await ApplyTemplateAsync(template)">
-                                <div class="template">
-                                    <img src="@template.IconUrl" />
-                                    <div>@template.Name</div>
-                                </div>
-                            </MudPaper>
-                        }
-                    </div>
 
+                    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                        @foreach(var category in _categories)
+                        {
+                            <MudTabPanel Text="@category">
+                                <div class="templates mt-5">
+                                    @foreach (var template in _templates.Where(x => x.Category == category))
+                                    {
+                                        <MudPaper Class="pa-4 hover-elevation" @onclick="async () => await ApplyTemplateAsync(template)">
+                                            <div class="template">
+                                                <img src="@template.IconUrl" />
+                                                <div>@template.Name</div>
+                                            </div>
+                                        </MudPaper>
+                                    }
+                                </div>
+                            </MudTabPanel>
+                        }
+                    </MudTabs>
 
                     <MudTextField Width="500px"
                                   Label="Compose"
@@ -172,6 +179,7 @@
             Resources = new()
         };
     private List<DeploymentPlanTemplate> _templates = new();
+    private List<string> _categories = new();
     private Pages _wizardPage = Pages.SelectTemplate;
 
     public enum Pages
@@ -191,6 +199,14 @@
 
         [Required]
         public string DomainName { get; set; } = "";
+
+        /// <summary>
+        /// Options related to the resource entity created from a deployment
+        /// </summary>
+        public ResourceCreationOptions Resource { get; set; } = new ResourceCreationOptions();
+
+        public string? Description {get;set;}
+        public string? Category { get; set; }
 
         ///<summary>
         /// Type of deployment
@@ -218,7 +234,6 @@
         public bool CreateIngress { get; set; }
 
         public NodeInfo? IngressNode { get; set; }
-        public List<string>? RequiredEnvironmentVariables = null;
 
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
         public string ApplicationProtocol { get; set; } = "https";
@@ -257,8 +272,6 @@
 
     private DeploymentPlan CreatePlan()
     {
-        model.RequiredEnvironmentVariables ??= new();
-
         model.EnvironmentVariables ??= new();
 
         var plan = new DeploymentPlan
@@ -278,12 +291,17 @@
                 ApplicationProtocol = model.ApplicationProtocol,
                 EnvironmentVariables = model.EnvironmentVariables,
                 HealthChecks = model.HealthChecks,
+                Resource = model.Resource,
+                Category = model.Category ?? "Apps"
             };
 
         // Add defaults (like domain name)
         foreach(var pair in deploymentManager.GetDefaultEnvironmentVariables(plan))
         {
-            model.EnvironmentVariables[pair.Key] = pair.Value;
+            if (!model.EnvironmentVariables.ContainsKey(pair.Key) || !string.IsNullOrEmpty(pair.Value))
+            {
+                model.EnvironmentVariables[pair.Key] = pair.Value;
+            }
         }
 
 
@@ -311,13 +329,14 @@
         }
 
         // Make sure that the required envionrment variables are set
+        /*
         foreach (string name in model.RequiredEnvironmentVariables)
-        {
-            if (!model.EnvironmentVariables.ContainsKey(name))
             {
+            if (!model.EnvironmentVariables.ContainsKey(name))
+                {
                 model.EnvironmentVariables[name] = "";
-            }
         }
+        }*/
         plan.EnvironmentVariables = model.EnvironmentVariables;
 
         return plan;
@@ -359,13 +378,20 @@
     private async Task ApplyTemplateAsync(DeploymentPlanTemplate template)
     {
         model.Plan = template.Plan;
+        model.Resource = template.Resource;
+        model.Description = template.Description;
+        model.Category = template.Category;
         model.DomainName = template.Name.ToLower().Replace(' ', '-') + "." + domain.DefaultDomain;
+        if(!string.IsNullOrEmpty(template.DomainNamePrefix))
+        {
+            model.DomainName = template.DomainNamePrefix.ToLower().Replace(' ', '-').TrimEnd('.') + "." + domain.DefaultDomain;
+        }
+
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
         model.HealthChecks = template.HealthChecks;
-        model.RequiredEnvironmentVariables = template.RequiresEnvironment;
         model.Resources = new();
         model.EnvironmentVariables = new();
 
@@ -380,9 +406,19 @@
     protected override async Task OnInitializedAsync()
     {
         _templates.Clear();
+        _categories.Clear();
+        _categories.Add("Apps");
+        _categories.Add("Services");
+        _categories.Add("Development");
+        _categories.Add("Test");
         foreach (var template in await _templateProvider.GetDeploymentsAsync())
         {
             _templates.Add(template);
+            template.Category ??= "Apps";
+            if(!_categories.Contains(template.Category))
+            {
+                _categories.Add(template.Category);
+            }
         }
     }
 

@@ -38,6 +38,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress)
         {
+            progress.Report($"Configuring ingress-server {service.DomainName} for {service.Id}..");
+
             await _lock.WaitAsync();
             try 
             { 
@@ -56,7 +58,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
                 _logger.LogInformation("Adding ingress-service {ServiceId}", service.Id);
 
-                progress.Report($"Generating HTTPS ingress certificate for {service.DomainName}..");
                 _logger.LogDebug("Generating certificate for ingress-service {ServiceId}", service.Id);
                 var certificate = await _certificateAuthority.GetOrCreateCertificateAsync(service.DomainName);
                 if (certificate?.PemCertPath is null || certificate?.PemKeyPath is null)
@@ -89,7 +90,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             var services = await _repository.GetServicesAsync();
             foreach (var ingressService in services.Where(x => x.DomainName == service.DomainName || x.Id == service.Id))
             {
-                await DeleteIngressServiceAsync(ingressService.Id);
+                await DeleteIngressServiceNoLockAsync(ingressService.Id);
             }
         }
 
@@ -133,24 +134,28 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             await _lock.WaitAsync();
             try
             {
-
-                var services = await _repository.GetServicesAsync();
-                var service = services.FirstOrDefault(x => x.Id == id);
-
-                await _repository.DeleteIngressServiceAsync(id);
-
-                // Remove DNS entry
-                if (service is not null)
-                {
-                    await RemoveDnsEntryAsync(service);
-                    await RemoveReverseProxyAsync(service);
-                }
+                await DeleteIngressServiceNoLockAsync(id);
             }
             finally
             {
                 _lock.Release();
             }
 
+        }
+
+        private async Task DeleteIngressServiceNoLockAsync(string id)
+        {
+            var services = await _repository.GetServicesAsync();
+            var service = services.FirstOrDefault(x => x.Id == id);
+
+            await _repository.DeleteIngressServiceAsync(id);
+
+            // Remove DNS entry
+            if (service is not null)
+            {
+                await RemoveDnsEntryAsync(service);
+                await RemoveReverseProxyAsync(service);
+            }
         }
 
         private async Task RemoveReverseProxyAsync(IngressServiceDescription? service)

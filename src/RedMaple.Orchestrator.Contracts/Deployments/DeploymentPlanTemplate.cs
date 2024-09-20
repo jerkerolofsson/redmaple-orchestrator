@@ -11,6 +11,7 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
     {
         public required string IconUrl { get; set; }
 
+        public string? DomainNamePrefix { get; set; }
         public string ApplicationProtocol { get; set; } = "https";
 
         /// <summary>
@@ -22,6 +23,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Textual description of the deployment
         /// </summary>
         public string? Description { get; set; }
+
+        /// <summary>
+        /// Can be used to group deployments
+        /// </summary>
+        public string? Category { get; set; } = "Apps";
 
         /// <summary>
         /// Name of the deployment
@@ -50,8 +56,8 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public List<DeploymentHealthCheck> HealthChecks { get; set; } = new();
 
         /// <summary>
-        /// Required environment variables
+        /// Options related to the resource entity created from a deployment
         /// </summary>
-        public List<string> RequiresEnvironment { get; set; } = new();
+        public ResourceCreationOptions Resource { get; set; } = new ResourceCreationOptions();
     }
 }

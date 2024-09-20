@@ -25,6 +25,9 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public required string Name { get; set; }
 
+        public string? Description { get; set; }
+        public string Category { get; set; } = "Apps";
+
         /// <summary>
         /// Ingress service created on this domain name (if set)
         /// </summary>
@@ -110,6 +113,9 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public ResourceHealthCheckResult? Health { get; set; }
 
+        /// <summary>
+        /// Options related to the resource entity created from a deployment
+        /// </summary>
         public ResourceCreationOptions Resource { get; set; } = new ResourceCreationOptions();
 
         /// <summary>

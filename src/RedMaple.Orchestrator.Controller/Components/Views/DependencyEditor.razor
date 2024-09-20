@@ -10,19 +10,6 @@
     <MudButton>Add Dependency</MudButton>
 }
 
-@if(_missingEnvironmentVariables.Count == 0)
-{
-    <div>No missing variables</div>
-}
-else
-{
-    <div>Missing variables:</div>
-    @foreach (var name in _missingEnvironmentVariables)
-    {
-        <MudChip Color="Color.Secondary" T=string>@name</MudChip>
-    }
-}
-
 @code {
     /// <summary>
     /// Environment variables required

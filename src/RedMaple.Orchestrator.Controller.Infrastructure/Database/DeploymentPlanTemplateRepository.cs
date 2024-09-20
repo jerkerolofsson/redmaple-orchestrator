@@ -73,11 +73,12 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         private async Task InitializeAsync() 
         {
-            List<DeploymentPlanTemplate> defaultTemplates = 
+            List<DeploymentPlanTemplate> defaultTemplates =
                 [
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Test",
                     Name = "Blank",
                     IconUrl = "/logo.png",
                     Plan = ""
@@ -85,24 +86,66 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Name = "Busybox",
-                    IconUrl = "/container.png",
+                    Category = "Services",
+                    Name = "Rabbit MQ",
+                    IconUrl = "/brands/rabbitmq.png",
                     CreateIngress = false,
+                    ApplicationProtocol = "rabbitmq",
+                    HealthChecks = new()
+                    {
+                        DeploymentHealthCheck.TcpLivez,
+                    },
+                    Resource = new ResourceCreationOptions
+                    {
+                        Create = true,
+                        Exported = ["RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS"]
+                    },
                     Plan = """
                     services:
-                      healthz:
+                      rabbitmq:
                         container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
-                        image: "busybox"
+                        image: "rabbitmq:3-management"
                         restart: unless-stopped
+                        environment:
+                          RABBITMQ_ERLANG_COOKIE: "SWQOKODSQALRPCLNMEQG"
+                          RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER}
+                          RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS}
+                          RABBITMQ_DEFAULT_VHOST: "/"                        
+                        ports:
+                        - target: 5672
+                          published: ${REDMAPLE_APP_PORT}
+                        - target: 15672
+                          published: ${RABBITMQ_MGMT_PORT}
                     """
                 },
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Services",
                     Name = "Ollama",
                     IconUrl = "/container.png",
                     CreateIngress = true,
                     ApplicationProtocol = "http",
+                    HealthChecks = new()
+                    {
+                        new DeploymentHealthCheck()
+                        {
+                            Type = HealthCheckType.Livez,
+                            RelativeUrl = "/",
+                            HealthyStatusCode = 200,
+                            Method = HealthCheckMethod.HttpGet,
+                            Target = HealthCheckTarget.Application,
+                        },
+                        new DeploymentHealthCheck()
+                        {
+                            Type = HealthCheckType.Readyz,
+                            RelativeUrl = "/",
+                            HealthyStatusCode = 200,
+                            Method = HealthCheckMethod.HttpGet,
+                            Target = HealthCheckTarget.Application,
+                        }
+                    },
+
                     Plan = """
                     services:
                       libetranslate:
@@ -118,6 +161,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 },
                 new DeploymentPlanTemplate
                 {
+                    Category = "Services",
                     Name = "Libretranslate",
                     IconUrl = "/container.png",
                     CreateIngress = true,
@@ -138,6 +182,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Test",
                     Name = "Healthz Test",
                     IconUrl = "/logo.png",
                     ApplicationProtocol = "http",
@@ -162,6 +207,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Services",
                     Name = "Prometheus",
                     IconUrl = "/brands/prometheus.png",
                     ApplicationProtocol = "http",
@@ -187,69 +233,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Name = "Teedy",
-                    Description = "Teedy is an open source, lightweight document management system for individuals and businesses.",
-                    IconUrl = "coding.png",
-                    ApplicationProtocol = "http",
-                    CreateIngress = true,
-                    Plan = """
-                    services:
-                      teedy-server:
-                        image: sismics/docs:v1.11
-                        restart: unless-stopped
-                        ports:
-                          # Map internal port to host
-                          - ${REDMAPLE_APP_PORT}:8080
-                        environment:
-                          # Base url to be used
-                          DOCS_BASE_URL: ${REDMAPLE_DOMAIN_NAME}
-                          # Set the admin email
-                          DOCS_ADMIN_EMAIL_INIT: "admin@example.com"
-                          # Set the admin password (in this example: "superSecure")
-                          DOCS_ADMIN_PASSWORD_INIT: "$$2a$$05$$PcMNUbJvsk7QHFSfEIDaIOjk1VI9/E7IPjTKx.jkjPxkx2EOKSoPS"
-                          # Setup the database connection. "teedy-db" is the hostname
-                          # and "teedy" is the name of the database the application
-                          # will connect to.
-                          DATABASE_URL: "jdbc:postgresql://teedy-db:5432/teedy"
-                          DATABASE_USER: "teedy_db_user"
-                          DATABASE_PASSWORD: "teedy_db_password"
-                          DATABASE_POOL_SIZE: "10"
-                        volumes:
-                          - /docs/data:/data
-                        networks:
-                          - docker-internal
-                          - internet
-                        depends_on:
-                          - teedy-db
-
-                    # DB for Teedy
-                      teedy-db:
-                        image: postgres:13.1-alpine
-                        restart: unless-stopped
-                        expose:
-                          - 5432
-                        environment:
-                          POSTGRES_USER: "teedy_db_user"
-                          POSTGRES_PASSWORD: "teedy_db_password"
-                          POSTGRES_DB: "teedy"
-                        volumes:
-                          - /docs/db:/var/lib/postgresql/data
-                        networks:
-                          - docker-internal
-
-                    networks:
-                      # Network without internet access. The db does not need
-                      # access to the host network.
-                      docker-internal:
-                        driver: bridge
-                        internal: true
-                      internet:
-                        driver: bridge
-                    """
-                },
-
-                new DeploymentPlanTemplate
-                {
+                    Category = "Test",
                     Name = "Blazor Sample HTTP",
                     IconUrl = "/brands/blazor.png",
                     ApplicationProtocol = "http",
@@ -268,6 +252,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 },
                 new DeploymentPlanTemplate
                 {
+                    Category = "Test",
                     Name = "Blazor Sample HTTPS",
                     IconUrl = "/brands/blazor.png",
                     ApplicationProtocol = "https",
@@ -291,6 +276,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Test",
                     Name = "ASP.net",
                     IconUrl = "/brands/aspnet.png",
                     ApplicationProtocol = "https",
@@ -321,9 +307,36 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
             new DeploymentPlanTemplate
             {
+                Category = "Development",
                 Name = "Docker Registry",
+                DomainNamePrefix = "docker-repo",
                 IconUrl = "/brands/docker-mark-blue.svg",
                 ApplicationProtocol = "http",
+                CreateIngress=false,
+                Plan = """
+                services:
+                    docker-registry:
+                        image: registry:2
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        restart: always
+                        ports:
+                            - ${REDMAPLE_APP_PORT}:5005
+                        environment:
+                            REGISTRY_HTTP_ADDR: 0.0.0.0:5005
+                            REGISTRY_HTTP_HOST: ${REDMAPLE_DOMAIN_NAME}
+                            REGISTRY_HTTP_SECRET: secret
+                """
+            },
+
+
+            new DeploymentPlanTemplate
+            {
+                Category = "Development",
+                Name = "Docker Registry Pull-through cache",
+                DomainNamePrefix = "docker-cache",
+                IconUrl = "/brands/docker-mark-blue.svg",
+                ApplicationProtocol = "http",
+                CreateIngress=false,
                 Plan = """
                 services:
                     docker-registry:
@@ -333,6 +346,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                         ports:
                             - ${REDMAPLE_APP_PORT}:5000
                         environment:
+                            remoteurl: https://registry-1.docker.io
                             REGISTRY_HTTP_ADDR: 0.0.0.0:5000
                             REGISTRY_HTTP_HOST: ${REDMAPLE_DOMAIN_NAME}
                             REGISTRY_HTTP_SECRET: secret
@@ -341,6 +355,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
             new DeploymentPlanTemplate
             {
+                Category = "Development",
                 Name = "Liget",
                 IconUrl = "/brands/nuget.png",
                 ApplicationProtocol = "http",
@@ -358,6 +373,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             },
             new DeploymentPlanTemplate
             {
+                Category = "Apps",
                 Name = "mediawiki",
                 IconUrl = "https://djeqr6to3dedg.cloudfront.net/repo-logos/library/mediawiki/live/logo-1720462231938.png",
                 ApplicationProtocol = "http",
@@ -392,14 +408,15 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
             new DeploymentPlanTemplate
             {
+                Category = "Services",
                 Name = "redis",
                 IconUrl = "/brands/redis.png",
                 ApplicationProtocol = "redis",
                 CreateIngress = false,
-                    HealthChecks = new()
-                    {
-                        DeploymentHealthCheck.TcpLivez,
-                    },
+                HealthChecks = new()
+                {
+                    DeploymentHealthCheck.TcpLivez,
+                },
 
                 Plan = """
                 services:

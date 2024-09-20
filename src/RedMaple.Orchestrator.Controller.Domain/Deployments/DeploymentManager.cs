@@ -294,6 +294,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
+            await TakeDownAsync(plan, progress, cancellationToken);
+
             _logger.LogInformation("Deleting deployments for {DeploymentSlug}", plan.Slug);
             foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
             {
@@ -376,6 +378,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
+            progress.Report("Validating plan..");
             await ValidatePlanAsync(plan);
             plan.Health = new Healthz.Models.ResourceHealthCheckResult { Status = HealthStatus.Degraded };
 
@@ -406,7 +409,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 plan.Resource,
                 applicationServerIp,
                 plan.ApplicationServerPort,
-                plan.ApplicationProtocol
+                plan.ApplicationProtocol,
+                plan.EnvironmentVariables
             );
 
             // Generate pfx certificate for the application server

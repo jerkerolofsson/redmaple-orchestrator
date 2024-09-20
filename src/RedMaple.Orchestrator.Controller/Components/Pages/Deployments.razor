@@ -27,116 +27,120 @@ else if(!_loading)
     </div>
 
 
-    <MudCard Class="pa-5 mt-5">
-
-        <MudText Typo="Typo.h6">Deployments</MudText>
-
-        <MudDataGrid Bordered="true" Dense="true"
-                     EditMode="DataGridEditMode.Cell"
-                     Items="@_plans"
-                     SortMode="SortMode.Multiple">
-            <Columns>
-                <TemplateColumn StickyLeft="true" HeaderStyle="width: 1rem">
-                    <CellTemplate>
-                        @if (context.Item.IconUrl is not null)
-                        {
-                            <img src="@context.Item.IconUrl" class="deployment-icon" alt="logo" />
-                        }
-                        else
-                        {
-                            <img src="/data-server.png" class="deployment-icon" alt="logo" />
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Name">
-                    <CellTemplate>
-                        @{
-                            string url = $"/deployments/{context.Item.Slug}";
-                        }
-                        <a target="_blank" href="@url">@context.Item.Name</a>
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Health">
-                    <CellTemplate>
-                        <HealthBadge Health="@context.Item.Health" />
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Ingress">
-                    <CellTemplate>
-                        @if (context.Item.DomainName is not null && context.Item.CreateIngress)
-                        {
-                            string url = $"https://{context.Item.DomainName}";
-                            <a target="_blank" href="@url">@url</a>
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
-
-                <TemplateColumn Title="Application">
-                    <CellTemplate>
-                        @if (!context.Item.Up)
-                        {
-                            <MudText Typo="Typo.body1" Color="Color.Error">-</MudText>                            
-                        }
-                        else
-                        {
-                            @foreach (var appServerIp in context.Item.ApplicationServerIps)
-                            {
-                                string url = $"{context.Item.ApplicationProtocol}://{appServerIp}:{context.Item.ApplicationServerPort}";
-                                if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="FilterDeployments">
+        @foreach (var category in _categories)
+        {
+            <MudTabPanel Text="@category">
+                <MudDataGrid Bordered="true" Dense="true"
+                             EditMode="DataGridEditMode.Cell"
+                             Items="@_filteredPlans"
+                             SortMode="SortMode.Multiple">
+                    <Columns>
+                        <TemplateColumn StickyLeft="true" HeaderStyle="width: 1rem">
+                            <CellTemplate>
+                                @if (context.Item.IconUrl is not null)
                                 {
-                                    <a href="@url">@url</a>
+                                    <img src="@context.Item.IconUrl" class="deployment-icon" alt="logo" />
                                 }
                                 else
                                 {
-                                    <span>@url</span>
+                                    <img src="/data-server.png" class="deployment-icon" alt="logo" />
                                 }
-                            }
-                        }
-                    </CellTemplate>
-                </TemplateColumn>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                <TemplateColumn StickyRight="true">
-                    <CellTemplate>
-                        <div class="d-flex align-center">
-                            @if(context.Item.Up)
-                            {
-                                <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
-                            }
-                            else
-                            {
-                                <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
-                            }
+                        <TemplateColumn Title="Name">
+                            <CellTemplate>
+                                @{
+                                    string url = $"/deployments/{context.Item.Slug}";
+                                }
+                                <a target="_blank" href="@url">@context.Item.Name</a>
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                            <MudMenu Icon="@Icons.Material.Filled.MoreVert">
-                                <MudMenuItem OnClick="async() => await PullImagesAsync(context.Item)">
-                                    Pull Images
-                                </MudMenuItem>
+                        <TemplateColumn Title="Health">
+                            <CellTemplate>
+                                <HealthBadge Health="@context.Item.Health" />
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                                <MudMenuItem OnClick="async() => await RestartAsync(context.Item)">
-                                    Restart
-                                </MudMenuItem>
+                        <TemplateColumn Title="Ingress">
+                            <CellTemplate>
+                                @if (context.Item.DomainName is not null && context.Item.CreateIngress)
+                                {
+                                    string url = $"https://{context.Item.DomainName}";
+                                    <a target="_blank" href="@url">@url</a>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                                <MudMenuItem OnClick="async() => await DeleteAsync(context.Item)">
-                                    Delete
-                                </MudMenuItem>
+                        <TemplateColumn Title="Application">
+                            <CellTemplate>
+                                @if (!context.Item.Up)
+                                {
+                                    <MudText Typo="Typo.body1" Color="Color.Error">-</MudText>
+                                }
+                                else
+                                {
+                                    @foreach (var appServerIp in context.Item.ApplicationServerIps)
+                                    {
+                                        string url = $"{context.Item.ApplicationProtocol}://{appServerIp}:{context.Item.ApplicationServerPort}";
+                                        if (context.Item.ApplicationProtocol == "http" || context.Item.ApplicationProtocol == "https")
+                                        {
+                                            <a href="@url">@url</a>
+                                        }
+                                        else
+                                        {
+                                            <span>@url</span>
+                                        }
+                                    }
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
 
-                            </MudMenu>
-                        </div>
-                    </CellTemplate>
-                </TemplateColumn>
-            </Columns>
-        </MudDataGrid>
-    </MudCard>
+                        <TemplateColumn StickyRight="true">
+                            <CellTemplate>
+                                <div class="d-flex align-center">
+                                    @if (context.Item.Up)
+                                    {
+                                        <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
+                                    }
+                                    else
+                                    {
+                                        <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
+                                    }
 
-    <div class="mt-3 ml-3">@_plans.Count deployment(s)</div>
+                                    <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+                                        <MudMenuItem OnClick="async() => await PullImagesAsync(context.Item)">
+                                            Pull Images
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="async() => await RestartAsync(context.Item)">
+                                            Restart
+                                        </MudMenuItem>
+
+                                        <MudMenuItem OnClick="async() => await DeleteAsync(context.Item)">
+                                            Delete
+                                        </MudMenuItem>
+
+                                    </MudMenu>
+                                </div>
+                            </CellTemplate>
+                        </TemplateColumn>
+                    </Columns>
+                </MudDataGrid>
+            </MudTabPanel>
+        }
+    </MudTabs>
+
+    <div class="mt-3 ml-3">@_filteredPlans.Count / @_plans.Count deployment(s)</div>
 }
 @code {
     private ProgressView _progress = null!;
 
+    private List<string> _categories = new();
     private List<DeploymentPlan> _plans = new();
+    private List<DeploymentPlan> _filteredPlans = new();
     private bool _loading = false;
     private string? _error = null;    
     private CancellationTokenSource? _cancellationTokenSource = null;
@@ -311,5 +315,30 @@ else if(!_loading)
     private async Task LoadPlansAsync()
     {
         _plans = await deploymentManager.GetDeploymentPlansAsync();
+        _categories.Clear();
+        _categories.Add("Apps");
+        _categories.Add("Services");
+        _categories.Add("Development");
+        _categories.Add("Test");
+        foreach (var plan in _plans)
+        {
+            plan.Category ??= "Apps";
+            if (!_categories.Contains(plan.Category))
+            {
+                _categories.Add(plan.Category);
+            }
+        }
+        FilterDeployments(0);
+    }
+
+    private void FilterDeployments(int index)
+    {
+        _filteredPlans.Clear();
+        var category = _categories[index];
+        _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
+        InvokeAsync(() =>
+        {
+            this.StateHasChanged();
+        });
     }
 }

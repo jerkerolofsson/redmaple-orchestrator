@@ -54,7 +54,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         public async Task SaveDeploymentAsync(Deployment service)
         {
-            _logger.LogDebug("Saving deployment plan with ID {id}..", service.Id);
+            _logger.LogTrace("Saving deployment with ID {id}..", service.Id);
             var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);
@@ -62,7 +62,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
         }
         public async Task AddDeploymentAsync(Deployment service)
         {
-            _logger.LogInformation("Adding deployment plan with ID {id}..", service.Id);
+            _logger.LogTrace("Adding deployment with ID {id}..", service.Id);
             var services = await LoadAsync();
             services.RemoveAll(x => x.Id == service.Id);
             services.Add(service);

@@ -15,13 +15,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
         private readonly ConcurrentDictionary<string, ClusterResource> _resources = new();
         private readonly IClusterResourceRepository _repo;
         private bool _isInitialized = false;
+        private SemaphoreSlim _lock = new SemaphoreSlim(1);
 
         public ClusterResourceManager(IClusterResourceRepository repo)
         {
             _repo = repo;
         }
 
-        public async Task<List<ClusterResource>> GetClusterResourcesAsync(Dictionary<string,string> environmentVariables)
+        public async Task<List<ClusterResource>> GetClusterResourcesAsync(Dictionary<string, string> environmentVariables)
         {
             var assignedResources = new List<ClusterResource>();
             var missingEnvironmentVariables = environmentVariables.Where(x => string.IsNullOrEmpty(x.Value)).Select(x => x.Key).ToList();
@@ -52,18 +53,34 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
 
         public async Task<List<ClusterResource>> GetClusterResourcesAsync()
         {
-            await EnsureInitializedAsync();
-            var resources = _resources.Values.ToList();
-            return resources;
+            await _lock.WaitAsync();
+            try
+            {
+                await EnsureInitializedAsync();
+                var resources = _resources.Values.ToList();
+                return resources;
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
 
         public async Task AddResourceAsync(ClusterResource resource)
         {
-            await EnsureInitializedAsync();
-            _resources[resource.Id] = resource;
-            if(resource.Persist)
+            await _lock.WaitAsync();
+            try
             {
-                await _repo.SaveResourceAsync(resource);    
+                await EnsureInitializedAsync();
+                _resources[resource.Id] = resource;
+                if (resource.Persist)
+                {
+                    await _repo.SaveResourceAsync(resource);
+                }
+            }
+            finally
+            {
+                _lock.Release();
             }
         }
 
@@ -81,29 +98,53 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
 
         public async Task RemoveResourceAsync(ClusterResource resource)
         {
-            await EnsureInitializedAsync();
-            _resources.TryRemove(resource.Id, out _);
-            if(resource.Persist)
+            await _lock.WaitAsync();
+            try
             {
-                await _repo.DeleteResourceAsync(resource);
+                await EnsureInitializedAsync();
+                _resources.TryRemove(resource.Id, out _);
+                if (resource.Persist)
+                {
+                    await _repo.DeleteResourceAsync(resource);
+                }
+            }
+            finally
+            {
+                _lock.Release();
             }
         }
 
         public async Task SaveResourceAsync(ClusterResource resource)
         {
-            await EnsureInitializedAsync();
-            _resources[resource.Id] = resource;
-            if (resource.Persist)
+            await _lock.WaitAsync();
+            try
             {
-                await _repo.SaveResourceAsync(resource);
+                await EnsureInitializedAsync();
+                _resources[resource.Id] = resource;
+                if (resource.Persist)
+                {
+                    await _repo.SaveResourceAsync(resource);
+                }
+            }
+            finally
+            {
+                _lock.Release();
             }
         }
 
         public async Task<ClusterResource?> GetClusterResourceAsync(string id)
         {
-            await EnsureInitializedAsync();
-            _resources.TryGetValue(id, out var resource);
-            return resource;
+            await _lock.WaitAsync();
+            try
+            {
+                await EnsureInitializedAsync();
+                _resources.TryGetValue(id, out var resource);
+                return resource;
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
     }
 }

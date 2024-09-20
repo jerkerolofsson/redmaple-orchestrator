@@ -15,6 +15,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
     internal class DeploymentPlanRepository : DocumentStore<DeploymentPlan>, IDeploymentPlanRepository
     {
         private readonly ILogger _logger;
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1);
 
         public DeploymentPlanRepository(ILogger<DeploymentPlanRepository> logger)
         {
@@ -56,11 +57,20 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 service.Id = Guid.NewGuid().ToString();
             }
-            _logger.LogDebug("Saving deployment plan with ID {id}..", service.Id);
-            var services = await LoadAsync();
-            services.RemoveAll(x => x.Id == service.Id);
-            services.Add(service);
-            await CommitAsync(services);
+            _logger.LogTrace("Saving deployment plan with ID {id}..", service.Id);
+
+            await _lock.WaitAsync();
+            try
+            {
+                var services = await LoadAsync();
+                services.RemoveAll(x => x.Id == service.Id);
+                services.Add(service);
+                await CommitAsync(services);
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
         public async Task AddDeploymentPlanAsync(DeploymentPlan service)
         {
@@ -68,26 +78,54 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 service.Id = Guid.NewGuid().ToString();
             }
-            _logger.LogInformation("Adding deployment plan with ID {id}..", service.Id);
-            var services = await LoadAsync();
-            services.RemoveAll(x => x.Id == service.Id);
-            services.Add(service);
-            await CommitAsync(services);
+            _logger.LogTrace("Adding deployment plan with ID {id}..", service.Id);
+            await _lock.WaitAsync();
+            try
+            {
+                var services = await LoadAsync();
+                services.RemoveAll(x => x.Id == service.Id);
+                services.Add(service);
+                await CommitAsync(services);
+            }
+            finally
+            {
+                _lock.Release();
+
+                }
         }
 
         public async Task<List<DeploymentPlan>> GetDeploymentPlansAsync()
         {
-            return await LoadAsync();
+            await _lock.WaitAsync();
+            try
+            {
+                return await LoadAsync();
+            }
+            finally
+            {
+                _lock.Release();
+            }
         }
 
         public async Task DeleteDeploymentPlanAsync(string id)
+        {
+            await _lock.WaitAsync();
+            try
+            {
+                await DeleteDeploymentPlanNoLockAsync(id);
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
+
+        private async Task DeleteDeploymentPlanNoLockAsync(string id)
         {
             _logger.LogInformation("Removing deployment plan with ID {id}..", id);
             var services = await LoadAsync();
             services.RemoveAll(x => x.Id == id);
             await CommitAsync(services);
         }
-
-
     }
 }
