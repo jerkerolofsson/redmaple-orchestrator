@@ -1,5 +1,6 @@
 ﻿using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Contracts.Ingress;
+using RedMaple.Orchestrator.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +11,10 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 {
-    internal class GlobalDnsRepository : IGlobalDnsRepository
+    internal class GlobalDnsRepository : DocumentStore<DnsEntry>, IGlobalDnsRepository
     {
+        protected override string SaveFilePath => GetConfigFilePath();
+
         private string GetLocalConfigDir()
         {
             string path = "/data/redmaple/controller/dns";
@@ -41,32 +44,14 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         public async Task SetDnsEntriesAsync(List<DnsEntry> entries)
         {
-            await WriteEntriesAsync(entries);
+            await CommitAsync(entries);
         }
 
         public async Task<List<DnsEntry>> GetDnsEntriesAsync()
         {
-            return await LoadEntriesAsync();
+            return await LoadAsync();
         }
 
-        public async Task<List<DnsEntry>> LoadEntriesAsync()
-        {
-            var path = GetConfigFilePath();
-            try
-            {
-                var json = await File.ReadAllTextAsync(path);
-                var services = JsonSerializer.Deserialize<List<DnsEntry>>(json);
-                return services ?? new();
-            }
-            catch (Exception) { }
-            return new List<DnsEntry>();
-        }
-        private async Task WriteEntriesAsync(List<DnsEntry> services)
-        {
-            var json = JsonSerializer.Serialize(services);
-            var path = GetConfigFilePath();
-            await File.WriteAllTextAsync(path, json);
-        }
 
     }
 }
