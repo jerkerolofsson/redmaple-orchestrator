@@ -1,29 +1,37 @@
 ﻿@if (_vm is not null)
 {
     <MudDataGrid Bordered="true" Dense="true"
-    ReadOnly="false"
-    EditMode="DataGridEditMode.Cell"
-    Items="@_vm.Variables"
-    SortMode="SortMode.Multiple">
+        ReadOnly="@ReadOnly"
+        EditMode="DataGridEditMode.Cell"
+        Items="@_vm.Variables"
+        SortMode="SortMode.Multiple">
         <Columns>
             <PropertyColumn Property="x => x.Key" Title="Name" />
             <PropertyColumn Property="x => x.Value" Title="Value" />
 
-            <TemplateColumn StickyRight="true">
-                <EditTemplate>
-                    <MudButton OnClick="async() => RemoveItem(context.Item.Key)">Delete</MudButton>
-                </EditTemplate>
-            </TemplateColumn>
+            @if (!ReadOnly)
+            {
+                <TemplateColumn StickyRight="true">
+                    <EditTemplate>
+                        <MudButton OnClick="async() => RemoveItem(context.Item.Key)">Delete</MudButton>
+                    </EditTemplate>
+                </TemplateColumn>
+            }
         </Columns>
     </MudDataGrid>
 
-    <MudCardActions>
-        <MudButton OnClick="@AddItem" Color="Color.Primary" Class="add-item-btn">Add Item</MudButton>
-    </MudCardActions>
+    @if (!ReadOnly)
+    {
+        <MudCardActions>
+            <MudButton OnClick="@AddItem" Color="Color.Primary" Class="add-item-btn">Add Item</MudButton>
+        </MudCardActions>
+    }
 }
 
 @code {
     [Parameter] public Dictionary<string, string?> EnvironmentVariables { get; set; } = new();
+
+    [Parameter] public bool ReadOnly { get; set; } = false;
 
     private EnvironmentVariableViewModel? _vm;
 

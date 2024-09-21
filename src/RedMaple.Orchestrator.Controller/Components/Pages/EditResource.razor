@@ -3,8 +3,10 @@
 @rendermode InteractiveServer
 @inject IClusterResourceManager resourceManager
 @inject NavigationManager navigationManager
+@inject IDialogService dialogService
 
 <MudPopoverProvider />
+<MudDialogProvider />
 
 @if(model is not null)
 {
@@ -28,15 +30,26 @@
         <MudCard Class="pa-5 mt-5">
              <MudItem>
                 <MudText Typo="Typo.h6">Environment Variables</MudText>
-                <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables" />
-                @if (!model.Persist)
-                {
-                    <MudAlert Variant="Variant.Text">This resource is read-only</MudAlert>
+                @{
+                    bool readOnly = !model.Persist;
                 }
+                <EnvironmentVariableEditor ReadOnly="@readOnly" EnvironmentVariables="@model.EnvironmentVariables" />
             </MudItem>
         </MudCard>
 
-        <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled" Class="mr-auto mt-5">Save</MudButton>
+        @if (model.Persist)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Start" Class="mt-5">
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+                <MudButton
+                    OnClick="async () => await DeleteAsync()"
+                    ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
+            </MudStack>
+        }
+        else
+        {
+            <MudAlert class="mt-5" Variant="Variant.Text">This resource is read-only</MudAlert>
+        }
     </EditForm>
 }
 
@@ -59,6 +72,25 @@
             await resourceManager.SaveResourceAsync(model);
 
             navigationManager.NavigateTo("/resources");
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (model is null)
+        {
+            return;
+        }
+        bool? result = await dialogService.ShowMessageBox(
+           "Confirm",
+           "Do you really want to delete the resource",
+           yesText: "Yeah", cancelText: "Cancel");
+        if (result == true)
+        {
+            await resourceManager.RemoveResourceAsync(model);
+
+            navigationManager.NavigateTo("/resources");
+
         }
     }
 }

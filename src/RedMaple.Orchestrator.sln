@@ -51,9 +51,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.AnsiEscapeCodes", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.AnsiEscapeCodes.Tests", "..\tests\RedMaple.AnsiEscapeCodes.Tests\RedMaple.AnsiEscapeCodes.Tests.csproj", "{CDDC9983-DCA8-47A4-A063-98D049A53532}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Infrastructure", "RedMaple.Orchestrator.Infrastructure\RedMaple.Orchestrator.Infrastructure.csproj", "{97F2376F-CE06-4ECE-B6FD-7604366B3EC3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Infrastructure", "RedMaple.Orchestrator.Infrastructure\RedMaple.Orchestrator.Infrastructure.csproj", "{97F2376F-CE06-4ECE-B6FD-7604366B3EC3}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Utilities", "RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj", "{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Utilities", "RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj", "{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

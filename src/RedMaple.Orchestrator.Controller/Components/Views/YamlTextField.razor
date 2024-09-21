@@ -1,0 +1,54 @@
+﻿@using YamlDotNet.Core
+ <MudTextField Label="@Label"
+                Class="@Class"
+                Value="@Value"
+                ValueChanged="async (string value) => await OnValueChanged(value)"
+                Style="@Style"
+                Lines="@Lines"/>
+@if(!IsValid)
+{
+    <MudAlert Severity="Severity.Error">@_errorMessage</MudAlert>
+}
+@code {
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Style { get; set; } = "";
+    [Parameter] public string Class { get; set; } = "";
+    [Parameter] public int Lines { get; set; } = 20;
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    public bool IsValid { get; private set; } = false;
+    private string _errorMessage { get; set; } = "";
+
+    private void Validate(string yaml)
+    {
+        _errorMessage = "";
+        try
+        {
+            var deserializer = new YamlDotNet.Serialization.Deserializer();
+            deserializer.Deserialize(yaml);
+            IsValid = true;
+        }
+        catch (YamlException ex)
+        {
+            _errorMessage = $"{ex.Message}: Line: {ex.Start.Line}, Columns {ex.Start.Column}";
+            IsValid = false;
+        }
+        catch(Exception)
+        {
+            IsValid = false;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        Validate(Value);
+        base.OnParametersSet();
+    }
+
+    private async Task OnValueChanged(string value)
+    {
+        await ValueChanged.InvokeAsync(value);
+        Validate(value);
+    }
+}

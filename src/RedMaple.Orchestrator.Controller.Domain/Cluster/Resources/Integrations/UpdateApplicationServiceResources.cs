@@ -46,16 +46,23 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
             {
                 var name = notification.Deployment.Slug;
                 var port = notification.Deployment.ApplicationServerPort;
-                var protocol = notification.Deployment.ApplicationProtocol.ToLower();
+                var protocol = "tcp";
+                if (notification.Deployment.ApplicationProtocol is not null)
+                {
+                    protocol = notification.Deployment.ApplicationProtocol.ToLower();
+                }
                 var key = $"services__{name}__{protocol}__0";
                 env[key] = $"{protocol}://{notification.Deployment.ApplicationServerIp}:{port}";
             }
 
-            foreach(var exportEnv in notification.Deployment.Resource.Exported)
+            if (notification.Deployment.Resource?.Exported is not null)
             {
-                if(notification.Deployment.EnvironmentVariables.TryGetValue(exportEnv, out var value))
+                foreach (var exportEnv in notification.Deployment.Resource.Exported)
                 {
-                    env[exportEnv] = value;
+                    if (notification.Deployment.EnvironmentVariables.TryGetValue(exportEnv, out var value))
+                    {
+                        env[exportEnv] = value;
+                    }
                 }
             }
 

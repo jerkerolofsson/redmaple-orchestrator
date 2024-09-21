@@ -328,7 +328,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 """
             },
 
-
             new DeploymentPlanTemplate
             {
                 Category = "Development",
@@ -434,7 +433,45 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                             - REDIS_PORT=6379
                             - REDIS_DATABASES=16
                 """
-            }
+            },
+
+            new DeploymentPlanTemplate
+            {
+                Category = "Networking",
+                Name = "unifi",
+                IconUrl = "/brands/unifi.webp",
+                ApplicationProtocol = "https",
+                HealthChecks = new()
+                {
+                    DeploymentHealthCheck.TcpLivez,
+                },
+
+                Plan = """
+                services:
+                    redis:
+                        image: lscr.io/linuxserver/unifi-controller:latest
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        restart: always
+                        ports:
+                        - "${REDMAPLE_APP_PORT}:8443"
+                        - 3478:3478/udp
+                        - 10001:10001/udp
+                        - 8080:8080
+                        - 1900:1900/udp
+                        - 8843:8843
+                        - 8880:8880
+                        - 6789:6789
+                        - 5514:5514/udp
+                        volumes:
+                         - /data/unifi:/config
+                        environment:
+                          - PUID=1000
+                          - PGID=1000
+                          - TZ=Etc/UTC
+                          - MEM_LIMIT=1024
+                          - MEM_STARTUP=1024
+                """
+            },
             ];
 
             foreach (var template in defaultTemplates)

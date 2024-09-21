@@ -192,7 +192,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                         }
                     }
                 }
-                catch (Exception) 
+                catch (Exception ex) 
                 {
                     result.Errors.Add(new ValidationFailure("Plan", "Failed to parse docker compose"));
                 }
