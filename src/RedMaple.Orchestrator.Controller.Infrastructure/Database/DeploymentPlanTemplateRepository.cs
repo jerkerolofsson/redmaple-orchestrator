@@ -247,7 +247,34 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     """
                 },
 
-
+                 new DeploymentPlanTemplate
+                {
+                    Resource = new ResourceCreationOptions
+                    {
+                        Exported = ["MONGODB_USERNAME", "MONGODB_PASSWORD"]
+                    },
+                    Category = "Services",
+                    CreateIngress= false,
+                    Name = "MongoDB 6.0",
+                    IconUrl = "/brands/mongodb.png",
+                    ApplicationProtocol = "tcp",
+                    Plan = """
+                    services:
+                      postgres:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "mongo:6.0"
+                        restart: unless-stopped
+                        environment:
+                          POSTGRES_DB: ${POSTGRES_DB}
+                          MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+                          MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+                        volumes:
+                        - "MONGODATA:/data/db"
+                        ports:
+                        - target: 27017
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
 
                 new DeploymentPlanTemplate
                 {
@@ -256,6 +283,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                         Exported = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
                     },
                     Category = "Services",
+                    CreateIngress= false,
                     Name = "PostgreSQL",
                     IconUrl = "/brands/postgres.png",
                     ApplicationProtocol = "tcp",
