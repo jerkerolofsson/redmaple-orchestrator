@@ -1,5 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
+using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Contracts.Resources;
 using RedMaple.Orchestrator.DockerCompose.Models;
 using System;
 using System.Collections.Generic;
@@ -60,24 +62,20 @@ namespace RedMaple.Orchestrator.DockerCompose
             foreach(var pair in plan.volumes)
             {
                 var name = pair.Key;
-                var volume = pair.Value;
+                DockerComposeVolume composeVolume = pair.Value;
 
-                var existingVolumes = await _docker.ListVolumesAsync(cancellationToken);
-                var existingVolume = existingVolumes.Volumes.Where(x => x.Name == name).FirstOrDefault();
-                if (existingVolume is null)
+                var volumeCreateParameters = new VolumesCreateParameters
                 {
-                    var driverName = volume.driver ?? "local";
-                    var response = await _docker.CreateVolumeAsync(new VolumesCreateParameters
+                    Name = name,
+                    Driver = composeVolume.driver ?? "local",
+                    DriverOpts = composeVolume.driver_opts,
+                    Labels = new Dictionary<string, string>
                     {
-                        Name = name,
-                        Driver = driverName,
-                        DriverOpts = volume.driver_opts,
-                        Labels = new Dictionary<string, string>
-                        {
-                            [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
-                        }
-                    }, cancellationToken);
-                }
+                        [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
+                    }
+                };
+
+                await _volumes.TryCreateVolumeAsync(volumeCreateParameters, cancellationToken);
             }
         }
 

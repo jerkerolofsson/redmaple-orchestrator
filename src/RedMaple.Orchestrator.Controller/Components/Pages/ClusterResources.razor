@@ -1,8 +1,10 @@
 ﻿@page "/resources"
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
 @using RedMaple.Orchestrator.Utilities
 @rendermode InteractiveServer
 @inject NavigationManager navigationManager
 @inject IClusterResourceManager resourceManager
+@inject IDialogService dialogService
 
 <MudThemeProvider />
 <MudPopoverProvider />
@@ -16,11 +18,14 @@
 }
 else if(!_loading)
 {
-
     <div class="buttons">
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
-                   @onclick="async () => await AddDatabaseAsync()">Add Database</MudButton>
+                   @onclick="async () => await AddConnectionStringAsync()">Add Connection String</MudButton>
+
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddVolumeAsync()">Add Volume</MudButton>
 
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
@@ -28,31 +33,35 @@ else if(!_loading)
     </div>
 
 
-    <MudCard Class="pa-5 mt-5">
+    <MudText Typo="Typo.h6">Resources</MudText>
 
-        <MudText Typo="Typo.h6">Resources</MudText>
+    <MudDataGrid Bordered="true" Dense="true"
+                    EditMode="DataGridEditMode.Cell"
+                    Items="@_resources"
+                    SortMode="SortMode.Multiple">
+        <Columns>
 
-        <MudDataGrid Bordered="true" Dense="true"
-                     EditMode="DataGridEditMode.Cell"
-                     Items="@_resources"
-                     SortMode="SortMode.Multiple">
-            <Columns>
-
-                <TemplateColumn Title="Name">
-                    <CellTemplate>
-                        @{
-                            var url = $"/resources/{context.Item.Id}";
+            <TemplateColumn Title="Name">
+                <CellTemplate>
+                    @{
+                        var url = $"/resources/{context.Item.Id}";
+                        var icon = "/resource-icons/resource.png";
+                        if(context.Item.Kind == ResourceKind.Volume)
+                        {
+                            icon = "/resource-icons/volume.png";
                         }
-                        <a href="@url">@context.Item.Name</a>
-                    </CellTemplate>
-                </TemplateColumn>
-                <PropertyColumn Property="x => x.Kind" Title="Kind" />
-            </Columns>
-        </MudDataGrid>
-
-        <MudCardActions>
-        </MudCardActions>
-    </MudCard>
+                    }
+                    <a href="@url">
+                        <div style="display: flex; align-items: center">
+                        <img src="@icon" class="icon" alt="@context.Item.Kind.ToString()" />
+                        <div>@context.Item.Name</div>
+                        </div>
+                    </a>
+                </CellTemplate>
+            </TemplateColumn>
+            <PropertyColumn Property="x => x.Kind" Title="Kind" />
+        </Columns>
+    </MudDataGrid>
 }
 @code {
     private ProgressView _progress = null!;
@@ -62,41 +71,93 @@ else if(!_loading)
     private string? _error = null;    
     private CancellationTokenSource? _cancellationTokenSource = null;
 
+    private async Task<string?> EnterNameAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterNameDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is not null)
+        {
+            return result.Data.ToString();
+        }
+        return null;
+    }
+
     private async Task AddOidcServerAsync()
     {
-        var name = "Identity Provider";
-        var resource = new ClusterResource
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = name,
-                Persist = true,
-                Slug = SlugGenerator.Generate(name),
-                Kind = ResourceKind.OidcServer,
-                EnvironmentVariables = new Dictionary<string, string>
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
                 {
-                    ["OIDC_AUTHORITY"] = "https://identityserver"
-                }
-            };
-        await resourceManager.AddResourceAsync(resource);
-        navigationManager.NavigateTo($"/resources/{resource.Id}");
-    }
-    private async Task AddDatabaseAsync()
-    {
-        var name = "New Database";
-        var resource = new ClusterResource
-            {
-                Id = Guid.NewGuid().ToString(),
-                Name = name,
-                Slug = SlugGenerator.Generate(name),
-                Persist = true,
-                Kind = ResourceKind.ConnectionString,
-                EnvironmentVariables = new Dictionary<string, string>
-                {
-                    ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
-                }
-            };
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Persist = true,
+                    Slug = SlugGenerator.Generate(name),
+                    Kind = ResourceKind.OidcServer,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                        ["OIDC_AUTHORITY"] = "https://identityserver"
+                    }
+                };
             await resourceManager.AddResourceAsync(resource);
-        navigationManager.NavigateTo($"/resources/{resource.Id}");
+            navigationManager.NavigateTo($"/resources/{resource.Id}");
+        }
+    }
+
+    private async Task AddVolumeAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var slug = SlugGenerator.Generate(name);
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Slug = slug,
+                    Persist = true,
+                    Kind = ResourceKind.Volume,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                    },
+                    Volume = new VolumeResource
+                    {
+                        Name = name,
+                        Slug  = slug,
+                        Driver = "local",
+                        FileMode = "0777",
+                        DirMode = "0777",
+                        Username = "Guest",
+                        Password = "Guest",
+                        Type = "cifs",
+                        Location = "//server-name/dir"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/{resource.Id}");
+        }
+    }
+
+    private async Task AddConnectionStringAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Slug = SlugGenerator.Generate(name),
+                    Persist = true,
+                    Kind = ResourceKind.ConnectionString,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                        ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/{resource.Id}");
+        }
     }
 
     private void Cancel()

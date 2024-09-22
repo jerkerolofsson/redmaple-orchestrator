@@ -23,6 +23,8 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public required Dictionary<string, string> EnvironmentVariables { get; set; }
 
+        public List<VolumeBind> VolumeBinds { get; set; } = new List<VolumeBind>();
+
         public required DeploymentKind Kind { get; set; }
 
         /// <summary>

@@ -27,6 +27,51 @@
                 }
             </MudItem>
         </MudCard>
+
+        @if(model.Volume is not null)
+        {
+            <MudCard Class="pa-5 mt-5">
+                <MudItem>
+                    <MudText Typo="Typo.h6">Volume</MudText>
+                    <MudTextField Label="Driver"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.Driver"
+                                  For="@(() => model.Volume.Driver)" />
+
+                    <MudTextField Label="Type"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.Type"
+                                  For="@(() => model.Volume.Type)" />
+
+                    <MudTextField Label="Directory mode"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.DirMode"
+                                  For="@(() => model.Volume.DirMode)" />
+
+                    <MudTextField Label="File mode"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.FileMode"
+                                  For="@(() => model.Volume.FileMode)" />
+
+                    <MudTextField Label="Location"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.Location"
+                                  For="@(() => model.Volume.Location)" />
+
+                    <MudTextField Label="Username"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.Username"
+                                  For="@(() => model.Volume.Username)" />
+
+                    <MudTextField Label="Password"
+                                  Class="mt-5 pa-5"
+                                  @bind-Value="model.Volume.Password"
+                                  For="@(() => model.Volume.Password)" />
+                </MudItem>
+            </MudCard>
+
+        }
+
         <MudCard Class="pa-5 mt-5">
              <MudItem>
                 <MudText Typo="Typo.h6">Environment Variables</MudText>
@@ -69,6 +114,11 @@
         if (model is not null)
         {
             model.Slug = SlugGenerator.Generate(model.Name);
+            if(model.Volume is not null)
+            {
+                model.Volume.Name = model.Name;
+                model.Volume.Slug = model.Slug;
+            }
             await resourceManager.SaveResourceAsync(model);
 
             navigationManager.NavigateTo("/resources");

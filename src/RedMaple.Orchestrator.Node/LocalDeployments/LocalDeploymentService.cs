@@ -4,16 +4,22 @@ using RedMaple.Orchestrator.DockerCompose;
 using RedMaple.Orchestrator.Node.Controllers;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
 
 namespace RedMaple.Orchestrator.Node.LocalDeployments
 {
     public class LocalDeploymentService : ILocalDeploymentService
     {
         private readonly ILogger<LocalDeploymentService> _logger;
+        private readonly IDockerVolumeManager _dockerVolumeManager;
         private readonly IDockerCompose _compose;
-        public LocalDeploymentService(ILogger<LocalDeploymentService> logger, IDockerCompose compose)
+        public LocalDeploymentService(
+            ILogger<LocalDeploymentService> logger,
+            IDockerVolumeManager dockerVolumeManager,
+            IDockerCompose compose)
         {
             _logger = logger;
+            _dockerVolumeManager = dockerVolumeManager;
             _compose = compose;
         }
 
@@ -62,11 +68,11 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             var envFile = Path.Combine(dir, "plan.env");
             var upFile = Path.Combine(dir, "up.sh");
             var downFile = Path.Combine(dir, "down.sh");
+            var volumesFile = Path.Combine(dir, "volumes.json");
 
-            switch(plan.Kind)
+            switch (plan.Kind)
             {
                 case DeploymentKind.DockerCompose:
-                    progress.Report("Writing docker-compose.yaml..");
                     var dockerComposeFile = Path.Combine(dir, "docker-compose.yaml");
                     await WritePlanFileAsync(dockerComposeFile, plan.Plan);
 
@@ -76,6 +82,7 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
                     throw new ArgumentException("Unsupported plan kind " + plan.Kind);
             }
 
+            await WriteVolumeBindsAsync(volumesFile, plan.VolumeBinds);
             await WriteEnvironmentFileAsync(envFile, plan.EnvironmentVariables);
             await WriteUpScriptAsync(upFile, envFile);
             await WriteDownScriptAsync(downFile, envFile);
@@ -101,6 +108,15 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
         {
             await File.WriteAllTextAsync(path, contents);
         }
+        private async Task WriteVolumeBindsAsync(string volumesFile, List<VolumeBind>? volumeBinds)
+        {
+            if (volumeBinds is not null && volumeBinds.Count > 0)
+            {
+                string contents = JsonSerializer.Serialize(volumeBinds); 
+                await File.WriteAllTextAsync(volumesFile, contents);
+            }
+        }
+
         private async Task WriteEnvironmentFileAsync(string envFile, Dictionary<string, string> environmentVariables)
         {
             StringBuilder contents = new StringBuilder();
@@ -165,11 +181,23 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             var dir = GetLocalConfigDir(slug);
             var composePath = Path.Combine(dir, "docker-compose.yaml");
             var envPath = Path.Combine(dir, "plan.env");
+            var volumesPath = Path.Combine(dir, "volumes.json");
 
             var plan = DockerComposeParser.ParseFile(composePath);
             try
             {
                 _logger.LogInformation("UP: {DockerComposePlanName}", plan.name);
+
+                if (File.Exists(volumesPath))
+                {
+                    using var stream = File.OpenRead(volumesPath);
+                    var volumeBinds = await JsonSerializer.DeserializeAsync<List<VolumeBind>>(stream);
+                    if (volumeBinds != null)
+                    {
+                        await _dockerVolumeManager.CreateVolumesAsync(volumeBinds, progress, cancellationToken);
+                    }
+                }
+                //_dockerVolumeManager.TryCreateVolumesAsync()
                 await _compose.UpAsync(progress, plan, envPath, cancellationToken);
             }
             catch(Exception ex)

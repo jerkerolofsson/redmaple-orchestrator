@@ -9,8 +9,10 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
 {
     public interface IDeploymentPlanTemplateRepository
     {
-        Task<List<DeploymentPlanTemplate>> GetDeploymentPlansAsync();
-        Task DeleteDeploymentPlanAsync(string name);
-        Task AddDeploymentPlanAsync(DeploymentPlanTemplate service);
+        Task<List<DeploymentPlanTemplate>> GetTemplatesAsync();
+        Task DeleteTemplateAsync(string name);
+        Task AddTemplateAsync(DeploymentPlanTemplate service);
+        Task SaveTemplateAsync(DeploymentPlanTemplate service);
+        Task<DeploymentPlanTemplate?> GetTemplateByNameAsync(string name);
     }
 }

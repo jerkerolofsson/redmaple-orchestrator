@@ -6,6 +6,7 @@ using RedMaple.Orchestrator.Security.Builder;
 using RedMaple.Orchestrator.Security.Serialization;
 using RedMaple.Orchestrator.Security.Services;
 using System.IO;
+using System.IO.Compression;
 using System.Net;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
@@ -88,7 +89,8 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             [FromQuery] string? cn,
             [FromQuery] string dnsName,
             [FromQuery] string? ipAddress,
-            [FromQuery] string? password)
+            [FromQuery] string? password,
+            [FromQuery] string? format)
         {
             // Get intermediate
             var root = await _ca.GetRootCertificateAsync();
@@ -118,10 +120,74 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             }
 
             var cert = builder.BuildSignedCertificate(issuer);
-            var pfxBytes = CertificateSerializer.ToPfx(cert, password, [issuer, root]);
+            var filename = dnsName ?? "cert";
 
-            var stream = new MemoryStream(pfxBytes);
-            return File(stream, "text/plain", "cert.pfx");
+            if (format == "pfx")
+            {
+                var stream = new MemoryStream(CertificateSerializer.ToPfx(cert, password, [issuer, root]));
+                return File(stream, "text/plain", $"{filename}.pfx");
+            }
+            else
+            {
+                var pfx = CertificateSerializer.ToPfx(cert, password, [issuer, root]);
+
+                var rootCaCrtBytes = CertificateSerializer.ToCert(root);
+                var intermediateCaCrtBytes = CertificateSerializer.ToCert(issuer);
+
+                var pksc7Bytes = CertificateSerializer.ExportCertificateChainAsByteArray(X509ContentType.Pkcs7, cert);
+                var pksc12Bytes = CertificateSerializer.ExportCertificateChainAsByteArray(X509ContentType.Pkcs12, cert);
+                var certBytes = CertificateSerializer.ToCert(cert);
+                var certPems = CertificateSerializer.ExportCertificatePemsAsByteArray(cert, issuer, root); // nginx order
+                var keyPem = CertificateSerializer.ExportPrivateKeyToPem(cert);
+
+                var stream = new MemoryStream();
+                using (var zip = new ZipArchive(stream, ZipArchiveMode.Create, leaveOpen:true))
+                {
+                    var pfxEntry = zip.CreateEntry("cert.pfx");
+                    using (var entryStream = pfxEntry.Open())
+                    {
+                        await entryStream.WriteAsync(pfx);
+                    }
+                    var certPemsEntry = zip.CreateEntry("cert.pem");
+                    using (var entryStream = certPemsEntry.Open())
+                    {
+                        await entryStream.WriteAsync(certPems);
+                    }
+                    var keyEntry = zip.CreateEntry("key.pem");
+                    using (var entryStream = keyEntry.Open())
+                    {
+                        await entryStream.WriteAsync(keyPem);
+                    }
+                    var crtEntry = zip.CreateEntry("cert.crt");
+                    using (var entryStream = crtEntry.Open())
+                    {
+                        await entryStream.WriteAsync(certBytes);
+                    }
+                    var pksc7 = zip.CreateEntry("cert.pksc7");
+                    using (var entryStream = pksc7.Open())
+                    {
+                        await entryStream.WriteAsync(pksc7Bytes);
+                    }
+                    var pksc12 = zip.CreateEntry("cert.pksc12");
+                    using (var entryStream = pksc12.Open())
+                    {
+                        await entryStream.WriteAsync(pksc12Bytes);
+                    }
+
+                    var rootCaEntry = zip.CreateEntry("root_ca.crt");
+                    using (var entryStream = rootCaEntry.Open())
+                    {
+                        await entryStream.WriteAsync(rootCaCrtBytes);
+                    }
+                    var intermediateCaEntry = zip.CreateEntry("intermediate_ca.crt");
+                    using (var entryStream = intermediateCaEntry.Open())
+                    {
+                        await entryStream.WriteAsync(intermediateCaCrtBytes);
+                    }
+                }
+                stream.Seek(0, SeekOrigin.Begin);
+                return File(stream, "application/zip", $"{filename}.zip");
+            }
         }
     }
 }

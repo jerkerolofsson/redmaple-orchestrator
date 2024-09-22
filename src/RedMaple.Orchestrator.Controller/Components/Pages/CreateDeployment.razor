@@ -40,31 +40,12 @@
         </MudStack>
 
 
-        @if (_wizardPage == Pages.SelectDomainName)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Define deployment</MudText>
-
-                    <MudTextField Label="Deployment Name" Class="mt-5"
-                                    @bind-Value="model.Name" For="@(() => model.Name)" />
-
-                    <MudTextField Label="Domain Name" Class="mt-5"
-                                    @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
-
-                    <MudText Typo="Typo.h6" Class="mt-10">Dependencies</MudText>
-                    <DependencyEditor 
-                        @bind-Dependencies="@model.Resources"
-                        EnvironmentVariables="@model.EnvironmentVariables"/>
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.SelectTemplate)
+        @if (_wizardPage == Pages.SelectTemplate)
         {
             <MudText Typo="Typo.h6">Select template</MudText>
 
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-                @foreach(var category in _categories)
+                @foreach (var category in _categories)
                 {
                     <MudTabPanel Text="@category">
                         <div class="templates mt-5">
@@ -82,6 +63,20 @@
                 }
             </MudTabs>
         } 
+        else if (_wizardPage == Pages.SelectDomainName)
+        {
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Define deployment</MudText>
+
+                    <MudTextField Label="Deployment Name" Class="mt-5"
+                                    @bind-Value="model.Name" For="@(() => model.Name)" />
+
+                    <MudTextField Label="Domain Name" Class="mt-5"
+                                    @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                </MudCardContent>
+            </MudCard>
+        }
         else if (_wizardPage == Pages.EditComposePlan)
         {
             <MudCard Class="pa-5 mt-5">
@@ -100,20 +95,43 @@
         {
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6">Select target nodes</MudText>
+                    <MudText Typo="Typo.h6">Ingress Server</MudText>
+                    <MudText Typo="Typo.subtitle1">Reverse proxy will be created here</MudText>
 
-                    <MudSwitch @bind-Value="model.CreateIngress">Create Ingress</MudSwitch>
+                    <MudSwitch Color="Color.Primary" Class="mt-5" @bind-Value="model.CreateIngress">Create Ingress</MudSwitch>
 
                     @if (model.CreateIngress)
                     {
-                        <MudItem xs="12" sm="6" md="4" Class="mt-5">
+                        <MudItem xs="12" sm="6" md="4">
                             <SelectNode MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
                         </MudItem>
                     }
 
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6">Application Server</MudText>
+                    <MudText Typo="Typo.subtitle1">Containers will be deployed here</MudText>
                     <MudItem xs="12" sm="6" md="4" Class="mt-5">
                         <SelectNode MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
                     </MudItem>
+                </MudCardContent>
+            </MudCard>
+        }
+        else if (_wizardPage == Pages.ConfigureResources)
+        {
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+
+                    <MudText Typo="Typo.h6">Dependencies</MudText>
+                    <DependencyEditor @bind-Dependencies="@model.Resources"
+                                      EnvironmentVariables="@model.EnvironmentVariables" />
+
+                    <MudText Typo="Typo.h6" Class="mt-5">Volumes</MudText>
+                    <VolumesEditor @bind-VolumeBinds="@model.VolumeBinds" />
+
                 </MudCardContent>
             </MudCard>
         }
@@ -122,7 +140,7 @@
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
                     <MudText Typo="Typo.h6">Environment Variables</MudText>
-                    <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables"/>
+                    <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables" />
                 </MudCardContent>
             </MudCard>
         }
@@ -206,8 +224,9 @@
         EditComposePlan = 1,
         SelectDomainName = 2,
         ConfigureServers = 3,
-        ConfigureEnvironmentVariables = 4,
-        ValidateAndConfirm = 5
+        ConfigureResources = 4,
+        ConfigureEnvironmentVariables = 5,
+        ValidateAndConfirm = 6
     }
 
     public class CreateDeploymentModel
@@ -217,6 +236,8 @@
 
         [Required]
         public string DomainName { get; set; } = "";
+
+        public List<VolumeBind> VolumeBinds { get; set; } = new();
 
         /// <summary>
         /// Options related to the resource entity created from a deployment
@@ -285,6 +306,7 @@
     private async Task OnLeavingPageAsync(Pages page)
     {
         this._workPlan = CreatePlan();
+
         _validationResult = await deploymentManager.ValidatePlanAsync(this._workPlan);
     }
 
@@ -310,8 +332,18 @@
                 EnvironmentVariables = model.EnvironmentVariables,
                 HealthChecks = model.HealthChecks,
                 Resource = model.Resource,
-                Category = model.Category ?? "Apps"
+                Category = model.Category ?? "Apps",
+                VolumeBinds = model.VolumeBinds,
             };
+
+        // Missing volumes
+        foreach(var volumeBind in deploymentManager.GetMissingVolumeNames(plan))
+        {
+            if(!model.VolumeBinds.Where(x => x.Name == volumeBind.Name).Any())
+            {
+                model.VolumeBinds.Add(volumeBind);
+            }
+        }
 
         // Add defaults (like domain name)
         foreach(var pair in deploymentManager.GetDefaultEnvironmentVariables(plan))
@@ -429,7 +461,7 @@
         _categories.Add("Services");
         _categories.Add("Development");
         _categories.Add("Test");
-        foreach (var template in await _templateProvider.GetDeploymentsAsync())
+        foreach (var template in await _templateProvider.GetTemplatesAsync())
         {
             _templates.Add(template);
             template.Category ??= "Apps";

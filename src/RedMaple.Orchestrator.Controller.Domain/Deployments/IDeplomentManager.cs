@@ -50,5 +50,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         Task<List<DeployedContainer>> GetDeployedContainersAsync(Deployment appDeployment);
         Task WaitUntilReadyzAsync(DeploymentPlan plan, Deployment applicationDeployment, IProgress<string> progress, CancellationToken cancellationToken);
         string CreateSlug(string deploymentName);
+        List<VolumeBind> GetMissingVolumeNames(DeploymentPlan plan);
     }
 }

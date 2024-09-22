@@ -1,0 +1,60 @@
+﻿@rendermode InteractiveServer
+@page "/templates/{name}"
+@inject IDeploymentTemplateProvider templateProvider
+@inject NavigationManager navigationManager
+
+<MudPopoverProvider />
+
+@if(_template is not null)
+{
+    <MudText Typo="Typo.h6">@Name</MudText>
+
+    <EditForm Model="@_template" OnValidSubmit="async () => await OnValidSubmitAsync()">            
+
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudStack Spacing="2">
+                    <MudTextField Label="Category" Class="mt-5" @bind-Value="_template.Category" />
+                    <MudTextField Label="Description" Class="mt-5" @bind-Value="_template.Description" Lines="5" />
+                    <MudTextField Label="Icon" Class="mt-5" @bind-Value="_template.IconUrl" />
+                    <MudTextField Label="Application Protocol" Class="mt-5" @bind-Value="_template.ApplicationProtocol" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+
+
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Docker Compose</MudText>
+                <MudItem Style="border: solid 1px #ccc; background: #444" Class="mt-5 pa-5">
+                    <YamlTextField Style="font-family: monspace; background: #444; color: white;"
+                                   Lines="20"
+                                   @bind-Value="_template.Plan" />
+                </MudItem>
+            </MudCardContent>
+        </MudCard>
+
+        <MudButton Class="mt-5" ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = null!;
+
+    private DeploymentPlanTemplate? _template = null;
+
+    private async Task OnValidSubmitAsync()
+    {
+        if(_template is not null)
+        {
+            await templateProvider.SaveTemplateAsync(_template);
+            navigationManager.NavigateTo("/templates");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _template = await templateProvider.GetTemplateByNameAsync(Name);
+    }
+
+}

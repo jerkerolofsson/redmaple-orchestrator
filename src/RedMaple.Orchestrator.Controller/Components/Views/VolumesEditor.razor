@@ -1,0 +1,84 @@
+﻿@inject IClusterResourceManager clusterResourceManager
+
+<MudStack Row="true" Spacing="2">
+    <MudSelectExtended T="VolumeResource" @bind-Value="_selectedVolume">
+        @foreach(var volume in _volumes)
+        {
+             <MudSelectItemExtended Value="@(volume)" Text="@(volume.Name)" />
+        }
+    </MudSelectExtended>
+
+</MudStack>
+
+<MudDataGrid Bordered="true" Dense="true"
+             ReadOnly="false"
+             EditMode="DataGridEditMode.Cell"
+             Items="@VolumeBinds"
+             SortMode="SortMode.Multiple">
+    <Columns>
+
+        <PropertyColumn Property="x => x.ContainerPath" Title="ContainerPath" />
+
+        <TemplateColumn Title="Bound Volume">
+            <EditTemplate>
+                <MudSelectExtended 
+                    Value="@context.Item.Volume"
+                    T="VolumeResource" ValueChanged="async (volume) => await OnVolumeChangedAsync(volume, context.Item)">
+                    @foreach (var volume in _volumes)
+                    {
+                        <MudSelectItemExtended Value="@(volume)" Text="@(volume.Name)" />
+                    }
+                </MudSelectExtended>
+            </EditTemplate>
+        </TemplateColumn>
+
+        <TemplateColumn StickyRight="true">
+            <EditTemplate>
+                <MudButton Color="Color.Error" Variant="Variant.Outlined"
+                           OnClick="async () => await RemoveVolumeAsync(context.Item)">Delete</MudButton>
+            </EditTemplate>
+        </TemplateColumn>
+
+    </Columns>
+</MudDataGrid>
+
+@code {
+    [Parameter] public List<VolumeBind> VolumeBinds { get; set; } = new();
+    [Parameter] public EventCallback<List<VolumeBind>> VolumeBindsChanged { get; set; }
+
+    private List<VolumeResource> _volumes = new List<VolumeResource>();
+    private VolumeResource? _selectedVolume = null;
+
+    private async Task AddVolumeAsync()
+    {
+        if (_selectedVolume is not null)
+        {
+            VolumeBinds.Add(new VolumeBind { ContainerPath = "/mnt/data" });
+            await VolumeBindsChanged.InvokeAsync(VolumeBinds);
+        }
+    }
+
+    private async Task OnVolumeChangedAsync(VolumeResource volume, VolumeBind volumeBind)
+    {
+        volumeBind.Volume = volume;
+        await VolumeBindsChanged.InvokeAsync(VolumeBinds);
+    }
+
+    private async Task RemoveVolumeAsync(VolumeBind volume)
+    {
+        VolumeBinds.Remove(volume);
+        await VolumeBindsChanged.InvokeAsync(VolumeBinds);
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var resources = await clusterResourceManager.GetClusterResourcesAsync();
+        foreach(var volume in resources.Where(x => x.Kind == ResourceKind.Volume).Select(x=>x.Volume))
+        {
+            if (volume is not null)
+            {
+                _volumes.Add(volume);
+            }
+        }
+    }
+}

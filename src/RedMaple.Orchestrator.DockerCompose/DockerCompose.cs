@@ -13,12 +13,14 @@ namespace RedMaple.Orchestrator.DockerCompose
     public partial class DockerCompose : IDockerCompose
     {
         private readonly ILocalContainersClient _docker;
+        private readonly IDockerVolumeManager _volumes;
         private readonly ILogger<DockerCompose> _logger;
 
-        public DockerCompose(ILocalContainersClient docker, ILogger<DockerCompose> logger)
+        public DockerCompose(ILocalContainersClient docker, ILogger<DockerCompose> logger, IDockerVolumeManager volumes)
         {
             _docker = docker;
             _logger = logger;
+            _volumes = volumes;
         }
 
     }

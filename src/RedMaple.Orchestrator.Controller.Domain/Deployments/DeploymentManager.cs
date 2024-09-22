@@ -139,6 +139,55 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             return plans.Where(x => x.Slug == slug).FirstOrDefault();
         }
 
+        public List<VolumeBind> GetMissingVolumeNames(DeploymentPlan plan)
+        {
+            List<VolumeBind> names = new();
+
+            if (plan.Kind == DeploymentKind.DockerCompose)
+            {
+                try
+                {
+                    var composePlan = DockerComposeParser.ParseYaml(plan.Plan);
+                    if (composePlan?.services is not null)
+                    {
+                        foreach (var service in composePlan.services.Values)
+                        {
+                           if (service?.volumes is not null)
+                            {
+                                foreach (var volume in service.volumes)
+                                {
+                                    if (volume.Source is null || volume.Target is null)
+                                    {
+                                        continue;
+                                    }
+                                    if (!volume.Source.Contains('/') && !volume.Source.Contains('\\'))
+                                    {
+                                        var name = volume.Source.TrimEnd(':');
+                                        if (!composePlan.volumes.ContainsKey(name))
+                                        {
+                                            // See if volume is added to plan
+                                            if (!plan.VolumeBinds.Where(x => x.Name == name).Any())
+                                            {
+                                                names.Add(new VolumeBind
+                                                {
+                                                    Name = name,
+                                                    ContainerPath = volume.Target
+                                                });
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                }
+            }
+            return names;
+        }
+
         public async Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan)
         {
             var plans = await GetDeploymentPlansAsync();
@@ -175,6 +224,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 }
             }
 
+            var missingVolumes = GetMissingVolumeNames(plan);
+            foreach (var volumeBind in missingVolumes)
+            {
+                result.Errors.Add(new ValidationFailure("Volumes", $"The volume '{volumeBind.Name}' is missing"));
+            }
+
             plan.ContainerImages.Clear();
             if (plan.Kind == DeploymentKind.DockerCompose)
             {
@@ -189,12 +244,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                             {
                                 plan.ContainerImages.Add(service.image);
                             }
+                            else
+                            {
+                                result.Errors.Add(new ValidationFailure("Plan", "Image is missing"));
+                            }
                         }
                     }
                 }
                 catch (Exception ex) 
                 {
-                    result.Errors.Add(new ValidationFailure("Plan", "Failed to parse docker compose"));
+                    result.Errors.Add(new ValidationFailure("Plan", "Failed to parse docker compose: " + ex.Message));
                 }
             }
 
@@ -412,6 +471,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 plan.ApplicationProtocol,
                 plan.EnvironmentVariables
             );
+            appDeployment.VolumeBinds = plan.VolumeBinds;
 
             // Generate pfx certificate for the application server
             if (plan.ApplicationHttpsCertificatePfx is null || plan.ApplicationHttpsCertificatePfx.Length == 0)
@@ -497,6 +557,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
             await deploymentClient.AddDeploymentAsync(new AddNodeDeploymentRequest
             {
+                VolumeBinds = plan.VolumeBinds,
                 EnvironmentVariables = plan.EnvironmentVariables,
                 HttpsCertificatePfx = plan.ApplicationHttpsCertificatePfx,
                 Kind = plan.Kind,

@@ -1,3 +1,4 @@
+using RedMaple.Orchestrator.DockerCompose;
 using RedMaple.Orchestrator.Node.Enrollment;
 using RedMaple.Orchestrator.Node.LocalDeployments;
 
@@ -15,7 +16,9 @@ builder.Services.AddMediatR(options =>
     options.RegisterServicesFromAssembly(typeof(EnrollAtStartup).Assembly);
 });
 
-builder.Services.AddTransient<RedMaple.Orchestrator.DockerCompose.IDockerCompose, RedMaple.Orchestrator.DockerCompose.DockerCompose>();
+builder.Services.AddTransient<IDockerCompose, DockerCompose>();
+builder.Services.AddTransient<IDockerVolumeManager, DockerVolumeManager>();
+
 builder.Services.AddSingleton<ILocalDeploymentService, LocalDeploymentService>();
 builder.Services.AddSingleton<INodeSettingsProvider, NodeSettingsProvider>();
 builder.Services.AddDns().AddIngress();

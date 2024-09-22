@@ -10,8 +10,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         string Id,
         string Slug,
         ResourceCreationOptions Resource,
-        string ApplicationServerIp, 
+        string ApplicationServerIp,
         int? ApplicationServerPort,
         string? ApplicationProtocol,
-        Dictionary<string,string> EnvironmentVariables);
+        Dictionary<string, string> EnvironmentVariables)
+    {
+        public List<VolumeBind>? VolumeBinds { get; set; }
+    }
 }

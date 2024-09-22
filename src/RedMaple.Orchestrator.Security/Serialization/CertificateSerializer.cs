@@ -58,6 +58,26 @@ namespace RedMaple.Orchestrator.Security.Serialization
                 File.WriteAllText(filename, sb.ToString());
             }
         }
+        public static byte[]? ExportCertificateChainAsByteArray(X509ContentType contentType, params X509Certificate2[] certs)
+        {
+            var chain = new X509Certificate2Collection();
+            foreach (var cert in certs)
+            {
+                chain.Add(cert);
+            }
+            return chain.Export(contentType);
+        }
+
+        public static byte[] ExportCertificatePemsAsByteArray(params X509Certificate2[] certs)
+        {
+            var chain = new X509Certificate2Collection();
+            foreach (var cert in certs)
+            {
+                chain.Add(cert);
+            }
+            var text = chain.ExportCertificatePems();
+            return Encoding.ASCII.GetBytes(text);
+        }
         public static void ExportCertificatePems(string filename, params X509Certificate2[] certs)
         {
             var chain = new X509Certificate2Collection();

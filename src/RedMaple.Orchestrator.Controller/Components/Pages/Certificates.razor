@@ -14,14 +14,14 @@
 <h1>Certificates</h1>
 <h2 class="mt-5">Root Certificate</h2>
 <MudPaper Class="pa-5">
-    <a href="/api/ca/root/cert">Download .crt</a>
-    <a href="/api/ca/root/pem">Download .pem</a>
+    <a href="/api/ca/root/cert"><img src="certificate.png" alt="certificate"/> Download Root-CA certificate (.crt)</a>
+    <a href="/api/ca/root/pem"><img src="certificate.png" alt="certificate" /> Download Root-CA certificate (.pem)</a>
 </MudPaper>
 
 <h2 class="mt-5">Intermediate CA Certificate</h2>
 <MudPaper Class="pa-5">
-    <a href="/api/ca/intermediate/cert">Download .crt</a>
-    <a href="/api/ca/intermediate/pem">Download .pem</a>
+    <a href="/api/ca/intermediate/cert"><img src="certificate.png" alt="certificate" /> Download Intermidate-CA certificate (.crt)</a>
+    <a href="/api/ca/intermediate/pem"><img src="certificate.png" alt="certificate" /> Download Intermidate-CA certificate (.pem)</a>
 </MudPaper>
 
 <h3 class="mt-5">Replace root certificate</h3>
@@ -32,7 +32,7 @@
 </MudPaper>
 
 <h3 class="mt-5">Generate certificate</h3>
-<EditForm Model="@model" OnValidSubmit="() => OnValidSubmit()">
+<EditForm Model="@model">
     <DataAnnotationsValidator />
     <MudGrid>
         <MudItem xs="12" sm="7">
@@ -50,9 +50,15 @@
 
                 </MudCardContent>
                 <MudCardActions>
-                    <MudButton ButtonType="ButtonType.Submit"
-                               Variant="Variant.Filled"
-                               Color="Color.Primary">Create</MudButton>
+                    <MudStack Row="true" Spacing="3">
+                        <MudButton OnClick="() => GenerateZip()"
+                                   Variant="Variant.Filled"
+                                   Color="Color.Primary">Generate Certificate</MudButton>
+
+                        <MudButton OnClick="() => GeneratePfx()"
+                                   Variant="Variant.Outlined"
+                                   Color="Color.Primary">Generate PFX</MudButton>
+                    </MudStack>
                 </MudCardActions>
             </MudCard>
         </MudItem>
@@ -74,9 +80,14 @@
         public string IpAddress { get; set; } = "";
     }
 
-    public void OnValidSubmit()
+    public void GenerateZip()
     {
-        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}");
+        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=zip");
+    }
+
+    public void GeneratePfx()
+    {
+        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=pfx");
     }
 
 

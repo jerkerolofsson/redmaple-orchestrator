@@ -47,5 +47,10 @@ namespace RedMaple.Orchestrator.Contracts.Resources
         /// Environment variable set for the resource
         /// </summary>
         public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
+
+        /// <summary>
+        /// Volume options, specific to a volume
+        /// </summary>
+        public VolumeResource? Volume { get; set; }
     }
 }

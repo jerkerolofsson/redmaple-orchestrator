@@ -12,6 +12,8 @@ namespace RedMaple.Orchestrator.Contracts.Resources
         OidcServer,
         OtlpServer,
 
+        Volume,
+
         ConnectionString,
 
         ApplicationService,

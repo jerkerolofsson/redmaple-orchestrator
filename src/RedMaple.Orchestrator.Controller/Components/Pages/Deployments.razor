@@ -103,11 +103,11 @@ else if(!_loading)
                                 <div class="d-flex align-center">
                                     @if (context.Item.Up)
                                     {
-                                        <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Down</MudButton>
+                                        <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Take Down</MudButton>
                                     }
                                     else
                                     {
-                                        <MudButton OnClick="async() => await BringUpAsync(context.Item)">Up</MudButton>
+                                        <MudButton OnClick="async() => await BringUpAsync(context.Item)">Bring Up</MudButton>
                                     }
 
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert">
@@ -213,6 +213,7 @@ else if(!_loading)
         {
             try
             {
+                await deploymentManager.PullImagesAsync(plan, _progress, _progress, token);
                 await deploymentManager.BringUpAsync(plan, _progress, token);
             }
             catch(Exception ex)

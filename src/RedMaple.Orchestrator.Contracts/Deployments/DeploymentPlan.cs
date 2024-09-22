@@ -50,6 +50,13 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
 
         /// <summary>
+        /// Binds for volumes in this plan
+        /// This only contains user declared volume binds, not the volumes
+        /// declared in the docker compose file with both a volume and a service volume bind
+        /// </summary>
+        public List<VolumeBind> VolumeBinds { get; set; } = new();
+
+        /// <summary>
         /// IP address of node that will host the service
         /// </summary>
         //public string? ApplicationServerIp { get; set; }

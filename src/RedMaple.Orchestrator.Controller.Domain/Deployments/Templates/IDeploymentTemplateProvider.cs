@@ -4,6 +4,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments.Templates
 {
     public interface IDeploymentTemplateProvider
     {
-        Task<List<DeploymentPlanTemplate>> GetDeploymentsAsync();
+        Task<DeploymentPlanTemplate?> GetTemplateByNameAsync(string name);
+        Task SaveTemplateAsync(DeploymentPlanTemplate template);
+        Task DeleteTemplateAsync(string name);
+        Task<List<DeploymentPlanTemplate>> GetTemplatesAsync();
     }
 }

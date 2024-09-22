@@ -1,6 +1,90 @@
-﻿@page "/templates"
+﻿@rendermode InteractiveServer
+@page "/templates"
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
+@inject IDeploymentTemplateProvider templateProvider
+@inject IDialogService dialogService
+@inject NavigationManager navigationManager
 
+<MudPopoverProvider />
+<MudDialogProvider />
+
+<MudText Typo="Typo.h6">Containers</MudText>
+<MudPaper Class="pa-5">
+
+    <MudDataGrid Bordered="true" Dense="true"
+                 ReadOnly="false"
+                 Items="@_templates"
+                 SortMode="SortMode.Multiple">
+        <Columns>
+
+            <TemplateColumn Title="Name">
+                <CellTemplate>
+                    <a href="/templates/@context.Item.Name">@context.Item.Name</a>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Category" Title="Category" />
+
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    <MudButton OnClick="async () => await DeleteTemplateAsync(context.Item.Name)">Delete</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+
+        </Columns>
+    </MudDataGrid>
+</MudPaper>
+
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="async () => await AddTemplateAsync()">Add</MudButton>
 
 @code {
+    private List<DeploymentPlanTemplate> _templates = new();
 
+    private async Task AddTemplateAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterNameDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is not null)
+        {
+            var templateName = result.Data.ToString();
+            if(templateName is null)
+            {
+                return;
+            }
+            var existingTemplate = await templateProvider.GetTemplateByNameAsync(templateName);
+            if(existingTemplate is {})
+            {
+                await dialogService.ShowMessageBox(
+                 "Conflict",
+                 "A template with this name already exists",
+                 cancelText: "Cancel");
+                return;
+            }
+
+            await templateProvider.SaveTemplateAsync(new DeploymentPlanTemplate
+                {
+                    IconUrl = "container.png",
+                    Name = templateName,
+                    Plan = ""
+                });
+
+            navigationManager.NavigateTo($"/templates/{templateName}");
+        }
+    }
+
+    private async Task DeleteTemplateAsync(string templateName)
+    {
+        await templateProvider.DeleteTemplateAsync(templateName);
+        await LoadTemplatesAsync();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadTemplatesAsync();
+    }
+
+    private async Task LoadTemplatesAsync()
+    {
+        _templates = await templateProvider.GetTemplatesAsync();
+    }
 }

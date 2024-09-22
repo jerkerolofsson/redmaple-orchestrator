@@ -68,7 +68,7 @@ namespace RedMaple.Orchestrator.Security.Services
         private async Task<X509Certificate2> GenerateRootCertificateAsync()
         {
             var builder = new CertificateBuilder()
-                    .AddCommonName("redmaple")
+                    .AddCommonName("redmaple_root_ca")
                     .AsCertificateAuthority()
                     .AddOrganization("Jerker Olofsson")
                     .AddLocality("Gothenburg")
@@ -87,7 +87,7 @@ namespace RedMaple.Orchestrator.Security.Services
         private async Task<X509Certificate2> GenerateCaCertificateAsync()
         {
             var builder = new CertificateBuilder()
-                    .AddCommonName("redmaple")
+                    .AddCommonName("redmaple_intermediate_ca")
                     .AsCertificateAuthority()
                     .AddOrganization("Jerker Olofsson")
                     .AddLocality("Gothenburg")

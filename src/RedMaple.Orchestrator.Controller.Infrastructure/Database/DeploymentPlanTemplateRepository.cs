@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Healthz;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 
@@ -30,7 +31,23 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             }
             return path;
         }
-        public async Task AddDeploymentPlanAsync(DeploymentPlanTemplate template)
+
+        public async Task AddTemplateAsync(DeploymentPlanTemplate template)
+        {
+            await SaveTemplateAsync(template);
+        }
+
+        public Task DeleteTemplateAsync(string name)
+        {
+            var templateDir = Path.Combine(GetLocalConfigDir(), name);
+            if (Directory.Exists(templateDir))
+            {
+                Directory.Delete(templateDir, true);
+            }
+            return Task.CompletedTask;
+        }
+
+            public async Task SaveTemplateAsync(DeploymentPlanTemplate template)
         {
             var templateDir = Path.Combine(GetLocalConfigDir(), template.Name);
             if (!Directory.Exists(templateDir))
@@ -60,7 +77,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             template.Plan = yaml;
         }
 
-        public async Task<List<DeploymentPlanTemplate>> GetDeploymentPlansAsync()
+        public async Task<List<DeploymentPlanTemplate>> GetTemplatesAsync()
         {
             if (!_isInitialized)
             {
@@ -231,6 +248,34 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 },
 
 
+
+                new DeploymentPlanTemplate
+                {
+                    Resource = new ResourceCreationOptions
+                    {
+                        Exported = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
+                    },
+                    Category = "Services",
+                    Name = "PostgreSQL",
+                    IconUrl = "/brands/postgres.png",
+                    ApplicationProtocol = "tcp",
+                    Plan = """
+                    services:
+                      postgres:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "postgres:15.3"
+                        restart: unless-stopped
+                        environment:
+                          POSTGRES_DB: ${POSTGRES_DB}
+                          POSTGRES_USER: ${POSTGRES_USER}
+                          POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+                        volumes:
+                        - "PGDATA:/var/lib/postgresql/data"
+                        ports:
+                        - target: 5432
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
                 new DeploymentPlanTemplate
                 {
                     Category = "Test",
@@ -472,11 +517,39 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                           - MEM_STARTUP=1024
                 """
             },
+
+
+            new DeploymentPlanTemplate
+            {
+                Category = "Apps",
+                Name = "Krita",
+                IconUrl = "/brands/krita.png",
+                ApplicationProtocol = "http",
+                HealthChecks = new()
+                {
+                    DeploymentHealthCheck.TcpLivez,
+                },
+
+                Plan = """
+                services:
+                    redis:
+                        image: lscr.io/linuxserver/krita:latest
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        restart: unless-stopped
+                        ports:
+                        - "${REDMAPLE_APP_PORT}:3000"
+                        environment:
+                        - PUID=1000
+                        - PGID=1000
+                        - TZ=Etc/UTC                        
+                
+                """
+            },
             ];
 
             foreach (var template in defaultTemplates)
             {
-                await AddDeploymentPlanAsync(template);
+                await AddTemplateAsync(template);
             }
         }
 
@@ -499,35 +572,56 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 foreach (var dir in new DirectoryInfo(path).GetDirectories())
                 {
-                    var templatePath = Path.Combine(dir.FullName, "template.json");
-                    var yamlPath = Path.Combine(dir.FullName, "plan.yaml");
-                    var dockerComposePath = Path.Combine(dir.FullName, "docker-compose.yaml");
-                    if (!File.Exists(templatePath))
+                    DeploymentPlanTemplate? template = await LoadTemplateFromDirAsync(dir);
+                    if (template is not null)
                     {
-                        continue;
-                    }
-
-                    _logger.LogInformation("Loading deployment templates from {path}", templatePath);
-                    var json = await File.ReadAllTextAsync(templatePath);
-                    var plan = JsonSerializer.Deserialize<DeploymentPlanTemplate>(json);
-                    if(plan is not null)
-                    {
-                        plan.Name = dir.Name;
-                        if (File.Exists(yamlPath))
-                        {
-                            plan.Plan = await File.ReadAllTextAsync(yamlPath);
-                        }
-                        if (File.Exists(dockerComposePath))
-                        {
-                            plan.Plan = await File.ReadAllTextAsync(dockerComposePath);
-                            plan.Kind = DeploymentKind.DockerCompose;
-                        }
-                        templates.Add(plan);
+                        templates.Add(template);
                     }
                 }
             }
             catch (Exception) { }
             return templates;
+        }
+
+        private async Task<DeploymentPlanTemplate?> LoadTemplateFromDirAsync(DirectoryInfo dir)
+        {
+            if(!dir.Exists)
+            {
+                return null;
+            }
+
+            var templatePath = Path.Combine(dir.FullName, "template.json");
+            var yamlPath = Path.Combine(dir.FullName, "plan.yaml");
+            var dockerComposePath = Path.Combine(dir.FullName, "docker-compose.yaml");
+            if (!File.Exists(templatePath))
+            {
+                return null;
+            }
+
+            _logger.LogTrace("Loading deployment templates from {path}", templatePath);
+            var json = await File.ReadAllTextAsync(templatePath);
+            var plan = JsonSerializer.Deserialize<DeploymentPlanTemplate>(json);
+            if (plan is not null)
+            {
+                plan.Name = dir.Name;
+                if (File.Exists(yamlPath))
+                {
+                    plan.Plan = await File.ReadAllTextAsync(yamlPath);
+                }
+                if (File.Exists(dockerComposePath))
+                {
+                    plan.Plan = await File.ReadAllTextAsync(dockerComposePath);
+                    plan.Kind = DeploymentKind.DockerCompose;
+                }
+            }
+
+            return plan;
+        }
+
+        public async Task<DeploymentPlanTemplate?> GetTemplateByNameAsync(string name)
+        {
+            var path = Path.Combine(GetLocalConfigDir(), name);
+            return await LoadTemplateFromDirAsync(new DirectoryInfo(path));
         }
     }
 }

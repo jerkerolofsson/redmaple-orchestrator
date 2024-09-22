@@ -34,4 +34,8 @@
     <ProjectReference Include="..\RedMaple.Orchestrator.ServiceDefaults\RedMaple.Orchestrator.ServiceDefaults.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="wwwroot\resource-icons\" />
+  </ItemGroup>
+
 </Project>

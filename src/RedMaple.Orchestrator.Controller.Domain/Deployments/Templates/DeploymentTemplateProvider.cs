@@ -15,9 +15,24 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments.Templates
             _repo = repo;
         }
 
-        public async Task<List<DeploymentPlanTemplate>> GetDeploymentsAsync()
+        public async Task DeleteTemplateAsync(string name)
         {
-            return await _repo.GetDeploymentPlansAsync();
+            await _repo.DeleteTemplateAsync(name);
+        }
+
+        public async Task<DeploymentPlanTemplate?> GetTemplateByNameAsync(string name)
+        {
+            return await _repo.GetTemplateByNameAsync(name);
+        }
+
+        public async Task<List<DeploymentPlanTemplate>> GetTemplatesAsync()
+        {
+            return await _repo.GetTemplatesAsync();
+        }
+
+        public async Task SaveTemplateAsync(DeploymentPlanTemplate template)
+        {
+            await _repo.AddTemplateAsync(template);
         }
     }
 }
