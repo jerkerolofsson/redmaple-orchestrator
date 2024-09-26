@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Ingress;
+using RedMaple.Orchestrator.Infrastructure;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -11,9 +12,14 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 {
-    internal class FileSystemIngressRepository : IIngressRepository
+    internal class FileSystemIngressRepository : DocumentStore<IngressServiceDescription>, IIngressRepository
     {
         private readonly ILogger _logger;
+
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+
+
+        protected override string SaveFilePath => GetConfigFilePath();
 
         public FileSystemIngressRepository(ILogger<FileSystemIngressRepository> logger)
         {
@@ -50,50 +56,51 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
         public async Task AddIngressServiceAsync(IngressServiceDescription service)
         {
-            if (string.IsNullOrWhiteSpace(service.Id))
+            await _semaphore.WaitAsync();
+            try
             {
-                service.Id = Guid.NewGuid().ToString();
+                if (string.IsNullOrWhiteSpace(service.Id))
+                {
+                    service.Id = Guid.NewGuid().ToString();
+                }
+                _logger.LogInformation("Adding ingress service with ID {id}..", service.Id);
+                var services = await LoadAsync();
+                services.Add(service);
+                await CommitAsync(services);
             }
-            _logger.LogInformation("Adding ingress service with ID {id}..", service.Id);
-            var services = await LoadDataAsync();
-            services.Add(service);
-            await WriteDataAsync(services);
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task<List<IngressServiceDescription>> GetServicesAsync()
         {
-            return await LoadDataAsync();
+            await _semaphore.WaitAsync();
+            try
+            {
+                return await LoadAsync();
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
         }
 
         public async Task DeleteIngressServiceAsync(string id)
         {
             _logger.LogInformation("Removing ingress service with ID {id}..", id);
-            var services = await LoadDataAsync();
-            services.RemoveAll(x => x.Id == id);
-            await WriteDataAsync(services);
-        }
-
-        private async Task<List<IngressServiceDescription>> LoadDataAsync()
-        {
-            var path = GetConfigFilePath();
+            await _semaphore.WaitAsync();
             try
             {
-                _logger.LogDebug("Loading service configuration from {path}", path);
-                var json = await File.ReadAllTextAsync(path);
-                var services = JsonSerializer.Deserialize<List<IngressServiceDescription>>(json);
-                return services ?? new();
+                var services = await LoadAsync();
+                services.RemoveAll(x => x.Id == id);
+                await CommitAsync(services);
             }
-            catch (Exception) { }
-            return new List<IngressServiceDescription>();
+            finally
+            {
+                _semaphore.Release();
+            }
         }
-        private async Task WriteDataAsync(List<IngressServiceDescription> services)
-        {
-            var json = JsonSerializer.Serialize(services);
-            var path = GetConfigFilePath();
-
-            _logger.LogDebug("Writing service configuration to {path}", path);
-            await File.WriteAllTextAsync(path, json);
-        }
-
     }
 }

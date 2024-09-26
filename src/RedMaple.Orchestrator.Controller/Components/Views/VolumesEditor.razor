@@ -1,15 +1,5 @@
 ﻿@inject IClusterResourceManager clusterResourceManager
 
-<MudStack Row="true" Spacing="2">
-    <MudSelectExtended T="VolumeResource" @bind-Value="_selectedVolume">
-        @foreach(var volume in _volumes)
-        {
-             <MudSelectItemExtended Value="@(volume)" Text="@(volume.Name)" />
-        }
-    </MudSelectExtended>
-
-</MudStack>
-
 <MudDataGrid Bordered="true" Dense="true"
              ReadOnly="false"
              EditMode="DataGridEditMode.Cell"
@@ -47,16 +37,6 @@
     [Parameter] public EventCallback<List<VolumeBind>> VolumeBindsChanged { get; set; }
 
     private List<VolumeResource> _volumes = new List<VolumeResource>();
-    private VolumeResource? _selectedVolume = null;
-
-    private async Task AddVolumeAsync()
-    {
-        if (_selectedVolume is not null)
-        {
-            VolumeBinds.Add(new VolumeBind { ContainerPath = "/mnt/data" });
-            await VolumeBindsChanged.InvokeAsync(VolumeBinds);
-        }
-    }
 
     private async Task OnVolumeChangedAsync(VolumeResource volume, VolumeBind volumeBind)
     {

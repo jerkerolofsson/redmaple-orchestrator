@@ -111,6 +111,14 @@ else if(!_loading)
                                     }
 
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert">
+
+                                        <MudMenuItem>
+                                            @{
+                                                string url = $"/deployments/{context.Item.Slug}/edit";
+                                            }
+                                            <a target="_blank" href="@url">Edit</a>
+                                        </MudMenuItem>
+
                                         <MudMenuItem OnClick="async() => await PullImagesAsync(context.Item)">
                                             Pull Images
                                         </MudMenuItem>
@@ -160,8 +168,33 @@ else if(!_loading)
     {
         await PullImagesAsync(plan);
 
-        await TakeDownAsync(plan);
-        await BringUpAsync(plan);
+        _loading = true;
+        _error = null;
+        _progress.Begin();
+        this.StateHasChanged();
+
+        _cancellationTokenSource = new();
+        var token = _cancellationTokenSource.Token;
+        await Task.Run(async () =>
+        {
+            try
+            {
+                await deploymentManager.RestartAsync(plan, _progress, token);
+            }
+            catch (Exception ex)
+            {
+                _error = ex.ToString();
+            }
+            finally
+            {
+                _loading = false;
+                await InvokeAsync(() =>
+                {
+                    StateHasChanged();
+                });
+
+            }
+        });
     }
 
     private async Task PullImagesAsync(DeploymentPlan plan)
@@ -335,11 +368,14 @@ else if(!_loading)
     private void FilterDeployments(int index)
     {
         _filteredPlans.Clear();
-        var category = _categories[index];
-        _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
-        InvokeAsync(() =>
+        if (index >= 0 && index < _categories.Count)
         {
-            this.StateHasChanged();
-        });
+            var category = _categories[index];
+            _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
+            InvokeAsync(() =>
+            {
+                this.StateHasChanged();
+            });
+        }
     }
 }

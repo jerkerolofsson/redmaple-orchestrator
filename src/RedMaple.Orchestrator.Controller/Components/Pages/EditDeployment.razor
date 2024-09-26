@@ -1,0 +1,89 @@
+﻿@page "/deployments/{slug}/edit"
+@implements IDisposable
+@rendermode InteractiveServer
+@using RedMaple.Orchestrator.Controller.Domain.Aggregations
+@using RedMaple.Orchestrator.Controller.Domain.Deployments
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
+@using RedMaple.Orchestrator.Controller.ViewModels
+@using System.Globalization
+@inject IDeploymentManager deploymentManager
+@inject NavigationManager navigationManager
+@inject ISnackbar Snackbar
+
+<MudSnackbarProvider />
+<MudPopoverProvider />
+
+<MudText Typo="Typo.h3">Edit @Slug</MudText>
+
+@if(_plan is not null)
+{
+    <EditForm Model="@_plan" OnValidSubmit="async () => await OnValidSubmitAsync()">
+        <DataAnnotationsValidator />
+
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudItem>
+                    <MudText Typo="Typo.h6">Deployment Name</MudText>
+                    <MudTextField Label="Name"
+                                  Class="pa-5"
+                                  @bind-Value="_plan.Name"
+                                  For="@(() => _plan.Name)" />
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Category</MudText>
+                    <MudTextField Label="Name"
+                                  Class="pa-5"
+                                  @bind-Value="_plan.Category"
+                                  For="@(() => _plan.Category)" />
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Docker Compose</MudText>
+                    <YamlTextField Style="font-family: monspace; background: #444; color: white;"
+                                   Lines="20"
+                                   @bind-Value="_plan.Plan" />
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Environment Variables</MudText>
+                    <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />
+
+                </MudItem>
+            </MudCardContent>
+            <MudCardActions>
+                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Variant="Variant.Filled">Save</MudButton>
+            </MudCardActions>
+        </MudCard>
+    </EditForm>
+}
+
+
+@code {
+    [Parameter]
+    public string Slug { get; set; } = null!;
+
+    private DeploymentPlan? _plan = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _plan = await deploymentManager.GetDeploymentBySlugAsync(Slug);
+    }
+
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (_plan is not null)
+        {
+            var res = await deploymentManager.ValidatePlanAsync(_plan);
+            if (res.Errors.Count == 0)
+            {
+                await deploymentManager.SaveAsync(_plan);
+                navigationManager.NavigateTo("/deployments");
+            }
+            else
+            {
+                Snackbar.Add(res.Errors[0].ErrorMessage, Severity.Error);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+    }
+}

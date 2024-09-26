@@ -160,7 +160,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                                     {
                                         continue;
                                     }
-                                    if (!volume.Source.Contains('/') && !volume.Source.Contains('\\'))
+                                    if (!volume.Source.Contains('/') && !volume.Source.Contains('\\') && !volume.Source.StartsWith('$'))
                                     {
                                         var name = volume.Source.TrimEnd(':');
                                         if (!composePlan.volumes.ContainsKey(name))
@@ -191,9 +191,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         public async Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan)
         {
             var plans = await GetDeploymentPlansAsync();
-            var planNames = plans.Select(x => x.Name).ToHashSet();
-            var planSlugs = plans.Select(x => x.Slug).ToHashSet();
-            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Select(x => x.Hostname).ToHashSet();
+            var planNames = plans.Where(x=>x.Id != plan.Id).Select(x => x.Name).ToHashSet();
+            var planSlugs = plans.Where(x => x.Id != plan.Id).Select(x => x.Slug).ToHashSet();
+            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Where(x => x.Hostname == plan.DomainName).ToList();
             var result = new ValidationResult();
 
             if (plan.CreateDnsEntry || plan.CreateIngress)
@@ -202,18 +202,18 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 {
                     result.Errors.Add(new ValidationFailure("DomainName", $"Domain name is missing"));
                 }
-                else if (dnsEntries.Contains(plan.DomainName))
+                else if (dnsEntries.Count > 0 && !plan.ApplicationServerIps.Contains(dnsEntries[0].IpAddress))
                 {
                     result.Errors.Add(new ValidationFailure("DomainName", $"The domain name is already in use"));
                 }
             }
             if (planNames.Contains(plan.Name))
             {
-                result.Errors.Add(new ValidationFailure("Name", $"The name is already in use"));
+                result.Errors.Add(new ValidationFailure("Name", $"The deployment name is already in use"));
             }
             if (planSlugs.Contains(plan.Slug))
             {
-                result.Errors.Add(new ValidationFailure("Name", $"The name (slug) is already in use"));
+                result.Errors.Add(new ValidationFailure("Name", $"The deployment slug is already in use"));
             }
 
             foreach (var env in plan.EnvironmentVariables)
@@ -394,6 +394,44 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     await client.PullImageAsync(containerImage, pullProgress, cancellationToken);
                 }
             }
+        }
+
+        public async Task RestartAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
+        {
+            foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
+            {
+                var targetNode = await GetApplicationHostAsync(deployment);
+                if (targetNode is null)
+                {
+                    throw new ArgumentException("Application node not found: " + deployment.ApplicationServerIp);
+                }
+
+                try
+                {
+                    await DownDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+                    await DeleteDeploymentFromTargetAsync(plan, progress, targetNode, cancellationToken);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to bring down deployment {DeploymentSlug} on node: {Node}", deployment.Slug, targetNode.IpAddress);
+                    throw;
+                }
+
+                try
+                {
+                    await AddDeploymentOnTargetAsync(plan, progress, targetNode);
+                    await UpDeploymentOnTargetAsync(plan, progress, targetNode, cancellationToken);
+                    plan.Up = true;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to bring up deployment {DeploymentSlug} on node: {Node}", deployment.Slug, targetNode.IpAddress);
+                    throw;
+                }
+            }
+
+            // Save state
+            await _deploymentPlanRepository.SaveDeploymentPlanAsync(plan);
         }
 
         public async Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
@@ -603,6 +641,22 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 throw new ArgumentException(nameof(plan.DomainName));
             }
+            var applicationServerIp = plan.ApplicationServerIps.First();
+
+            // Check if ingress already exists..
+            if (plan.CreateIngress)
+            {
+                var existingIngressService = await _ingressManager.GetIngressServiceByDomainNameAsync(plan.DomainName);
+                if(existingIngressService is { })
+                {
+                    if(existingIngressService.DestinationIp == applicationServerIp &&
+                        existingIngressService.DestinationPort == plan.ApplicationServerPort)
+                    {
+                        // Ingress already exists
+                        return;
+                    }
+                }
+            }
 
             // Todo: LB: required if multiple ApplicationServerIps are set
             // 
@@ -611,9 +665,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             // If we have an ingress node then we set the DNS to it
             // If not, we set the DNS directly to the application IP
 
-            var applicationServerIp = plan.ApplicationServerIps.First();
-
-            if (!plan.CreateIngress)
+            if (!plan.CreateIngress && plan.CreateDnsEntry)
             {
                 var entries = await _dns.GetDnsEntriesAsync();
                 var existingEntry = entries.FirstOrDefault(x => x.Hostname == plan.DomainName);

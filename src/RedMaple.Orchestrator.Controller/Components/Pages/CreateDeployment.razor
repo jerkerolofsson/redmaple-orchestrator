@@ -12,7 +12,9 @@
 @inject IDeploymentManager deploymentManager
 @inject IClusterResourceManager clusterResourceManager
 @inject NavigationManager navigationManager
+@inject ISnackbar Snackbar
 
+<MudSnackbarProvider />
 <MudPopoverProvider />
 
 <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">

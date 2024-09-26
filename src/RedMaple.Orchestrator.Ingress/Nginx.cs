@@ -35,7 +35,6 @@ namespace RedMaple.Orchestrator.Ingress
                 var conf = new StringBuilder();
                 conf.Append("""
                 client_max_body_size 300M;
-                
                 ssl_session_cache    shared:SSL:1m;
                 ssl_session_timeout  5m;
                 """);

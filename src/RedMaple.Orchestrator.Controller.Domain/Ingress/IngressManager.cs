@@ -143,6 +143,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         }
 
+        public async Task<IngressServiceDescription?> GetIngressServiceByDomainNameAsync(string domainName)
+        {
+            var services = await _repository.GetServicesAsync();
+            return services.FirstOrDefault(x => x.Id == domainName);
+        }
+
         private async Task DeleteIngressServiceNoLockAsync(string id)
         {
             var services = await _repository.GetServicesAsync();
