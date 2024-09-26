@@ -188,7 +188,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             return names;
         }
 
-        public async Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan)
+        public async Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan, bool validateDomainName = true)
         {
             var plans = await GetDeploymentPlansAsync();
             var planNames = plans.Where(x=>x.Id != plan.Id).Select(x => x.Name).ToHashSet();
@@ -198,13 +198,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
             if (plan.CreateDnsEntry || plan.CreateIngress)
             {
-                if (string.IsNullOrWhiteSpace(plan.DomainName))
+                if (validateDomainName)
                 {
-                    result.Errors.Add(new ValidationFailure("DomainName", $"Domain name is missing"));
-                }
-                else if (dnsEntries.Count > 0 && !plan.ApplicationServerIps.Contains(dnsEntries[0].IpAddress))
-                {
-                    result.Errors.Add(new ValidationFailure("DomainName", $"The domain name is already in use"));
+                    if (string.IsNullOrWhiteSpace(plan.DomainName))
+                    {
+                        result.Errors.Add(new ValidationFailure("DomainName", $"Domain name is missing"));
+                    }
+                    else if (dnsEntries.Count > 0)
+                    {
+                        result.Errors.Add(new ValidationFailure("DomainName", $"The domain name is already in use"));
+                    }
                 }
             }
             if (planNames.Contains(plan.Name))
