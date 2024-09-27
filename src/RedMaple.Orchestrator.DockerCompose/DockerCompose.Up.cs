@@ -223,6 +223,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                 DNSOptions = service.dns_opt,
                 DNSSearch = service.dns_search,
                 CapAdd = service.cap_add,
+                DeviceRequests = CreateDevicesRequest(service),
                 RestartPolicy = (service.restart ?? "unless-stopped") switch
                 {
                     "unless-stopped" => new RestartPolicy() { Name = RestartPolicyKind.UnlessStopped },
@@ -234,6 +235,32 @@ namespace RedMaple.Orchestrator.DockerCompose
                 PortBindings = CreatePortBindings(service),
                 Binds = CreateBinds(service)
             };
+        }
+
+        private IList<DeviceRequest> CreateDevicesRequest(DockerComposeService service)
+        {
+            var devices = new List<DeviceRequest>();
+            if(service.deploy?.resources?.reservations?.devices is not null)
+            {
+                foreach(var device in service.deploy.resources.reservations.devices)
+                {
+                    var caps = new List<IList<string>>();
+                    if(device.capabilities is not null)
+                    {
+                        caps.Add(new List<string>(device.capabilities));
+                    }
+
+                    devices.Add(new DeviceRequest
+                    {
+                        Capabilities = caps,
+                        Count = device.count ?? 1,
+                        Driver = device.driver,
+                        Options = device.options,
+                        DeviceIDs = device.device_ids
+                    });
+                }
+            }
+            return devices;
         }
 
         private IDictionary<string, IList<PortBinding>> CreatePortBindings(DockerComposeService service)

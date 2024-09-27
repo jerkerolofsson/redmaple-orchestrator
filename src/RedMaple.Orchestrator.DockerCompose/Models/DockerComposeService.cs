@@ -19,7 +19,8 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
         public string? restart { get; set; }
 
         public List<DockerComposePortMapping>? ports { get; set; }
-        public List<string>? devices { get; set; }
+        //public List<DockerComposeDeviceReservation>? devices { get; set; }
+        public DockerComposeDeploy? deploy { get; set; }
         public List<string>? dns { get; set; }
         public List<string>? dns_opt { get; set; }
         public List<string>? dns_search { get; set; }

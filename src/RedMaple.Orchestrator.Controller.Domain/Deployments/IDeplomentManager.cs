@@ -24,7 +24,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         /// <param name="plan"></param>
         /// <returns></returns>
         Task SaveAsync(DeploymentPlan plan);
-        Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan);
+        Task<ValidationResult> ValidatePlanAsync(DeploymentPlan plan, bool validateDomainName = true);
 
         Task<List<DeploymentPlan>> GetDeploymentPlansAsync();
         Task PullImagesAsync(DeploymentPlan plan, IProgress<string> progress, IProgress<JSONMessage> pullProgress, CancellationToken cancellationToken);
