@@ -165,9 +165,12 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
                 var composePath = Path.Combine(dir, "docker-compose.yaml");
                 var envPath = Path.Combine(dir, "plan.env");
 
-                var plan = DockerComposeParser.ParseFile(composePath);
-                _logger.LogInformation("DOWN: {DockerComposePlanName}", plan.name);
-                await _compose.DownAsync(progress, plan, envPath, cancellationToken);
+                if (File.Exists(composePath))
+                { 
+                    var plan = DockerComposeParser.ParseFile(composePath);
+                    _logger.LogInformation("DOWN: {DockerComposePlanName}", plan.name);
+                    await _compose.DownAsync(progress, plan, envPath, cancellationToken);
+                }
             }
             catch (Exception ex)
             {

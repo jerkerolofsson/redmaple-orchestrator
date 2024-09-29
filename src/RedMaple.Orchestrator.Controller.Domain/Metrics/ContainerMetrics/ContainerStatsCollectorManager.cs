@@ -102,10 +102,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
                 double cpuPercent = 0;
                 if (systemDelta > 0)
                 {
-                    cpuPercent = (cpuDelta.Value / systemDelta.Value) * numCores * 100.0;
+                    cpuPercent = (cpuDelta.Value / (double)systemDelta.Value) * numCores * 100.0;
                 }
                 Logger.LogTrace("Container: {ContainerId} CPU: {cpuPercent}%", ContainerId, Math.Round(cpuPercent, 2));
-                cpuPercent = Math.Min(0, cpuPercent);
+                cpuPercent = Math.Max(0, cpuPercent);
                 StatsManager.ReportCpuUsage(ContainerId, cpuPercent);
             }
         }
