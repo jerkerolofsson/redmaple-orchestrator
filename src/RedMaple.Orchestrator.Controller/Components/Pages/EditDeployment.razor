@@ -25,21 +25,19 @@
             <MudCardContent>
                 <MudItem>
                     <MudText Typo="Typo.h6">Deployment Name</MudText>
-                    <MudTextField Label="Name"
-                                  Class="pa-5"
-                                  @bind-Value="_plan.Name"
-                                  For="@(() => _plan.Name)" />
+                    <MudTextField Class="pa-5"
+                                  @bind-Value="_plan.Name"/>
 
                     <MudText Class="mt-5" Typo="Typo.h6">Category</MudText>
-                    <MudTextField Label="Name"
-                                  Class="pa-5"
-                                  @bind-Value="_plan.Category"
-                                  For="@(() => _plan.Category)" />
+                    <MudTextField Class="pa-5"
+                                  @bind-Value="_plan.Category"/>
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Icon</MudText>
+                    <MudTextField Class="pa-5"
+                                  @bind-Value="_plan.IconUrl" />
 
                     <MudText Class="mt-5" Typo="Typo.h6">Docker Compose</MudText>
-                    <YamlTextField Style="font-family: monspace; background: #444; color: white;"
-                                   Lines="20"
-                                   @bind-Value="_plan.Plan" />
+                    <DockerComposeEditor @bind-Value="_plan.Plan" />
 
                     <MudText Class="mt-5" Typo="Typo.h6">Environment Variables</MudText>
                     <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />

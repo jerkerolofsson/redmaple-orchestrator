@@ -22,8 +22,8 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
     /// </summary>
     public class DockerComposePortMapping
     {
-        public int? ContainerPort { get; set; }
-        public int? HostPort { get; set; }
+        public string? ContainerPort { get; set; }
+        public string? HostPort { get; set; }
         public string? Name { get; set; }
         public string? HostIp { get; set; }
         public string? AppProtocol { get; set; }

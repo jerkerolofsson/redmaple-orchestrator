@@ -2,8 +2,55 @@ html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
+.mud-input-text {
+    border-radius: 16px;
+    background: rgba(0,0,0,0.2);
+}
+
+.btn-delete {
+    border-radius: 10px;
+    background: var(--mud-palette-error);
+    text-transform: none;
+    padding: 2px 12px;
+}
+
+.btn-delete:hover {
+    background: var(--mud-palette-error-darken);
+}
+
+.mud-input>textarea.mud-input-root {
+    padding: 8px 12px;    
+}
+
+.mud-input>input.mud-input-root.mud-input-root-margin-dense,
+.mud-input>input.mud-input-root, 
+div.mud-input-slot.mud-input-root {
+    padding: 8px 12px;    
+}
+
+.mud-input-control > .mud-input-control-input-container > .mud-input-label-inputcontrol {
+    transform: translate(10px,24px) scale(1);
+}
+
+.mud-input.mud-input-underline:hover:not(.mud-disabled):before,
+.mud-input.mud-input-underline:before,
+.mud-input.mud-input-underline.mud-input-error:after,
+.mud-input:focus-within.mud-input-underline:before {
+    border: none;
+}
+.mud-input:focus-within.mud-input-underline:after {
+    border: none;
+}
+
+.mud-input {
+    border: solid 2px transparent;
+}
+
+.mud-input:focus-within {
+    border: solid 2px var(--mud-palette-primary);
+}
+
 a, .btn-link {
-    color: #006bb7;
 }
 
 .btn-primary {
@@ -56,16 +103,14 @@ table {
 }
 
 table thead tr {  
-    background: linear-gradient(#eee, #ddd);
 }
 table thead th,
 table tbody td {
     padding: 7px;
-    border-bottom: solid 1px #eee;
 }
 
 table a {
-    color: darkblue;
+    color: white;
     font-weight: 600;
     padding: 6px;
     border-radius: 3px;

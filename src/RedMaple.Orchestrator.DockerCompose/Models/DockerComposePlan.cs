@@ -10,25 +10,31 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
     public class DockerComposePlan
     {
         public string? name { get; set; }
-        public string? version { get; set; }
 
-        public Dictionary<string, DockerComposeVolume> volumes { get; set; } = new();
+        [YamlIgnore()]
+        public string? version { get; set; }
         public Dictionary<string, DockerComposeService> services { get; set; } = new();
         public Dictionary<string, DockerComposeNetwork> networks { get; set; } = new();
+        public Dictionary<string, DockerComposeVolume> volumes { get; set; } = new();
         //public Dictionary<string, DockerComposeNetwork?> configs { get; set; } = new Dictionary<string, DockerComposeNetwork?>();
         //public Dictionary<string, DockerComposeNetwork?> secrets { get; set; } = new Dictionary<string, DockerComposeNetwork?>();
 
         /// <summary>
         /// Global labels
         /// </summary>
+        [YamlIgnore] 
         public Dictionary<string, string> Labels { get; set; } = new();
+        
+        [YamlIgnore] 
         public IReadOnlyList<string>? RequiredEnvironmentVariables { get; internal set; }
 
         /// <summary>
         /// Keep the original yaml, as we will transform it with environment variables
         /// </summary>
+        [YamlIgnore]
         public string Yaml { get; set; } = "";
 
+        [YamlIgnore]
         public string ProjectName
         {
             get

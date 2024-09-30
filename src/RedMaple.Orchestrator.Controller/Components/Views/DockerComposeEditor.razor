@@ -1,0 +1,76 @@
+﻿@using RedMaple.Orchestrator.DockerCompose
+@using RedMaple.Orchestrator.DockerCompose.Models
+<MudGrid>
+    <MudItem>
+        <YamlTextField Style="font-family: monospace; width: 900px; font-weight: bold;"
+                       Lines="20"
+                       ValueChanged="async(s) => await OnPlanChangedAsync(s)"
+                       Value="@Value" />
+        @if(_exception is not null)
+        {
+            <MudAlert Severity="Severity.Error">@_exception.Message</MudAlert>
+        }
+    </MudItem>
+    <MudItem>
+        @if(_plan?.services is not null)
+        {
+            foreach(var serviceItem in _plan.services)
+            {
+                var name = serviceItem.Key;
+                var service = serviceItem.Value;
+                <DockerComposeServiceEditor Service="@service" ServiceChanged="async (s) => await OnServiceUpdatedAsync(name, s)" />
+            }
+        }
+       
+    </MudItem>
+</MudGrid>
+@code {
+    [Parameter] public string Value { get; set; } = null!;
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private DockerComposePlan? _plan = null;
+
+    private Exception? _exception = null;
+
+    private async Task OnServiceUpdatedAsync(string name, DockerComposeService service)
+    {
+        if(_plan is not null)
+        {
+            _plan.services[name] = service;
+
+            string value = DockerComposeParser.ToYaml(_plan);
+            await ValueChanged.InvokeAsync(value);
+        }
+    }
+
+    public async Task OnPlanChangedAsync(string yaml)
+    {
+        //ParsePlan();
+        await ValueChanged.InvokeAsync(yaml);
+    }
+
+    private void ParsePlan()
+    {
+        try
+        {
+            _exception = null;
+            _plan = DockerComposeParser.ParseYaml(Value);
+            if (_plan.services is null || _plan.services.Count == 0)
+            {
+                throw new ArgumentException("No services defined");
+            }
+        }
+        catch (Exception ex)
+        {
+            _exception = ex;
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        ParsePlan();
+
+
+        base.OnParametersSet();
+    }
+}

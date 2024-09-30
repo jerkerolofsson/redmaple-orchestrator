@@ -71,6 +71,16 @@ namespace RedMaple.Orchestrator.DockerCompose
             plan.Labels.Add("com.docker.compose.config-hash", Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(yaml))));
         }
 
+        public static string ToYaml(DockerComposePlan plan)
+        {
+            var serializer = new SerializerBuilder()
+                .WithTypeConverter(new EnvironmentVariablesTypeConverter())
+                .WithTypeConverter(new ServiceVolumeTypeConverter())
+                .WithTypeConverter(new PortMappingTypeConverter())
+                .Build();
+
+            return serializer.Serialize(plan);
+        }
         public static DockerComposePlan ParseYaml(string text)
         {
             var deserializer = new DeserializerBuilder()

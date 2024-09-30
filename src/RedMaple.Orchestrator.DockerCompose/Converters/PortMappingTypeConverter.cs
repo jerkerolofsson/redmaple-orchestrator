@@ -40,16 +40,10 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
                 switch(key.Value)
                 {
                     case "published":
-                        if (int.TryParse(value.Value, out int hostPort))
-                        {
-                            port.HostPort = hostPort;
-                        }
+                        port.HostPort = value.Value;
                         break;
                     case "target":
-                        if (int.TryParse(value.Value, out int containerPort))
-                        {
-                            port.ContainerPort = containerPort;
-                        }
+                        port.ContainerPort = value.Value;
                         break;
                     case "host_ip":
                         port.HostIp = value.Value;
@@ -111,26 +105,24 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
             var items = portsString.Split(':');
             if (items.Length == 1)
             {
-                if (int.TryParse(items[0], out int containerPort))
-                {
-                    port.ContainerPort = containerPort;
-                }
+                port.ContainerPort = items[0];
             }
             else if (items.Length == 2)
             {
-                if (int.TryParse(items[0], out int hostPort))
-                {
-                    port.HostPort = hostPort;
-                }
-                if (int.TryParse(items[1], out int containerPort))
-                {
-                    port.ContainerPort = containerPort;
-                }
+                port.HostPort = items[0];
+                port.ContainerPort = items[1];
             }
         }
 
         public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
         {
+            if (value is null)
+            {
+                emitter.Emit(new SequenceStart(AnchorName.Empty, TagName.Empty, isImplicit: true, SequenceStyle.Block));
+                emitter.Emit(new SequenceEnd());
+                return;
+            }
+
             var ports = (List<DockerComposePortMapping>)value!;
 
             // We start a new YAML object

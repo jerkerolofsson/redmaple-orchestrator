@@ -39,7 +39,9 @@ else
                
                 <TemplateColumn StickyRight="true">
                     <EditTemplate>
-                        <MudButton OnClick="async() => RemoveItem(context.Item)">Delete</MudButton>
+                        <MudButton Class="btn-delete" OnClick="async() => RemoveItem(context.Item)">
+                            <i class="fa fa-trash"></i>&nbsp;Delete
+                        </MudButton>
                     </EditTemplate>
                 </TemplateColumn>
 

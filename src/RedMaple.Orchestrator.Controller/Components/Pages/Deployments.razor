@@ -7,7 +7,7 @@
 @inject IDeploymentManager deploymentManager
 @inject IDialogService dialogService
 
-<MudThemeProvider />
+<MudThemeProvider IsDarkMode="true"/>
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -19,13 +19,13 @@
 }
 else if(!_loading)
 {
-
-    <div class="buttons">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
+        <MudText Typo="Typo.h6">Deployments</MudText>
+        <MudSpacer/>
         <MudButton Variant="Variant.Filled"
-                   Color="Color.Primary"
-                   @onclick="OnCreate">Create</MudButton>
-    </div>
-
+                Color="Color.Primary"
+                @onclick="OnCreate"><i class="fa fa-plus"/>&nbsp;Create</MudButton>
+    </MudStack>
 
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="FilterDeployments">
         @foreach (var category in _categories)
@@ -100,7 +100,7 @@ else if(!_loading)
 
                         <TemplateColumn StickyRight="true">
                             <CellTemplate>
-                                <div class="d-flex align-center">
+                                <MudStack Row="true">
                                     @if (context.Item.Up)
                                     {
                                         <MudButton OnClick="async() => await TakeDownAsync(context.Item)">Take Down</MudButton>
@@ -110,13 +110,14 @@ else if(!_loading)
                                         <MudButton OnClick="async() => await BringUpAsync(context.Item)">Bring Up</MudButton>
                                     }
 
+                                    <MudSpacer/>
+
                                     <MudMenu Icon="@Icons.Material.Filled.MoreVert">
 
-                                        <MudMenuItem>
-                                            @{
-                                                string url = $"/deployments/{context.Item.Slug}/edit";
-                                            }
-                                            <a target="_blank" href="@url">Edit</a>
+                                        @{
+                                            string url = $"/deployments/{context.Item.Slug}/edit";
+                                        }
+                                        <MudMenuItem Href="@url">Edit
                                         </MudMenuItem>
 
                                         <MudMenuItem OnClick="async() => await PullImagesAsync(context.Item)">
@@ -132,7 +133,7 @@ else if(!_loading)
                                         </MudMenuItem>
 
                                     </MudMenu>
-                                </div>
+                                </MudStack>
                             </CellTemplate>
                         </TemplateColumn>
                     </Columns>

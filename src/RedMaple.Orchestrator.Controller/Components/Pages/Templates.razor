@@ -8,7 +8,12 @@
 <MudPopoverProvider />
 <MudDialogProvider />
 
-<MudText Typo="Typo.h6">Containers</MudText>
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
+    <MudText Typo="Typo.h6">Templates</MudText>
+    <MudSpacer />
+<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="async () => await AddTemplateAsync()"><i class="fa fa-plus" />&nbsp;Add</MudButton>
+</MudStack>
+
 <MudPaper Class="pa-5">
 
     <MudDataGrid Bordered="true" Dense="true"
@@ -27,15 +32,14 @@
 
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudButton OnClick="async () => await DeleteTemplateAsync(context.Item.Name)">Delete</MudButton>
+                    <MudButton Class="btn-delete" OnClick="async () => await DeleteTemplateAsync(context.Item.Name)">
+                        <i class="fa fa-trash"/>&nbsp;Delete</MudButton>
                 </CellTemplate>
             </TemplateColumn>
 
         </Columns>
     </MudDataGrid>
 </MudPaper>
-
-<MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="async () => await AddTemplateAsync()">Add</MudButton>
 
 @code {
     private List<DeploymentPlanTemplate> _templates = new();
@@ -63,7 +67,7 @@
 
             await templateProvider.SaveTemplateAsync(new DeploymentPlanTemplate
                 {
-                    IconUrl = "container.png",
+                    IconUrl = "apps.png",
                     Name = templateName,
                     Plan = ""
                 });
@@ -85,6 +89,6 @@
 
     private async Task LoadTemplatesAsync()
     {
-        _templates = await templateProvider.GetTemplatesAsync();
+        _templates = (await templateProvider.GetTemplatesAsync()).OrderBy(x=>x.Name).ToList();
     }
 }

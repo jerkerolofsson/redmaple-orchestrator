@@ -55,12 +55,13 @@
                 <TemplateColumn StickyRight="true">
                     <CellTemplate>
                           <MudLoadingButton 
+                              Class="btn-delete"
                               ButtonVariant="ButtonVariant.Button"
                                           @bind-Loading="@context.Item.IsLoading"
                                           LoadingCircularColor="Color.Primary" 
                                           OnClick="async () => await DeleteAsync(context.Item)">
                             <ChildContent>
-                                DELETE
+                                <i class="fa fa-trash"></i>&nbsp;Delete
                             </ChildContent>
                             <LoadingContent>
                                 LOADING

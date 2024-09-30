@@ -8,6 +8,8 @@
     private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
     public ChartOptions Options = new ChartOptions()
     {
+        ShowLegend = false,
+        YAxisRequireZeroPoint = true
     };
 
     public List<ChartSeries> Series = new List<ChartSeries>()

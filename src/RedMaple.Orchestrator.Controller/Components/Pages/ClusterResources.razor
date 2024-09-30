@@ -6,7 +6,7 @@
 @inject IClusterResourceManager resourceManager
 @inject IDialogService dialogService
 
-<MudThemeProvider />
+<MudThemeProvider IsDarkMode="true"/>
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -18,7 +18,9 @@
 }
 else if(!_loading)
 {
-    <div class="buttons">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
+        <MudText Typo="Typo.h6">Resources</MudText>
+        <MudSpacer />
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    @onclick="async () => await AddConnectionStringAsync()">Add Connection String</MudButton>
@@ -30,11 +32,8 @@ else if(!_loading)
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    @onclick="async () => await AddOidcServerAsync()">Add OIDC Server</MudButton>
-    </div>
 
-
-    <MudText Typo="Typo.h6">Resources</MudText>
-
+    </MudStack>
     <MudDataGrid Bordered="true" Dense="true"
                     EditMode="DataGridEditMode.Cell"
                     Items="@_resources"

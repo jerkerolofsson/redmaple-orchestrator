@@ -12,7 +12,38 @@
 @implements IDisposable
 @rendermode InteractiveServer
 
-<MudText Typo="Typo.h3">@Slug</MudText>
+<MudItem Class="pa-5">
+    <MudStack Spacing="2">
+        <MudText Typo="Typo.h4">@Slug</MudText>
+
+        <MudStack  Spacing="2" Row="true">
+            @if (_plan is not null)
+            {
+                string ingressUrl = "";
+                string appUrl = "";
+
+                if (_plan.CreateIngress && !string.IsNullOrEmpty(_plan.DomainName))
+                {
+                    ingressUrl = $"https://{_plan.DomainName}";
+                }
+                if (_plan.ApplicationServerIps?.Count > 0)
+                {
+                    appUrl = $"{_plan.ApplicationProtocol}://{_plan.ApplicationServerIps[0]}:{_plan.ApplicationServerPort}";
+                }
+                if (!string.IsNullOrEmpty(ingressUrl))
+                {
+                    <MudNavLink Href="@ingressUrl">@ingressUrl</MudNavLink>
+                }
+                if (!string.IsNullOrEmpty(appUrl))
+                {
+                    <MudNavLink Href="@appUrl">@appUrl</MudNavLink>
+                }
+            }
+        </MudStack>
+
+    </MudStack>
+</MudItem>
+
 
 <MudText Typo="Typo.h6">Logs</MudText>
 <div class="container-logs">
@@ -26,15 +57,15 @@
 </div>
 
 <div class="container-charts">
-    <MudCard Class="pa-3">
-        <MudText Typo="Typo.caption">@_cpuHeader</MudText>
+    <MudItem Class="pa-3">
+        <MudText Color="Color.Secondary" Typo="Typo.h6">@_cpuHeader</MudText>
         <ContainerStatsChart SeriesName="CPU (%)" Data="@_cpuStats"></ContainerStatsChart>
-    </MudCard>
+    </MudItem>
 
-    <MudCard Class="pa-3">
-        <MudText Typo="Typo.caption">@_memoryHeader</MudText>
+    <MudItem Class="pa-3">
+        <MudText Color="Color.Secondary" Typo="Typo.h6">@_memoryHeader</MudText>
         <ContainerStatsChart SeriesName="Memory (MB)" Data="@_memoryUsage"></ContainerStatsChart>
-    </MudCard>
+    </MudItem>
 </div>
 
 
@@ -48,10 +79,11 @@
     private string? _monitorContainerId = null;
     private string _memoryHeader = "Memory Usage";
     private string _cpuHeader = "CPU (%)";
+    private DeploymentPlan? _plan;
 
     protected override async Task OnParametersSetAsync()
     {
-        //var deployment = await deploymentManager.GetDeploymentBySlugAsync(Slug);
+        _plan = await deploymentManager.GetDeploymentBySlugAsync(Slug);
         await RefreshStatsAsync();
     }
 

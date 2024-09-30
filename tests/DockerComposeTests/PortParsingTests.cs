@@ -15,8 +15,8 @@ namespace DockerComposeTests
 
             Assert.NotNull(service.ports);
             Assert.Single(service.ports);
-            Assert.Equal(1234, service.ports[0].HostPort);
-            Assert.Equal(8081, service.ports[0].ContainerPort);
+            Assert.Equal("1234", service.ports[0].HostPort);
+            Assert.Equal("8081", service.ports[0].ContainerPort);
             Assert.Equal("http port", service.ports[0].Name);
         }
 
@@ -31,8 +31,8 @@ namespace DockerComposeTests
 
             Assert.NotNull(service.ports);
             Assert.Single(service.ports);
-            Assert.Equal(1234, service.ports[0].HostPort);
-            Assert.Equal(8081, service.ports[0].ContainerPort);
+            Assert.Equal("1234", service.ports[0].HostPort);
+            Assert.Equal("8081", service.ports[0].ContainerPort);
             Assert.Equal("UDP", service.ports[0].Protocol);
         }
 
@@ -47,8 +47,8 @@ namespace DockerComposeTests
 
             Assert.NotNull(service.ports);
             Assert.Single(service.ports);
-            Assert.Equal(1234, service.ports[0].HostPort);
-            Assert.Equal(8081, service.ports[0].ContainerPort);
+            Assert.Equal("1234", service.ports[0].HostPort);
+            Assert.Equal("8081", service.ports[0].ContainerPort);
             Assert.Equal("TCP", service.ports[0].Protocol);
         }
 
@@ -63,8 +63,8 @@ namespace DockerComposeTests
 
             Assert.NotNull(service.ports);
             Assert.Single(service.ports);
-            Assert.Equal(1234, service.ports[0].HostPort);
-            Assert.Equal(8081, service.ports[0].ContainerPort);
+            Assert.Equal("1234", service.ports[0].HostPort);
+            Assert.Equal("8081", service.ports[0].ContainerPort);
         }
     }
 }

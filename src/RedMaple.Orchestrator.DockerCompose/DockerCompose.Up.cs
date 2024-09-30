@@ -281,7 +281,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                     portBindings[key].Add(new PortBinding
                     {
                         HostIP = port.HostIp,
-                        HostPort = hostPort.ToString()
+                        HostPort = hostPort ?? port.ContainerPort
                     });
                 }
             }

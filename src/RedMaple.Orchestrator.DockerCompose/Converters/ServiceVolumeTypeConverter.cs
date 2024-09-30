@@ -95,7 +95,7 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
         /// /host/path:/container/path:ro"
         /// </summary>
         /// <param name="scalar"></param>
-        /// <param name="port"></param>
+        /// <param name="volume"></param>
         private static void ParseShortFormat(Scalar scalar, DockerComposeServiceVolume volume)
         {
             var items = scalar.Value.Split(':');
@@ -132,48 +132,44 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
 
         public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
         {
-            var ports = (List<DockerComposePortMapping>)value!;
+            if (value is null)
+            {
+                emitter.Emit(new SequenceStart(AnchorName.Empty, TagName.Empty, isImplicit: true, SequenceStyle.Block));
+                emitter.Emit(new SequenceEnd());
+                return;
+            }
+            var volumes = (List<DockerComposeServiceVolume>)value!;
 
             // We start a new YAML object
             emitter.Emit(new SequenceStart(AnchorName.Empty, TagName.Empty, isImplicit: true, SequenceStyle.Block));
 
-            foreach (var port in ports)
+            foreach (var volume in volumes)
             {
                 emitter.Emit(new MappingStart(AnchorName.Empty, TagName.Empty, isImplicit: true, MappingStyle.Block));
-                if (port.Name is not null)
+                if (volume.Type is not null)
                 {
-                    emitter.Emit(new Scalar("name"));
-                    emitter.Emit(new Scalar(port.Name));
+                    emitter.Emit(new Scalar("type"));
+                    emitter.Emit(new Scalar(volume.Type));
                 }
-                if (port.HostIp is not null)
+                if (volume.Source is not null)
                 {
-                    emitter.Emit(new Scalar("host_ip"));
-                    emitter.Emit(new Scalar(port.HostIp));
+                    emitter.Emit(new Scalar("source"));
+                    emitter.Emit(new Scalar(volume.Source));
                 }
-                if (port.AppProtocol is not null)
-                {
-                    emitter.Emit(new Scalar("app_protocol"));
-                    emitter.Emit(new Scalar(port.AppProtocol));
-                }
-                if (port.Mode is not null)
-                {
-                    emitter.Emit(new Scalar("mode"));
-                    emitter.Emit(new Scalar(port.Mode));
-                }
-                if (port.HostPort is not null)
-                {
-                    emitter.Emit(new Scalar("published"));
-                    emitter.Emit(new Scalar(port.HostPort.ToString()!));
-                }
-                if (port.ContainerPort is not null)
+                if (volume.Target is not null)
                 {
                     emitter.Emit(new Scalar("target"));
-                    emitter.Emit(new Scalar(port.ContainerPort.ToString()!));
+                    emitter.Emit(new Scalar(volume.Target));
                 }
-                if (port.Protocol is not null)
+                if (volume.Consistency is not null)
                 {
-                    emitter.Emit(new Scalar("protocol"));
-                    emitter.Emit(new Scalar(port.Protocol));
+                    emitter.Emit(new Scalar("consistency"));
+                    emitter.Emit(new Scalar(volume.Consistency));
+                }
+                if (volume.ReadOnly is not null)
+                {
+                    emitter.Emit(new Scalar("read_only"));
+                    emitter.Emit(new Scalar(volume.ReadOnly));
                 }
                 emitter.Emit(new MappingEnd());
 

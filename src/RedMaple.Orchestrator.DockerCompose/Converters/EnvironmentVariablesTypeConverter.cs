@@ -89,6 +89,12 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
 
         public void WriteYaml(IEmitter emitter, object? value, Type type, ObjectSerializer serializer)
         {
+            if(value is null)
+            {
+                emitter.Emit(new MappingStart(AnchorName.Empty, TagName.Empty, isImplicit: true, MappingStyle.Block));
+                emitter.Emit(new MappingEnd());
+                return;
+            }
             var envvars = (EnvironmentVariables)value!;
 
             // We start a new YAML object

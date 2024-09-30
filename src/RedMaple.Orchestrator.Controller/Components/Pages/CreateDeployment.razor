@@ -84,12 +84,7 @@
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
                     <MudText Typo="Typo.h6">@model.Kind</MudText>
-                    <MudItem Style="border: solid 1px #ccc; background: #444"  Class="mt-5 pa-5">
-                    <YamlTextField 
-                                    Style="font-family: monspace; background: #444; color: white;"
-                                    Lines="20"
-                                    @bind-Value="model.Plan"/>
-                    </MudItem>
+                    <DockerComposeEditor @bind-Value="model.Plan" />
                 </MudCardContent>
             </MudCard>
         }
@@ -119,6 +114,11 @@
                     <MudItem xs="12" sm="6" md="4" Class="mt-5">
                         <SelectNode MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
                     </MudItem>
+
+                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
+                        <MudTextField @bind-Value="model.ApplicationPort" Label="Host Port" />
+                    </MudItem>
+
                 </MudCardContent>
             </MudCard>
         }
@@ -173,35 +173,36 @@
             else
             {
                 <MudText Typo="Typo.h6">Ready for deployment</MudText>
-                <MudButton  Class="ml-auto"
-                            OnClick="CreateDeploymentAsync"
-                            ButtonType="ButtonType.Submit"
-                            Variant="Variant.Filled"
-                            Color="Color.Primary">Create</MudButton>
-
                 <MudItem Class="ml-5 mt-5">
-                <ol>
-                    @if(model.CreateIngress)
-                    {
-                        <li>Create DNS entry @model.DomainName for Ingress</li>
-                        <li>Create ingress service @model.DomainName at @model.IngressNode?.IpAddress</li>
-                        <li>Generate HTTPS certificates for SAN: @model.DomainName</li>
-                        <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
-                    }
-                    else
-                    {
-                        <li>Create DNS entry @model.DomainName for application</li>
-                        <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
-                    }
-
-                    @if(_workPlan is not null)
-                    {
-                        foreach(var container in _workPlan.ContainerImages)
+                    <ol>
+                        @if(model.CreateIngress)
                         {
-                            <li>Create container '@container' at @model.ApplicationNode?.IpAddress</li>
+                            <li>Create DNS entry @model.DomainName for Ingress</li>
+                            <li>Create ingress service @model.DomainName at @model.IngressNode?.IpAddress</li>
+                            <li>Generate HTTPS certificates for SAN: @model.DomainName</li>
+                            <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
                         }
-                    }
-                </ol>
+                        else
+                        {
+                            <li>Create DNS entry @model.DomainName for application</li>
+                            <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                        }
+
+                        @if(_workPlan is not null)
+                        {
+                            foreach(var container in _workPlan.ContainerImages)
+                            {
+                                <li>Create container '@container' at @model.ApplicationNode?.IpAddress</li>
+                            }
+                        }
+                    </ol>
+                    <MudButton Class="ml-auto mt-5"
+                                OnClick="CreateDeploymentAsync"
+                                ButtonType="ButtonType.Submit"
+                                Variant="Variant.Filled"
+                                Color="Color.Primary">Create</MudButton>
+
+
                 </MudItem>
             }
                 </MudCardContent>

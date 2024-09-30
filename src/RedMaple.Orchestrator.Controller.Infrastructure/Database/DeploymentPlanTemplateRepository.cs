@@ -140,7 +140,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 {
                     Category = "Services",
                     Name = "Ollama",
-                    IconUrl = "/container.png",
+                    IconUrl = "/apps.png",
                     CreateIngress = true,
                     ApplicationProtocol = "http",
                     HealthChecks = new()
@@ -180,7 +180,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 {
                     Category = "Services",
                     Name = "Libretranslate",
-                    IconUrl = "/container.png",
+                    IconUrl = "/apps.png",
                     CreateIngress = true,
                     ApplicationProtocol = "http",
                     Plan = """
