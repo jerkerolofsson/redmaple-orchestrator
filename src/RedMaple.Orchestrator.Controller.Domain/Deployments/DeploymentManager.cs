@@ -315,6 +315,11 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             environmentVariables["REDMAPLE_DEPLOYMENT_SLUG"] = plan.Slug;
             environmentVariables["REDMAPLE_APP_PORT"] = plan.ApplicationServerPort?.ToString() ?? "";
 
+            if (plan.ApplicationServerIps.Any())
+            {
+                environmentVariables["REDMAPLE_APP_SERVER_IP"] = plan.ApplicationServerIps.First();
+            }
+
             environmentVariables["REDMAPLE_APP_HTTPS_PEM_KEY_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/key.pem";
             environmentVariables["REDMAPLE_APP_HTTPS_PEM_CERT_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/cert.pem";
 
