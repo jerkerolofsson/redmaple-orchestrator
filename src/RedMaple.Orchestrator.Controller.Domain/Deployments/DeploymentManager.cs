@@ -315,6 +315,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             environmentVariables["REDMAPLE_DEPLOYMENT_SLUG"] = plan.Slug;
             environmentVariables["REDMAPLE_APP_PORT"] = plan.ApplicationServerPort?.ToString() ?? "";
 
+            environmentVariables["REDMAPLE_APP_HTTPS_PEM_KEY_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/key.pem";
+            environmentVariables["REDMAPLE_APP_HTTPS_PEM_CERT_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/cert.pem";
+
             environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/https.pfx";
             environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD"] = RandomNumberGenerator.GetString(_secretCharacters, 32);
 
@@ -601,6 +604,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 VolumeBinds = plan.VolumeBinds,
                 EnvironmentVariables = plan.EnvironmentVariables,
                 HttpsCertificatePfx = plan.ApplicationHttpsCertificatePfx,
+                HttpsCertificatePemCert = plan.ApplicationHttpsPemCert ?? [],
+                HttpsCertificatePemKey = plan.ApplicationHttpsPemKey ?? [],
                 Kind = plan.Kind,
                 Plan = plan.Plan,
                 Slug = plan.Slug
@@ -634,8 +639,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             builder.SetPassword(password);
 
             var cert = builder.BuildSignedCertificate(issuer);
-            var pfxBytes = CertificateSerializer.ToPfx(cert, password, [issuer, root]);
-            plan.ApplicationHttpsCertificatePfx = pfxBytes;
+            plan.ApplicationHttpsCertificatePfx = CertificateSerializer.ToPfx(cert, password, [issuer, root]);
+            plan.ApplicationHttpsPemCert = CertificateSerializer.ExportCertificatePemsAsByteArray(cert, issuer, root); // nginx order
+            plan.ApplicationHttpsPemKey = CertificateSerializer.ExportPrivateKeyToPem(cert);
         }
 
         private async Task CreateDnsAndIngressAsync(DeploymentPlan plan, IProgress<string> progress)

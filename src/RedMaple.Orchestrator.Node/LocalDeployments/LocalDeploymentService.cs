@@ -57,6 +57,19 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             var path = Path.Combine(dir, "https.pfx");
             await File.WriteAllBytesAsync(path, plan.HttpsCertificatePfx);
 
+            if (plan.HttpsCertificatePemKey is not null && plan.HttpsCertificatePemKey.Length > 0)
+            {
+                var pemPath = Path.Combine(dir, "key.pem");
+                await File.WriteAllBytesAsync(pemPath, plan.HttpsCertificatePemKey);
+                plan.EnvironmentVariables["REDMAPLE_APP_HTTPS_PEM_KEY_HOST_PATH"] = pemPath;
+            }
+            if (plan.HttpsCertificatePemCert is not null && plan.HttpsCertificatePemCert.Length > 0)
+            {
+                var pemPath = Path.Combine(dir, "cert.pem");
+                await File.WriteAllBytesAsync(pemPath, plan.HttpsCertificatePemCert);
+                plan.EnvironmentVariables["REDMAPLE_APP_HTTPS_PEM_CERT_HOST_PATH"] = pemPath;
+            }
+
             // Change the environment variable
             plan.EnvironmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = path;
         }
