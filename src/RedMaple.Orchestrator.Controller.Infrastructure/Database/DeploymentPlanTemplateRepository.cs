@@ -265,7 +265,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                         image: "mongo:6.0"
                         restart: unless-stopped
                         environment:
-                          POSTGRES_DB: ${POSTGRES_DB}
                           MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
                           MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
                         volumes:

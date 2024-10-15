@@ -11,6 +11,7 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task StartAsync(string id, CancellationToken cancellationToken = default);
         Task StopAsync(string id, CancellationToken cancellationToken = default);
         Task<CreateContainerResponse> CreateContainerAsync(CreateContainerParameters parameters, CancellationToken cancellationToken = default);
+        Task<Container?> GetContainerByIdAsync(string id, CancellationToken cancellationToken = default);
         Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken = default);
         Task<List<Container>> GetContainersAsync(string? project, CancellationToken cancellationToken = default);
         Task<bool> HasContainerByNameAsync(string name, CancellationToken cancellationToken = default);
@@ -55,6 +56,6 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task<VolumeResponse> CreateVolumeAsync(VolumesCreateParameters parameters, CancellationToken cancellationToken);
         Task PullImageAsync(string imageName, IProgress<JSONMessage> progress, CancellationTokenSource? cts,
             CancellationToken cancellationToken);
-
+        Task RestartAsync(string id, CancellationToken cancellationToken);
     }
 }

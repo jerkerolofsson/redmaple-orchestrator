@@ -16,6 +16,18 @@ namespace RedMaple.Orchestrator.Node.Controllers
             _logger = logger;
             _containersClient = containersClient;
         }
+        [HttpPost("/api/containers/{id}/restart")]
+        public async Task RestartContainerByIdAsync([FromRoute] string id, CancellationToken cancellationToken)
+        {
+            await _containersClient.RestartAsync(id, cancellationToken);
+        }
+
+        [HttpGet("/api/containers/{id}")]
+        public async Task<Container?> GetContainerByIdAsync([FromRoute] string id)
+        {
+            Container? container = await _containersClient.GetContainerByIdAsync(id);
+            return container;
+        }
 
         [HttpGet()]
         public async Task<List<Container>> GetContainersAsync([FromQuery] string? project)
@@ -85,13 +97,6 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/containers/{id}/start")]
         public async Task StartAsync([FromRoute] string id)
         {
-            await _containersClient.StartAsync(id);
-        }
-
-        [HttpPost("/api/containers/{id}/restart")]
-        public async Task RestartAsync([FromRoute] string id)
-        {
-            await _containersClient.StopAsync(id);
             await _containersClient.StartAsync(id);
         }
     }
