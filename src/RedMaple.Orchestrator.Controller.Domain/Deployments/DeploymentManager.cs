@@ -20,6 +20,7 @@ using RedMaple.Orchestrator.Security.Services;
 using RedMaple.Orchestrator.Utilities;
 using System.Diagnostics;
 using System.Net;
+using System.Numerics;
 using System.Security.Cryptography;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
@@ -602,6 +603,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         {
             ArgumentNullException.ThrowIfNull(plan.ApplicationHttpsCertificatePfx);
 
+            UpdateDeploymentFromYaml(plan);
+
             progress.Report($"Adding deployment on {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
             await deploymentClient.AddDeploymentAsync(new AddNodeDeploymentRequest
@@ -615,6 +618,30 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 Plan = plan.Plan,
                 Slug = plan.Slug
             }, progress);
+        }
+
+        private static void UpdateDeploymentFromYaml(DeploymentPlan plan)
+        {
+            try
+            {
+                plan.Version = "latest";
+                var composePlan = DockerComposeParser.ParseYaml(plan.Plan);
+                if (composePlan?.services is not null)
+                {
+                    foreach (var service in composePlan.services.Values)
+                    {
+                        if(!string.IsNullOrEmpty(service.image))
+                        {
+                            var imageParts = service.image.Split(':');
+                            if(imageParts.Length > 0)
+                            {
+                                plan.Version = imageParts[^1];
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
         }
 
         private async Task GenerateHttpsCertificateAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
@@ -729,6 +756,38 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         public async Task<List<DeploymentPlan>> GetDeploymentPlansAsync()
         {
             return await _deploymentPlanRepository.GetDeploymentPlansAsync();
+        }
+
+        public async Task ChangeImageTagAsync(DeploymentPlan plan, string tag)
+        {
+            var composePlan = DockerComposeParser.ParseYaml(plan.Plan);
+            bool changed = false;
+            if (composePlan?.services is not null)
+            {
+                foreach (var service in composePlan.services.Values)
+                {
+                    if (!string.IsNullOrEmpty(service.image))
+                    {
+                        plan.Version = tag;
+                        var index = service.image.LastIndexOf(':');
+                        if(index == -1)
+                        {
+                            service.image = service.image + ':' + tag;
+                        }
+                        else
+                        {
+                            service.image = service.image.Substring(0,index) + ':' + tag;
+                        }
+                        changed = true;
+                    }
+                }
+
+                if (changed)
+                {
+                    plan.Plan = DockerComposeParser.ToYaml(composePlan);
+                    await SaveAsync(plan);
+                }
+            }
         }
     }
 }

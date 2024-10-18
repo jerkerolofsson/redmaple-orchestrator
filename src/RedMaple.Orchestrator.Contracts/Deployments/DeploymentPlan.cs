@@ -45,6 +45,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public required string Plan { get; set; }
 
         /// <summary>
+        /// Version/Tag. This is read from the deployment plan
+        /// </summary>
+        public string? Version { get; set; }
+
+        /// <summary>
         /// Environment variables that will be set before applying the plan
         /// </summary>
         public Dictionary<string, string> EnvironmentVariables { get; set; } = new();

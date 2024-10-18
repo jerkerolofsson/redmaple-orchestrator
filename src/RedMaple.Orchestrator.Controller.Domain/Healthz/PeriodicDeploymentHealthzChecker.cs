@@ -60,6 +60,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
         {
             foreach (var deployment in deployments)
             {
+                var prevHealth = deployment.Health;
                 var deploymentHealth = new ResourceHealthCheckResult { Status = HealthStatus.Healthy };
                 for (int i = 0; i < deployment.HealthChecks.Count; i++)
                 {
@@ -89,23 +90,26 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                     }
                 }
 
-                await UpdateHealthStatusAsync(deployment, deploymentHealth);
+                await UpdateHealthStatusAsync(deployment, prevHealth, deploymentHealth);
             }
 
             return sleepTime;
         }
 
-        private async Task UpdateHealthStatusAsync(DeploymentPlan deployment, ResourceHealthCheckResult deploymentHealth)
+        private async Task UpdateHealthStatusAsync(DeploymentPlan deployment, ResourceHealthCheckResult? prevHealth, ResourceHealthCheckResult newHealth)
         {
-            if (deploymentHealth.Status == HealthStatus.Healthy)
+            if (newHealth.Status == HealthStatus.Healthy)
             {
-                _logger.LogDebug("{DeploymentSlug} health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
+                if (prevHealth != newHealth)
+                {
+                    _logger.LogTrace("{DeploymentSlug} health is {HealthStatus}", deployment.Slug, newHealth.Status);
+                }
             }
             else
             {
-                _logger.LogWarning("{DeploymentSlug} health changed to {HealthStatus}", deployment.Slug, deploymentHealth.Status);
+                _logger.LogWarning("{DeploymentSlug} health is {HealthStatus}", deployment.Slug, newHealth.Status);
             }
-            deployment.Health = deploymentHealth;
+            deployment.Health = newHealth;
             await _deploymentManager.SaveAsync(deployment);
         }
 
@@ -125,7 +129,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
             try
             {
 
-                _logger.LogDebug("{DeploymentSlug}: Testing health (livez)..", deploymentPlan.Slug);
+                _logger.LogTrace("{DeploymentSlug}: Testing health (livez)..", deploymentPlan.Slug);
 
                 var deployments = await _deploymentManager.GetApplicationDeploymentsAsync(deploymentPlan.Slug);
 
@@ -133,7 +137,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                 {
                     status = await _healthChecker.CheckAsync(appDeployment, deploymentPlan, check, cts.Token);
                 }
-                _logger.LogDebug("{DeploymentSlug}: Health (livez)={HealthStatus}", deploymentPlan.Slug, status);
+                _logger.LogTrace("{DeploymentSlug}: Health (livez)={HealthStatus}", deploymentPlan.Slug, status);
             }
             catch (Exception ex)
             {
