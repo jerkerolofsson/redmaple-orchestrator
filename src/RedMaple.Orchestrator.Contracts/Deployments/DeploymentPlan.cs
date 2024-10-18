@@ -90,9 +90,20 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public bool CreateIngress { get; set; }
 
         /// <summary>
-        /// HTTPS certificate for the application server
+        /// HTTPS certificate for the application server in PFX format
         /// </summary>
         public byte[]? ApplicationHttpsCertificatePfx { get; set; }
+
+        /// <summary>
+        /// HTTPS certificate for the application server in PEM format
+        /// </summary>
+        public byte[]? ApplicationHttpsPemCert { get; set; }
+
+        /// <summary>
+        /// HTTPS private key for the application server in PEM format
+        /// </summary>
+        public byte[]? ApplicationHttpsPemKey { get; set; }
+
 
         /// <summary>
         /// Password for the PFX certificate
