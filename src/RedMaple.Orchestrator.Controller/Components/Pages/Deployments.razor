@@ -27,7 +27,7 @@ else if(!_loading)
                 @onclick="OnCreate"><i class="fa fa-plus"/>&nbsp;Create</MudButton>
     </MudStack>
 
-    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndexChanged="FilterDeployments">
+    <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndex="@_activeTabIndex" ActivePanelIndexChanged="FilterDeployments">
         @foreach (var category in _categories)
         {
             <MudTabPanel Text="@category">
@@ -365,11 +365,15 @@ else if(!_loading)
                 _categories.Add(plan.Category);
             }
         }
+        _activeTabIndex = 0;
         FilterDeployments(0);
     }
 
+    private int _activeTabIndex = 0;
+
     private void FilterDeployments(int index)
     {
+        _activeTabIndex = index;
         _filteredPlans.Clear();
         if (index >= 0 && index < _categories.Count)
         {

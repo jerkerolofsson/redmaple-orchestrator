@@ -58,6 +58,9 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                         await _deploymentManager.ChangeImageTagAsync(deployment, tag);
                     }
 
+                    _logger.LogInformation("Pulling images for {deploymentSlug}..", deploymentSlug);
+                    await _deploymentManager.PullImagesAsync(deployment, progress, progress, cancellationToken);
+
                     _logger.LogInformation("Bringing up {deploymentSlug}..", deploymentSlug);
                     await _deploymentManager.BringUpAsync(deployment, progress, cancellationToken);
                     _logger.LogInformation("Restarted {deploymentSlug}!", deploymentSlug);
