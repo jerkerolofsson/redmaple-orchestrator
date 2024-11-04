@@ -1,5 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
+
 using RedMaple.Orchestrator.Contracts.Healthz;
 using System;
 using System.Collections.Generic;
@@ -16,9 +18,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
     /// </summary>
     internal class TcpConnectHealthzChecker : IHealthzCheckerMethod
     {
-        static TcpConnectHealthzChecker()
+        private readonly ILogger _logger;
+
+        public TcpConnectHealthzChecker(ILogger logger)
         {
+            _logger = logger;
         }
+
+        
 
         public async Task<HealthStatus> CheckAsync(DeploymentHealthCheck check, string url, CancellationToken cancellationToken)
         {
@@ -35,8 +42,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
 
                 return HealthStatus.Unhealthy;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
+                _logger.LogError("TCP-Connect health check failed: {Message}", ex.Message);
                 return HealthStatus.Unhealthy;
             }
         }

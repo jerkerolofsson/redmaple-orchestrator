@@ -1,4 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
+
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Healthz;
 using System;
@@ -14,10 +16,17 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
     /// </summary>
     internal class HealthzChecker : IHealthzChecker
     {
+        private readonly ILogger<HealthzChecker> _logger;
+
         public Task<HealthStatus> CheckReadyzAsync(Deployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
             CheckAsync(applicationDeployment, deployment, HealthCheckType.Readyz, cancellationToken);
         public Task<HealthStatus> CheckLivezAsync(Deployment applicationDeployment, DeploymentPlan deployment, CancellationToken cancellationToken) => 
             CheckAsync(applicationDeployment,deployment, HealthCheckType.Livez, cancellationToken);
+
+        public HealthzChecker(ILogger<HealthzChecker> logger)
+        {
+            _logger = logger;
+        }
 
         /// <summary>
         /// Checks health with checks of a specific kind
@@ -68,8 +77,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
 
             IHealthzCheckerMethod checker = check.Method switch
             {
-                HealthCheckMethod.HttpGet => new HttpGetHealthzChecker(),
-                HealthCheckMethod.TcpConnect => new TcpConnectHealthzChecker(),
+                HealthCheckMethod.HttpGet => new HttpGetHealthzChecker(_logger),
+                HealthCheckMethod.TcpConnect => new TcpConnectHealthzChecker(_logger),
                 _ => throw new NotImplementedException()
             };
 

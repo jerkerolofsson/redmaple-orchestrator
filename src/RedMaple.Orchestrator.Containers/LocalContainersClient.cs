@@ -91,6 +91,11 @@ namespace RedMaple.Orchestrator.Containers
             return false;
         }
 
+        public async Task<Container?> GetContainerByIdAsync(string containerId, CancellationToken cancellationToken)
+        {
+            var containers = await GetContainersAsync(null, cancellationToken);
+            return containers.Where(x => x.Id == containerId).FirstOrDefault();
+        }
         public async Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken)
         {
             var containers = await GetContainersAsync(null, cancellationToken);
@@ -100,6 +105,35 @@ namespace RedMaple.Orchestrator.Containers
         {
             var containers = await GetContainersAsync(null, cancellationToken);
             return containers.Where(x => x.Name == name).Any();
+        }
+
+        public async Task ExecAsync(string containerId, IList<string> commands, CancellationToken cancellationToken)
+        {
+            var container = await GetContainerByIdAsync(containerId, cancellationToken);
+
+            var execParams = new ContainerExecCreateParameters
+            {
+                Cmd = commands,
+            };
+
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            var exec = await client.Exec.ExecCreateContainerAsync(containerId, execParams);
+            using var stream = await client.Exec.StartAndAttachContainerExecAsync(exec.ID, false);
+
+            var stdout = new MemoryStream();
+            var stderr = new MemoryStream();
+            await stream.CopyOutputToAsync(
+                null,
+                stdout,
+                stderr,
+                cancellationToken);
+
+            stdout.Position = 0;
+            stderr.Position = 0;
+
+            var stdErrText = Encoding.UTF8.GetString(stderr.GetBuffer(), 0, (int)stderr.Length);
+            var stdOutText = Encoding.UTF8.GetString(stdout.GetBuffer(), 0, (int)stdout.Length);
+
         }
 
         public async Task<List<Container>> GetContainersAsync(string? project, CancellationToken cancellationToken)

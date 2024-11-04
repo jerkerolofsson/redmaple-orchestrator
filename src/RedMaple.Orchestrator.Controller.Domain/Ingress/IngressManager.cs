@@ -36,7 +36,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             _nodeManager = nodeManager;
         }
 
-        public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress)
+        public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress, CancellationToken cancellationToken)
         {
             progress.Report($"Configuring ingress-server {service.DomainName} for {service.Id}..");
 
@@ -77,7 +77,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
                 _logger.LogInformation("Provisioning {BaseUrl} with ingress service {ServiceId}", node.BaseUrl, service.Id);
                 progress.Report($"Provisioning ingress service {node.IpAddress}..");
                 using var ingressClient = new NodeIngressClient(node.BaseUrl);
-                await ingressClient.AddIngressServiceAsync(service, progress);
+                await ingressClient.AddIngressServiceAsync(service, progress, cancellationToken);
             }
             finally
             {
@@ -129,9 +129,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             */
         }
 
-        public async Task DeleteIngressServiceAsync(string id)
+        public async Task DeleteIngressServiceAsync(string id, CancellationToken cancellationToken)
         {
-            await _lock.WaitAsync();
+            await _lock.WaitAsync(cancellationToken);
             try
             {
                 await DeleteIngressServiceNoLockAsync(id);
@@ -174,7 +174,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             if (node is not null)
             {
                 using var ingressClient = new NodeIngressClient(node.BaseUrl);
-                await ingressClient.DeleteIngressServiceAsync(service.Id);
+                await ingressClient.DeleteIngressServiceAsync(service.Id, CancellationToken.None);
             }
         }
 
@@ -211,7 +211,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             {
                 if (service.DomainName == domainName)
                 {
-                    await DeleteIngressServiceAsync(service.Id);
+                    await DeleteIngressServiceAsync(service.Id, CancellationToken.None);
                     result = true;
                 }
             }

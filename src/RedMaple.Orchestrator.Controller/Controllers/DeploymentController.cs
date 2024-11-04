@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Diagnostics;
+
+using Microsoft.AspNetCore.Mvc;
 
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Node;
@@ -49,21 +51,26 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             {
                 try
                 {
-                    _logger.LogInformation("Taking down {deploymentSlug}..", deploymentSlug);
+                    var startTimestamp = Stopwatch.GetTimestamp();
+                    _logger.LogInformation("Deploy: Taking down {deploymentSlug}..", deploymentSlug);
                     await _deploymentManager.TakeDownAsync(deployment, progress, cancellationToken);
 
                     if (tag is not null)
                     {
-                        _logger.LogInformation("Changing tag to {tag} for {deploymentSlug}", tag, deploymentSlug);
+                        _logger.LogInformation("Deploy: Changing tag to {tag} for {deploymentSlug}", tag, deploymentSlug);
                         await _deploymentManager.ChangeImageTagAsync(deployment, tag);
                     }
 
-                    _logger.LogInformation("Pulling images for {deploymentSlug}..", deploymentSlug);
+                    _logger.LogInformation("Deploy: Pulling images for {deploymentSlug}..", deploymentSlug);
                     await _deploymentManager.PullImagesAsync(deployment, progress, progress, cancellationToken);
 
-                    _logger.LogInformation("Bringing up {deploymentSlug}..", deploymentSlug);
+                    _logger.LogInformation("Deploy: Bringing up {deploymentSlug}..", deploymentSlug);
                     await _deploymentManager.BringUpAsync(deployment, progress, cancellationToken);
-                    _logger.LogInformation("Restarted {deploymentSlug}!", deploymentSlug);
+                    _logger.LogInformation("Deploy: Restarted {deploymentSlug}!", deploymentSlug);
+
+                    var elapsed = Stopwatch.GetElapsedTime(startTimestamp);
+                    _logger.LogInformation("Deploy: Deployment for {deploymentSlug} completed in {seconds} seconds", deploymentSlug, elapsed.TotalSeconds);
+
                     cts.Cancel();
                 }
                 catch { }

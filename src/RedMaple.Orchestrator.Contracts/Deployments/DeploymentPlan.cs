@@ -137,6 +137,16 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public ResourceHealthCheckResult? Health { get; set; }
 
         /// <summary>
+        /// Timestamp when the health status was changed
+        /// </summary>
+        public DateTime? HealthStatusChangedTimestamp { get; set; }
+
+        /// <summary>
+        /// Timestamp when reliability mitigation was attempted
+        /// </summary>
+        public DateTime? ReliabiltityMitigationAttemptedTimestamp { get; set; }
+
+        /// <summary>
         /// Options related to the resource entity created from a deployment
         /// </summary>
         public ResourceCreationOptions Resource { get; set; } = new ResourceCreationOptions();

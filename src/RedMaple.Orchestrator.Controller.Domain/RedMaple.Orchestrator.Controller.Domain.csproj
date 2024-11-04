@@ -12,18 +12,18 @@
     <ProjectReference Include="..\RedMaple.Orchestrator.Sdk\RedMaple.Orchestrator.Sdk.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Security\RedMaple.Orchestrator.Security.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj" />
-    <PackageReference Include="FluentValidation" Version="11.9.2" />
-	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="8.0.8" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
+    <PackageReference Include="FluentValidation" Version="11.10.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
+	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="8.0.10" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.1" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.1" />
 
   </ItemGroup>
 
 	<ItemGroup>
 		<PackageReference Include="Humanizer" Version="2.14.1" />
 
-		<PackageReference Include="MediatR" Version="12.4.0" />
+		<PackageReference Include="MediatR" Version="12.4.1" />
 	</ItemGroup>
 
 </Project>

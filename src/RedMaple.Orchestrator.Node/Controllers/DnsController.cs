@@ -29,15 +29,18 @@ namespace RedMaple.Orchestrator.Node.Controllers
 
 
         [HttpPost("/api/dns/table")]
-        public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries)
+        public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries, CancellationToken cancellationToken)
         {
             await _dns.SetDnsEntriesAsync(entries);
             var settings = await _nodeSettingsProvider.GetSettingsAsync();
             if (settings.EnableDns)
             {
                 _logger.LogInformation("DNS table updated, restarting dns..");
-                await _dns.StopAsync();
-                await _dns.StartAsync();
+
+                // docker exec dnsmasq killall -HUP dnsmasq
+                await _dns.ReloadConfigurationAsync(cancellationToken);
+                //await _dns.StopAsync();
+                //await _dns.StartAsync();
             }
         }
 

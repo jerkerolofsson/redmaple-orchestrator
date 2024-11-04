@@ -6,6 +6,6 @@ namespace RedMaple.Orchestrator.Ingress
     {
         Task StartAsync();
         Task StopAsync();
-        Task UpdateConfigurationAsync(List<IngressServiceDescription> services);
+        Task UpdateConfigurationAsync(List<IngressServiceDescription> services, CancellationToken cancellationToken);
     }
 }

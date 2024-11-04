@@ -117,7 +117,7 @@
                     Id = Guid.NewGuid().ToString(),
                     IngressIp = node.IpAddress,
                     IngressPort = model.IngressPort
-                }, _progress);
+                }, _progress, CancellationToken.None);
 
                 _navigationManager.NavigateTo($"/node/{Id}/ingress");
         }

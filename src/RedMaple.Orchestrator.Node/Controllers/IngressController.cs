@@ -25,17 +25,17 @@ namespace RedMaple.Orchestrator.Node.Controllers
         }
 
         [HttpPost("/api/ingress")]
-        public async Task<string> AddIngressServiceAsync([FromBody] IngressServiceDescription service)
+        public async Task<string> AddIngressServiceAsync([FromBody] IngressServiceDescription service, CancellationToken cancellationToken)
         {
             var results = new ProgressResultBuilder();
-            await _ingress.AddIngressServiceAsync(service, results);
+            await _ingress.AddIngressServiceAsync(service, results, cancellationToken);
             return results.ToString() ?? "";
         }
 
         [HttpDelete("/api/ingress/{id}")]
-        public async Task DeleteIngressServiceAsync([FromRoute] string id)
+        public async Task DeleteIngressServiceAsync([FromRoute] string id, CancellationToken cancellationToken)
         {
-            await _ingress.DeleteIngressServiceAsync(id);
+            await _ingress.DeleteIngressServiceAsync(id, cancellationToken);
         }
 
     }

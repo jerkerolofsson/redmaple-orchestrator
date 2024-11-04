@@ -9,7 +9,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz.Models
 {
     public class ResourceHealthCheckResult
     {
+        /// <summary>
+        /// Duration for the the health check
+        /// </summary>
         public TimeSpan Duration { get; set; }
+
+        /// <summary>
+        /// Current status
+        /// </summary>
         public HealthStatus Status { get; set; }
     }
 }

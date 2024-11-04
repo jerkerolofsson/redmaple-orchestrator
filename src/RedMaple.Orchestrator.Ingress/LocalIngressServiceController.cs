@@ -63,31 +63,32 @@ namespace RedMaple.Orchestrator.Ingress
             return new List<IngressServiceDescription>();
         }
 
-        public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress)
+        public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress, CancellationToken cancellationToken)
         {
             progress.Report("Starting ingress..");
             var services = await LoadSettingsAsync();
+            services.RemoveAll(x=>x.DomainName == service.DomainName);
             services.Add(service);
             await WriteSettingsAsync(services);
-            await _reverseProxy.UpdateConfigurationAsync(services);
+            await _reverseProxy.UpdateConfigurationAsync(services, cancellationToken);
 
-            await _reverseProxy.StartAsync();
+            //await _reverseProxy.StartAsync();
         }
 
-        public async Task StartAsync()
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             var services = await LoadSettingsAsync();
-            await _reverseProxy.UpdateConfigurationAsync(services);
+            await _reverseProxy.UpdateConfigurationAsync(services, cancellationToken);
             await _reverseProxy.StartAsync();
         }
 
-        public async Task DeleteIngressServiceAsync(string id)
+        public async Task DeleteIngressServiceAsync(string id, CancellationToken cancellationToken)
         {
             var services = await LoadSettingsAsync();
             services.RemoveAll(x => x.Id == id);
             await WriteSettingsAsync(services);
 
-            await _reverseProxy.UpdateConfigurationAsync(services);
+            await _reverseProxy.UpdateConfigurationAsync(services, cancellationToken);
             await _reverseProxy.StartAsync();
         }
 

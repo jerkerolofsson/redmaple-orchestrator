@@ -21,4 +21,11 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
     /// </summary>
     /// <param name="Deployment"></param>
     public record class AppDeploymentStoppingNotification(Deployment Deployment) : INotification;
+
+
+    /// <summary>
+    /// Raised when the deployment is unhealthy
+    /// </summary>
+    /// <param name="Plan"></param>
+    public record class AppDeploymentUnhealthyNotification(DeploymentPlan Plan) : INotification;
 }

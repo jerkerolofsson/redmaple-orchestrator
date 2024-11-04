@@ -14,6 +14,8 @@
         /// <returns></returns>
         Task StopAsync();
 
+        Task ReloadConfigurationAsync(CancellationToken cancellationToken);
+
         /// <summary>
         /// Adds an entry
         /// </summary>
