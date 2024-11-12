@@ -1,5 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Resources;
 using RedMaple.Orchestrator.DockerCompose.Models;
@@ -207,8 +209,28 @@ namespace RedMaple.Orchestrator.DockerCompose
             {
                 foreach (var port in service.ports)
                 {
-                    string key = $"{port.ContainerPort}/{port.Protocol ?? "tcp"}";
-                    ports[key] = new EmptyStruct();
+                    if (port.ContainerPort is null)
+                    {
+                        continue;
+                    }
+                    if (port.ContainerPort.Contains('-'))
+                    {
+                        var containerPortRange = port.ContainerPort.Split('-');
+                        var hostPortRange = containerPortRange;
+                        int containerStart, containerEnd, hostStart, hostEnd;
+                        ValidatePortRange(containerPortRange, hostPortRange, out containerStart, out containerEnd, out hostStart, out hostEnd);
+
+                        for(int i=containerStart; i<=containerEnd; i++)
+                        {
+                            string key = $"{i}/{port.Protocol ?? "tcp"}";
+                            ports[key] = new EmptyStruct();
+                        }
+                    }
+                    else
+                    {
+                        string key = $"{port.ContainerPort}/{port.Protocol ?? "tcp"}";
+                        ports[key] = new EmptyStruct();
+                    }
                 }
             }
             return ports;
@@ -273,19 +295,84 @@ namespace RedMaple.Orchestrator.DockerCompose
                     // Default to same port unless excplicitly defined
                     var hostPort = port.HostPort ?? port.ContainerPort;
 
-                    var key = $"{port.ContainerPort}/{port.Protocol ?? "tcp"}";
-                    if(!portBindings.ContainsKey(key))
+                    if(hostPort is null || port.ContainerPort is null)
                     {
-                        portBindings[key] = new List<PortBinding>();
+                        continue;
                     }
-                    portBindings[key].Add(new PortBinding
+
+                    if (port.ContainerPort.Contains('-') && hostPort.Contains('-'))
                     {
-                        HostIP = port.HostIp,
-                        HostPort = hostPort ?? port.ContainerPort
-                    });
+                        var containerPortRange = port.ContainerPort.Split('-');
+                        var hostPortRange = hostPort.Split('-');
+                        int containerStart, containerEnd, hostStart, hostEnd;
+                        ValidatePortRange(containerPortRange, hostPortRange, out containerStart, out containerEnd, out hostStart, out hostEnd);
+
+                        var containerRange = containerEnd - containerStart + 1;
+                        var hostRange = hostEnd - hostStart + 1;
+                        if (containerRange != hostRange)
+                        {
+                            throw new Exception("Container port range must match host range");
+                        }
+                        if (containerRange <= 0 || hostRange <= 0)
+                        {
+                            throw new Exception("Invalid port range (start>end)");
+                        }
+
+                        var currentContainer = containerStart;
+                        var currentHost = hostStart;
+                        for (int i = 0; i < containerRange; i++)
+                        {
+                            AddPortMapping(portBindings, port, currentHost.ToString(), currentContainer.ToString());
+                            currentContainer++;
+                            currentHost++;
+                        }
+                    }
+                    else
+                    {
+                        var containerPort = port.ContainerPort;
+                        AddPortMapping(portBindings, port, hostPort, containerPort);
+                    }
                 }
             }
             return portBindings;
+        }
+
+        private static void ValidatePortRange(string[] containerPortRange, string[] hostPortRange, out int containerStart, out int containerEnd, out int hostStart, out int hostEnd)
+        {
+            if (containerPortRange.Length != 2 || hostPortRange.Length != 2)
+            {
+                throw new Exception("Expected port range two container a single -");
+            }
+            if (!int.TryParse(containerPortRange[0], out containerStart))
+            {
+                throw new Exception("Expected integer in port range");
+            }
+            if (!int.TryParse(containerPortRange[1], out containerEnd))
+            {
+                throw new Exception("Expected integer in port range");
+            }
+            if (!int.TryParse(hostPortRange[0], out hostStart))
+            {
+                throw new Exception("Expected integer in port range");
+            }
+            if (!int.TryParse(hostPortRange[1], out hostEnd))
+            {
+                throw new Exception("Expected integer in port range");
+            }
+        }
+
+        private static void AddPortMapping(Dictionary<string, IList<PortBinding>> portBindings, DockerComposePortMapping port, string? hostPort, string? containerPort)
+        {
+            var key = $"{containerPort}/{port.Protocol ?? "tcp"}";
+            if (!portBindings.ContainsKey(key))
+            {
+                portBindings[key] = new List<PortBinding>();
+            }
+            portBindings[key].Add(new PortBinding
+            {
+                HostIP = port.HostIp,
+                HostPort = hostPort ?? containerPort
+            });
         }
 
         // Volume binds
