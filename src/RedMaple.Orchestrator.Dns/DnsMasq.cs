@@ -109,27 +109,23 @@ namespace RedMaple.Orchestrator.Dns
         {
             string path = GetLocalConfigDir();
             var filePath = Path.Combine(path, "dnsmasq.conf");
-            if (!File.Exists(filePath))
-            {
-                _logger.LogDebug("Creating default {path}", filePath);
+            _logger.LogDebug("Creating default {path}", filePath);
 
-                dns1 ??= "8.8.8.8";
-                dns2 ??= "8.8.4.4";
+            dns1 ??= "8.8.8.8";
+            dns2 ??= "8.8.4.4";
 
-                using var writer = File.CreateText(filePath);
-                await writer.WriteAsync($"""
-                    no-resolv
+            using var writer = File.CreateText(filePath);
+            await writer.WriteAsync($"""
+                no-resolv
 
-                    # Upstream DNS servers
-                    server={dns1}
-                    server={dns2}
+                # Upstream DNS servers
+                server={dns1}
+                server={dns2}
 
-                    conf-file=/etc/dnsmasq.d/global.conf
-                    conf-file=/etc/dnsmasq.d/managed.conf
+                conf-file=/etc/dnsmasq.d/global.conf
+                conf-file=/etc/dnsmasq.d/managed.conf
                     
-                    """);
-
-            }
+                """);
         }
 
         /// <summary>

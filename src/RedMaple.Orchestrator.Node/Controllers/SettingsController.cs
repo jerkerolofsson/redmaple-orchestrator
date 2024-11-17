@@ -36,6 +36,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
             if(settings.EnableDns)
             {
                 await _dns.SetUpstreamDnsServersAsync(settings.UpstreamDns1, settings.UpstreamDns2);
+                await _dns.ReloadConfigurationAsync(CancellationToken.None);
             }
         }
     }
