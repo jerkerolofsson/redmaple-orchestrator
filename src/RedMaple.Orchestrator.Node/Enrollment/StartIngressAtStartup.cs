@@ -32,7 +32,7 @@ namespace RedMaple.Orchestrator.Node.Enrollment
             if (settings.IngressHost)
             {
                 _logger.LogInformation("Starting ingress..");
-                await _ingress.StartAsync();
+                await _ingress.StartAsync(stoppingToken);
             }
         }
     }

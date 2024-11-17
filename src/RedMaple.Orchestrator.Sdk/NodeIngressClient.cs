@@ -20,10 +20,10 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
 
-        public async Task AddIngressServiceAsync(IngressServiceDescription serviceDescription, IProgress<string> progress)
+        public async Task AddIngressServiceAsync(IngressServiceDescription serviceDescription, IProgress<string> progress, CancellationToken cancellationToken)
         {
             string url = $"/api/ingress";
-            using var response = await _httpClient.PostAsJsonAsync(url, serviceDescription);
+            using var response = await _httpClient.PostAsJsonAsync(url, serviceDescription, cancellationToken);
             response.EnsureSuccessStatusCode();
             var text = await response.Content.ReadAsStringAsync();
             foreach(var line in text.Split('\n'))
@@ -31,10 +31,10 @@ namespace RedMaple.Orchestrator.Sdk
                 progress.Report(line);
             }
         }
-        public async Task DeleteIngressServiceAsync(string id)
+        public async Task DeleteIngressServiceAsync(string id, CancellationToken cancellationToken)
         {
             string url = $"/api/ingress/{id}";
-            using var response = await _httpClient.DeleteAsync(url);
+            using var response = await _httpClient.DeleteAsync(url, cancellationToken);
             response.EnsureSuccessStatusCode();
         }
         public async Task<List<IngressServiceDescription>> GetServicesAsync()

@@ -45,6 +45,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public required string Plan { get; set; }
 
         /// <summary>
+        /// Version/Tag. This is read from the deployment plan
+        /// </summary>
+        public string? Version { get; set; }
+
+        /// <summary>
         /// Environment variables that will be set before applying the plan
         /// </summary>
         public Dictionary<string, string> EnvironmentVariables { get; set; } = new();
@@ -130,6 +135,16 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Status for health check
         /// </summary>
         public ResourceHealthCheckResult? Health { get; set; }
+
+        /// <summary>
+        /// Timestamp when the health status was changed
+        /// </summary>
+        public DateTime? HealthStatusChangedTimestamp { get; set; }
+
+        /// <summary>
+        /// Timestamp when reliability mitigation was attempted
+        /// </summary>
+        public DateTime? ReliabiltityMitigationAttemptedTimestamp { get; set; }
 
         /// <summary>
         /// Options related to the resource entity created from a deployment

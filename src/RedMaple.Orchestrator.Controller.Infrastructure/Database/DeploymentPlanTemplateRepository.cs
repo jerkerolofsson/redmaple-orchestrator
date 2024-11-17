@@ -1,6 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Healthz;
+using RedMaple.Orchestrator.Contracts.Resources;
+
 using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text.Json;
@@ -249,18 +251,23 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                  new DeploymentPlanTemplate
                 {
+                     // mongodb://admin:password@localhost:15433
                     Resource = new ResourceCreationOptions
                     {
+                        Create = true,
+                        Kind = ResourceKind.ConnectionString,
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_NAME}",
+                        ConnectionStringFormat = "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
                         Exported = ["MONGODB_USERNAME", "MONGODB_PASSWORD"]
                     },
-                    Category = "Services",
+                    Category = "Databases",
                     CreateIngress= false,
                     Name = "MongoDB 6.0",
                     IconUrl = "/brands/mongodb.png",
                     ApplicationProtocol = "tcp",
                     Plan = """
                     services:
-                      postgres:
+                      mongodb:
                         container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
                         image: "mongo:6.0"
                         restart: unless-stopped
@@ -275,13 +282,55 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     """
                 },
 
+            new DeploymentPlanTemplate
+            {
+                 Resource = new ResourceCreationOptions
+                {
+                    Create = true,
+                    Kind = ResourceKind.ConnectionString,
+                    ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_SLUG}",
+                    ConnectionStringFormat = "${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT},password=${REDIS_PASSWORD}",
+                    Exported = ["REDIS_PASSWORD"]
+                },
+                Category = "Services",
+                Name = "redis",
+                IconUrl = "/brands/redis.png",
+                ApplicationProtocol = "redis",
+                CreateIngress = false,
+                HealthChecks = new()
+                {
+                    DeploymentHealthCheck.TcpLivez,
+                },
+
+                Plan = """
+                services:
+                    redis:
+                        image: redis:latest
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        restart: always
+                        ports:
+                            - "${REDMAPLE_APP_PORT}:6379"
+                        volumes:
+                            - /dаta/redis:/root/redis
+                            - /data/redis.conf:/usr/local/etc/redis/redis.conf
+                        environment:
+                            - REDIS_PASSWORD=${REDIS_PASSWORD}
+                            - REDIS_PORT=6379
+                            - REDIS_DATABASES=16
+                """
+            },
                 new DeploymentPlanTemplate
                 {
                     Resource = new ResourceCreationOptions
                     {
+                        // User ID=user;Password=password;Host=localhost;Port=15432;Database=redmaple;Pooling=true;Integrated Security=false;Maximum Pool Size=1024;
+                        Create = true,
+                        Kind = ResourceKind.ConnectionString,
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${POSTGRES_DB}",
+                        ConnectionStringFormat = "User ID=${POSTGRES_USER};Password=${POSTGRES_PASSWORD}Host=${REDMAPLE_APP_SERVER_IP};Port=${REDMAPLE_APP_PORT};Database=${POSTGRES_DB};Pooling=true;Integrated Security=false;Maximum Pool Size=1024;",
                         Exported = ["POSTGRES_DB", "POSTGRES_USER", "POSTGRES_PASSWORD"]
                     },
-                    Category = "Services",
+                    Category = "Databases",
                     CreateIngress= false,
                     Name = "PostgreSQL",
                     IconUrl = "/brands/postgres.png",
@@ -477,35 +526,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 """
             },
 
-            new DeploymentPlanTemplate
-            {
-                Category = "Services",
-                Name = "redis",
-                IconUrl = "/brands/redis.png",
-                ApplicationProtocol = "redis",
-                CreateIngress = false,
-                HealthChecks = new()
-                {
-                    DeploymentHealthCheck.TcpLivez,
-                },
-
-                Plan = """
-                services:
-                    redis:
-                        image: redis:latest
-                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
-                        restart: always
-                        ports:
-                            - "${REDMAPLE_APP_PORT}:6379"
-                        volumes:
-                            - /dаta/redis:/root/redis
-                            - /data/redis.conf:/usr/local/etc/redis/redis.conf
-                        environment:
-                            - REDIS_PASSWORD=my-password
-                            - REDIS_PORT=6379
-                            - REDIS_DATABASES=16
-                """
-            },
 
             new DeploymentPlanTemplate
             {

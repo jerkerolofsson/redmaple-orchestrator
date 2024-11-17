@@ -49,7 +49,7 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                 return BadRequest();
             }
 
-            _logger.LogInformation("Enrolling node with IP: {remoteIp}", remoteIp);
+            _logger.LogTrace("Enrolling node with IP: {remoteIp}", remoteIp);
             if (!await _clusterService.OnEnrollAsync(request, remoteIp))
             {
                 _logger.LogWarning("Failed to enroll node with IP: {remoteIp}", remoteIp);

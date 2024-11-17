@@ -43,15 +43,13 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments.State
                     try
                     {
                         await _mediator.Publish(new AppDeploymentStartingNotification(deployment));
-
                         await _deploymentManager.WaitUntilReadyzAsync(plan, deployment, this, stoppingToken);
-
-                        await _mediator.Publish(new AppDeploymentReadyNotification(deployment));
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error during DeploymentStartupService");
+                        _logger.LogError(ex, $"Error during DeploymentStartupService for {plan.Slug}");
                     }
+                    await _mediator.Publish(new AppDeploymentReadyNotification(deployment, plan));
                 }
             }
         }

@@ -95,7 +95,7 @@
         model.IsLoading = true;
         this.StateHasChanged();
 
-        await ingressManager.DeleteIngressServiceAsync(service.Id);
+        await ingressManager.DeleteIngressServiceAsync(service.Id, CancellationToken.None);
         await LoadServicesAsync();
             model.IsLoading = false;
         this.StateHasChanged();

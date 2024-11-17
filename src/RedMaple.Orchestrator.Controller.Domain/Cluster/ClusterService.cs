@@ -32,7 +32,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster
 
         public async Task<bool> OnEnrollAsync(EnrollmentRequest request, string remoteIp)
         {
-            _logger.LogInformation("Enrolling node, remoteip={IP}", remoteIp);
+            _logger.LogTrace("Enrolling node, remoteip={IP}", remoteIp);
             string[] addresses = [.. request.HostAddresses, remoteIp];
 
             bool success = false;
@@ -47,7 +47,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster
                         try
                         {
                             var url = $"{request.Schema}://{ipAddress}:{request.Port}";
-                            _logger.LogInformation("Testing node connection to {url}", url);
+                            _logger.LogTrace("Testing node connection to {url}", url);
                             using var client = new NodeContainersClient(url);
                             var _ = await client.GetContainersAsync();
                             remoteIp = ipAddress.ToString();
@@ -87,7 +87,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster
 
             if(_nodes.ContainsKey(nodeInfo.IpAddress))
             {
-                _logger.LogDebug("Keep-Alive received from node IP={IP}, Port={Port}, Schema={Schema}", remoteIp, request.Port, request.Schema);
+                _logger.LogTrace("Keep-Alive received from node IP={IP}, Port={Port}, Schema={Schema}", remoteIp, request.Port, request.Schema);
                 await _mediator.Publish(new NodeKeepAliveReceivedNotification(nodeInfo));
             }
             else

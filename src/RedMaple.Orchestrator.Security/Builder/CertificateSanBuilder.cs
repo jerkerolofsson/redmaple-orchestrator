@@ -10,24 +10,24 @@ namespace RedMaple.Orchestrator.Security.Builder
 {
     public class CertificateSanBuilder
     {
-        private CertificateBuilderData mCertificate;
-        private SubjectAlternativeNameBuilder mSubjectAlternativeNameBuilder = new();
+        private readonly CertificateBuilderData _certificate;
+        private readonly SubjectAlternativeNameBuilder _subjectAlternativeNameBuilder = new();
 
-        internal SubjectAlternativeNameBuilder SubjectAlternativeNameBuilder => mSubjectAlternativeNameBuilder;
+        internal SubjectAlternativeNameBuilder SubjectAlternativeNameBuilder => _subjectAlternativeNameBuilder;
 
         internal CertificateSanBuilder(CertificateBuilderData certificate)
         {
-            mCertificate = certificate;
+            _certificate = certificate;
         }
 
         public CertificateSanBuilder AddIpAddress(System.Net.IPAddress ipAddress)
         {
-            mSubjectAlternativeNameBuilder.AddIpAddress(ipAddress);
+            _subjectAlternativeNameBuilder.AddIpAddress(ipAddress);
             return this;
         }
         public CertificateSanBuilder AddDnsName(string dnsName)
         {
-            mSubjectAlternativeNameBuilder.AddDnsName(dnsName);
+            _subjectAlternativeNameBuilder.AddDnsName(dnsName);
             return this;
         }
     }

@@ -8,6 +8,7 @@
 @using RedMaple.Orchestrator.Controller.ViewModels
 @using System.Globalization
 @inject IDeploymentManager deploymentManager
+@inject INodeManager nodeManager
 @inject NavigationManager navigationManager
 @inject ISnackbar Snackbar
 
@@ -27,6 +28,12 @@
                     <MudText Typo="Typo.h6">Deployment Name</MudText>
                     <MudTextField Class="pa-5"
                                   @bind-Value="_plan.Name"/>
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Ingress Server</MudText>
+                    <SelectNode Class="pa-5" MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+
+                    <MudText Class="mt-5" Typo="Typo.h6">Application Server</MudText>
+                    <SelectNode Class="pa-5" MustBeApplicationHost="true" Value="@_applicationNode" ValueChanged="OnApplicationNodeChanged" Label="" />
 
                     <MudText Class="mt-5" Typo="Typo.h6">Category</MudText>
                     <MudTextField Class="pa-5"
@@ -57,10 +64,44 @@
     public string Slug { get; set; } = null!;
 
     private DeploymentPlan? _plan = null;
+    private NodeInfo? _ingressNode = null;
+    private NodeInfo? _applicationNode = null;
+
+    private void OnApplicationNodeChanged(NodeInfo node)
+    {
+        _applicationNode = node;
+        if (_plan is not null)
+        {
+            _plan.ApplicationServerIps = [node.IpAddress];
+        }
+    }
+    private void OnIngressNodeChanged(NodeInfo node)
+    {
+        _ingressNode = node;
+        if (_plan is not null)
+        {
+            _plan.IngressServerIp = node.IpAddress;
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         _plan = await deploymentManager.GetDeploymentBySlugAsync(Slug);
+        if(_plan is null)
+        {
+            navigationManager.NavigateTo("/deployments");
+        }
+        else 
+        {
+            if (_plan.ApplicationServerIps.Count > 0)
+            {
+                _applicationNode = await nodeManager.GetNodeByIpAddressAsync(_plan.ApplicationServerIps[0]);
+            }
+            if (!string.IsNullOrEmpty(_plan.IngressServerIp))
+            {
+                _ingressNode = await nodeManager.GetNodeByIpAddressAsync(_plan.IngressServerIp);
+            }
+        }
     }
 
 

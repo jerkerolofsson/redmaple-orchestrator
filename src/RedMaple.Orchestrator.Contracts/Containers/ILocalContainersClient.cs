@@ -57,5 +57,6 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         Task PullImageAsync(string imageName, IProgress<JSONMessage> progress, CancellationTokenSource? cts,
             CancellationToken cancellationToken);
         Task RestartAsync(string id, CancellationToken cancellationToken);
+        Task ExecAsync(string containerId, IList<string> commands, CancellationToken cancellationToken);
     }
 }

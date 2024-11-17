@@ -14,7 +14,7 @@ namespace RedMaple.Orchestrator.DockerCompose
     public class DockerComposeParser
     {
         private static readonly Regex _regex = new Regex("\\$\\{.*?\\}");
-
+        
         public static string ReplaceEnvironmentVariables(string text, Dictionary<string,string?> env)
         {
             foreach (var envVar in env)

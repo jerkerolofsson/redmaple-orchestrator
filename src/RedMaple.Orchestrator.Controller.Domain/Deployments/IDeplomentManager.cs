@@ -52,5 +52,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         string CreateSlug(string deploymentName);
         List<VolumeBind> GetMissingVolumeNames(DeploymentPlan plan);
         Task RestartAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
+        Task ChangeImageTagAsync(DeploymentPlan plan, string tag);
     }
 }

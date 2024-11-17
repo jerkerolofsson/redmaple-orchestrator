@@ -1,5 +1,7 @@
 ﻿using Docker.DotNet.Models;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
+
 using RedMaple.Orchestrator.Contracts.Healthz;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,13 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
     internal class HttpGetHealthzChecker : IHealthzCheckerMethod
     {
         private static readonly HttpClient _httpClient;
+
+        private readonly ILogger _logger;
+
+        public HttpGetHealthzChecker(ILogger logger)
+        {
+            _logger = logger;
+        }
 
         static HttpGetHealthzChecker()
         {
@@ -43,8 +52,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Healthz
                 }
                 return HealthStatus.Unhealthy;
             }
-            catch(Exception)
+            catch(Exception ex)
             {
+                _logger.LogError("HTTP GET health check failed: {Message}", ex.Message);
                 return HealthStatus.Unhealthy;
             }
         }

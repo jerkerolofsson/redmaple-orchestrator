@@ -34,7 +34,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Node
             }
             else
             {
-                _logger.LogInformation("Node already enrolled: {BaseUrl}", nodeInfo.BaseUrl);
+                _logger.LogTrace("Node already enrolled: {BaseUrl}", nodeInfo.BaseUrl);
                 var changed = false;
                 if (existingNode.IsDnsEnabled != nodeInfo.IsDnsEnabled)
                 {

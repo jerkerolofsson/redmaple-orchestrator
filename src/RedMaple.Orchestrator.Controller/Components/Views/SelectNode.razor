@@ -3,6 +3,7 @@
 @inject INodeManager nodeManager
 
     <MudSelectExtended  T="NodeInfo"
+        Class="@Class"
         ItemCollection="_nodes"
         Label="@Label" HelperText="" Value="@Value" ValueChanged="OnValueChanged">
 
@@ -53,6 +54,8 @@
 
     [Parameter]
     public NodeInfo Value { get; set; } = null!;
+
+    [Parameter] public string Class { get; set; } = "";
 
     [Parameter]
     public EventCallback<NodeInfo?> ValueChanged { get; set; }
