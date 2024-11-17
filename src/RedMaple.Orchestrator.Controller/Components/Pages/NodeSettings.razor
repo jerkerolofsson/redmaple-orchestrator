@@ -42,6 +42,12 @@
                 <MudSwitch @bind-Value="_nodeSettings.EnableDns"
                            Label="DNS Server" Color="Color.Primary" />
 
+                @if(_nodeSettings.EnableDns)
+                {
+                    <MudTextField @bind-Value=_nodeSettings.UpstreamDns1 Label="Upstream DNS 1"></MudTextField>
+                    <MudTextField @bind-Value=_nodeSettings.UpstreamDns2 Label="Upstream DNS 2"></MudTextField>
+                }
+
                 <MudSwitch @bind-Value="_nodeSettings.IngressHost"
                            Label="Ingress" Color="Color.Primary" />
 
