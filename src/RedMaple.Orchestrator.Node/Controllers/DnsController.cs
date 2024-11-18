@@ -1,4 +1,5 @@
 
+
 using static Grpc.Core.Metadata;
 
 namespace RedMaple.Orchestrator.Node.Controllers
@@ -31,7 +32,10 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/dns/table")]
         public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries, CancellationToken cancellationToken)
         {
-            await _dns.SetDnsEntriesAsync(entries);
+            string? region = await GetNodeRegionAsync();
+            var filteredEntries = entries.Where(entry => region is null || entry.Region is null || entry.Region == region).ToList();
+
+            await _dns.SetDnsEntriesAsync(filteredEntries);
             var settings = await _nodeSettingsProvider.GetSettingsAsync();
             if (settings.EnableDns)
             {
@@ -47,7 +51,17 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/dns/entries")]
         public async Task AddEntryAsync([FromBody] DnsEntry entry)
         {
-            await _dns.AddEntryAsync(entry);
+            string? region = await GetNodeRegionAsync();
+            if (region is null || entry.Region is null || entry.Region == region)
+            {
+                await _dns.AddEntryAsync(entry);
+            }
+        }
+
+        private async Task<string?> GetNodeRegionAsync()
+        {
+            var nodeSettings = await _nodeSettingsProvider.GetSettingsAsync();
+            return nodeSettings?.Region;
         }
 
         [HttpDelete("/api/dns/entries/{hostname}")]

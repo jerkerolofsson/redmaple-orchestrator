@@ -42,9 +42,10 @@
 
     public void AddLine(string line)
     {
+        line = line.Replace("<", "&lt;").Replace(">", "&gt;");
         if (ParseAnsiEscapeCodes)
         {
-            line = AnsiToHtml(line) + "<br/>";
+            line = AnsiToHtml(line);
         }
         if (ParseLogLevels)
         {
@@ -57,7 +58,7 @@
             {
                 _lines.RemoveFirst();
             }
-            _lines.AddLast(line);
+            _lines.AddLast(line + "<br/>");
 
             this.StateHasChanged();
         });

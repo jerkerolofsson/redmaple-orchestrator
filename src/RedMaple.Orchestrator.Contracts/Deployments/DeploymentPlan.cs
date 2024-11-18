@@ -34,6 +34,13 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public string? DomainName { get; set; }
 
         /// <summary>
+        /// Region identifier. Should match node regions.
+        /// If region is set then a DNS entry is added on nodes with the same region. 
+        /// This allows multiple deployments with the same domain name
+        /// </summary>
+        public string? Region { get; set; }
+
+        /// <summary>
         /// Kind of deployment
         /// </summary>
         public DeploymentKind Kind { get; set; } = DeploymentKind.DockerCompose;

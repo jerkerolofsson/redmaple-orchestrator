@@ -18,6 +18,7 @@
 
     <MudDataGrid Bordered="true" Dense="true"
                  ReadOnly="false"
+                 Filterable="true"
                  Items="@_templates"
                  SortMode="SortMode.Multiple">
         <Columns>
@@ -32,12 +33,16 @@
 
             <TemplateColumn StickyRight="true">
                 <CellTemplate>
-                    <MudButton Class="btn-delete" OnClick="async () => await DeleteTemplateAsync(context.Item.Name)">
-                        <i class="fa fa-trash"/>&nbsp;Delete</MudButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="async () => await DeleteTemplateAsync(context.Item.Name)"/>
                 </CellTemplate>
             </TemplateColumn>
 
         </Columns>
+
+        <PagerContent>
+            <MudDataGridPager T="DeploymentPlanTemplate" PageSizeOptions=@(new int[] {10, 25, 50}) />
+        </PagerContent>
+
     </MudDataGrid>
 </MudPaper>
 

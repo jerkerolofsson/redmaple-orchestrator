@@ -88,7 +88,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
         private async Task DeleteExistingIngressServicesWithSameDomainName(IngressServiceDescription service)
         {
             var services = await _repository.GetServicesAsync();
-            foreach (var ingressService in services.Where(x => x.DomainName == service.DomainName || x.Id == service.Id))
+            foreach (var ingressService in services.Where(x => (x.DomainName == service.DomainName && x.Region == service.Region) || x.Id == service.Id))
             {
                 await DeleteIngressServiceNoLockAsync(ingressService.Id);
             }
@@ -96,16 +96,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         private async Task UpdateDnsServersAsync(IngressServiceDescription service, IProgress<string> progress)
         {
-            var dnsEntry = new DnsEntry { Hostname = service.DomainName, IpAddress = service.IngressIp, IsGlobal = true };
+            var dnsEntry = new DnsEntry { Region = service.Region, Hostname = service.DomainName, IpAddress = service.IngressIp, IsGlobal = true };
 
             var dnsEntries = await _globalDns.GetDnsEntriesAsync();
 
-            var existingEntry = dnsEntries.FirstOrDefault(x => x.Hostname == service.DomainName);
+            var existingEntry = dnsEntries.FirstOrDefault(x => x.Hostname == service.DomainName && x.Region == service.Region);
             if (existingEntry is null)
             {
-                progress.Report($"Creating DNS entry {service.DomainName} to {service.IngressIp}..");
+                progress.Report($"Creating DNS entry {service.Region}::{service.DomainName} to {service.IngressIp}..");
                 _logger.LogWarning("Deployment plan DNS entry creeated for {DomainName}={IpAddress}", service.DomainName, service.IngressIp);
-                dnsEntries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = service.DomainName, IpAddress = service.IngressIp });
+                dnsEntries.Add(new Contracts.Dns.DnsEntry { Region = service.Region, IsGlobal = true, Hostname = service.DomainName, IpAddress = service.IngressIp });
                 await _globalDns.SetDnsEntriesAsync(dnsEntries);
             }
             else if (existingEntry.IpAddress != service.IngressIp)
@@ -143,10 +143,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         }
 
-        public async Task<IngressServiceDescription?> GetIngressServiceByDomainNameAsync(string domainName)
+        public async Task<IngressServiceDescription?> GetIngressServiceByDomainNameAsync(string domainName, string? region)
         {
             var services = await _repository.GetServicesAsync();
-            return services.FirstOrDefault(x => x.Id == domainName);
+            return services.FirstOrDefault(x => x.Id == domainName && x.Region == region);
         }
 
         private async Task DeleteIngressServiceNoLockAsync(string id)
@@ -181,7 +181,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
         private async Task RemoveDnsEntryAsync(IngressServiceDescription service)
         {
             var entries = await _globalDns.GetDnsEntriesAsync();
-            entries.RemoveAll(x => x.Hostname == service.DomainName);
+            entries.RemoveAll(x => x.Hostname == service.DomainName && x.Region == service.Region);
             await _globalDns.SetDnsEntriesAsync(entries);
             /*
             foreach (var dnsNode in await _nodeManager.GetNodesAsync())
@@ -198,7 +198,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             return await _repository.GetServicesAsync();
         }
 
-        public async Task<bool> TryDeleteIngressServiceByDomainNameAsync(string? domainName)
+        public async Task<bool> TryDeleteIngressServiceByDomainNameAsync(string? domainName, string? region)
         {
             if(domainName is null)
             {
@@ -209,7 +209,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             var result = false;
             foreach (var service in await GetServicesAsync())
             {
-                if (service.DomainName == domainName)
+                if (service.DomainName == domainName && service.Region == region)
                 {
                     await DeleteIngressServiceAsync(service.Id, CancellationToken.None);
                     result = true;

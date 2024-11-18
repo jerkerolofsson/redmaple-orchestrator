@@ -5,7 +5,7 @@ namespace RedMaple.Orchestrator.Node.Controllers
 {
     public class ProgressResultBuilder : IProgress<string>
     {
-        private List<string> _lines = new();
+        private readonly List<string> _lines = new();
 
         public IReadOnlyList<string> Lines => _lines;
 

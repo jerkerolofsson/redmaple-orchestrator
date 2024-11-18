@@ -14,10 +14,13 @@
         <MudCard Class="pa-5 mt-5">
             <MudCardContent>
                 <MudStack Spacing="2">
-                    <MudTextField Label="Category" Class="mt-5" @bind-Value="_template.Category" />
-                    <MudTextField Label="Description" Class="mt-5" @bind-Value="_template.Description" Lines="5" />
-                    <MudTextField Label="Icon" Class="mt-5" @bind-Value="_template.IconUrl" />
-                    <MudTextField Label="Application Protocol" Class="mt-5" @bind-Value="_template.ApplicationProtocol" />
+                    <MudTextField Label="Category" @bind-Value="_template.Category" />
+                    <MudTextField Label="Description" @bind-Value="_template.Description" Lines="5" />
+                    <MudTextField Label="Icon" @bind-Value="_template.IconUrl" />
+                    <MudTextField Label="Application Protocol" @bind-Value="_template.ApplicationProtocol" />
+
+                    <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
+                    
                 </MudStack>
             </MudCardContent>
         </MudCard>
@@ -26,11 +29,7 @@
         <MudCard Class="pa-5 mt-5">
             <MudCardContent>
                 <MudText Typo="Typo.h6">Docker Compose</MudText>
-                <MudItem Style="border: solid 1px #ccc; background: #444" Class="mt-5 pa-5">
-                    <YamlTextField Style="font-family: monspace; background: #444; color: white;"
-                                   Lines="20"
-                                   @bind-Value="_template.Plan" />
-                </MudItem>
+                <DockerComposeEditor @bind-Value="_template.Plan"/>
             </MudCardContent>
         </MudCard>
 

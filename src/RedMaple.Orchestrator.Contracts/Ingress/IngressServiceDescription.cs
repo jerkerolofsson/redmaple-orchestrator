@@ -14,6 +14,12 @@ namespace RedMaple.Orchestrator.Contracts.Ingress
         public required string DomainName { get; set; }
 
         /// <summary>
+        /// Region specific ingress
+        /// This allows multiple ingress nodes
+        /// </summary>
+        public string? Region { get; set; }
+
+        /// <summary>
         /// http or https
         /// </summary>
         public string Scheme { get; set; } = "https";

@@ -194,7 +194,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             var plans = await GetDeploymentPlansAsync();
             var planNames = plans.Where(x=>x.Id != plan.Id).Select(x => x.Name).ToHashSet();
             var planSlugs = plans.Where(x => x.Id != plan.Id).Select(x => x.Slug).ToHashSet();
-            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Where(x => x.Hostname == plan.DomainName).ToList();
+            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Where(x => x.Hostname == plan.DomainName && x.Region == plan.Region).ToList();
             var result = new ValidationResult();
 
             if (plan.CreateDnsEntry || plan.CreateIngress)
@@ -501,7 +501,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     return false;
                 }
 
-                var ingressService = await _ingressManager.GetIngressServiceByDomainNameAsync(plan.DomainName);
+                var ingressService = await _ingressManager.GetIngressServiceByDomainNameAsync(plan.DomainName, plan.Region);
                 if(ingressService is null)
                 {
                     _logger.LogWarning("Deployment {DeploymentSlug} ingress service '{DomainName}' is missing", plan.Slug, plan.DomainName);
@@ -542,7 +542,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         {
             if (plan.CreateIngress)
             {
-                await _ingressManager.TryDeleteIngressServiceByDomainNameAsync(plan.DomainName);
+                await _ingressManager.TryDeleteIngressServiceByDomainNameAsync(plan.DomainName, plan.Region);
             }
             else if(plan.CreateDnsEntry)
             {
@@ -788,7 +788,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             // Check if ingress already exists..
             if (plan.CreateIngress)
             {
-                var existingIngressService = await _ingressManager.GetIngressServiceByDomainNameAsync(plan.DomainName);
+                var existingIngressService = await _ingressManager.GetIngressServiceByDomainNameAsync(plan.DomainName, plan.Region);
                 if(existingIngressService is { })
                 {
                     if(existingIngressService.DestinationIp == applicationServerIp &&
@@ -846,6 +846,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
                 await _ingressManager.AddIngressServiceAsync(new IngressServiceDescription
                 {
+                    Region = plan.Region,
                     IngressIp = plan.IngressServerIp,
                     DomainName = plan.DomainName,
                     IngressPort = 443,

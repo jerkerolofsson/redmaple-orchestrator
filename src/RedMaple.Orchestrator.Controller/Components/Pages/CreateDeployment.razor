@@ -19,7 +19,7 @@
 
 <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
     <DataAnnotationsValidator />
-    <MudItem >
+    <MudItem Style="max-width: 1200px">
         <MudText Typo="Typo.h5">Create deployment</MudText>
 
         <MudStack Row="true">
@@ -41,170 +41,193 @@
             }
         </MudStack>
 
-
-        @if (_wizardPage == Pages.SelectTemplate)
-        {
-            <MudText Typo="Typo.h6">Select template</MudText>
-
-            <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
-                @foreach (var category in _categories)
-                {
-                    <MudTabPanel Text="@category">
-                        <div class="templates mt-5">
-                            @foreach (var template in _templates.Where(x => x.Category == category))
-                            {
-                                <MudPaper Class="pa-4 hover-elevation" @onclick="async () => await ApplyTemplateAsync(template)">
-                                    <div class="template">
-                                        <img src="@template.IconUrl" />
-                                        <div>@template.Name</div>
-                                    </div>
-                                </MudPaper>
-                            }
-                        </div>
-                    </MudTabPanel>
-                }
-            </MudTabs>
-        } 
-        else if (_wizardPage == Pages.SelectDomainName)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Define deployment</MudText>
-
-                    <MudTextField Label="Deployment Name" Class="mt-5"
-                                    @bind-Value="model.Name" For="@(() => model.Name)" />
-
-                    <MudTextField Label="Domain Name" Class="mt-5"
-                                    @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.EditComposePlan)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">@model.Kind</MudText>
-                    <DockerComposeEditor @bind-Value="model.Plan" />
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.ConfigureServers)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Ingress Server</MudText>
-                    <MudText Typo="Typo.subtitle1">Reverse proxy will be created here</MudText>
-
-                    <MudSwitch Color="Color.Primary" Class="mt-5" @bind-Value="model.CreateIngress">Create Ingress</MudSwitch>
-
-                    @if (model.CreateIngress)
-                    {
-                        <MudItem xs="12" sm="6" md="4">
-                            <SelectNode MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
-                        </MudItem>
-                    }
-
-                </MudCardContent>
-            </MudCard>
-
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Application Server</MudText>
-                    <MudText Typo="Typo.subtitle1">Containers will be deployed here</MudText>
-                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
-                        <SelectNode MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
-                    </MudItem>
-
-                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
-                        <MudTextField @bind-Value="model.ApplicationPort" Label="Host Port" />
-                    </MudItem>
-
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.ConfigureResources)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-
-                    <MudText Typo="Typo.h6">Dependencies</MudText>
-                    <DependencyEditor @bind-Dependencies="@model.Resources"
-                                      EnvironmentVariables="@model.EnvironmentVariables" />
-
-                    <MudText Typo="Typo.h6" Class="mt-5">Volumes</MudText>
-                    <VolumesEditor @bind-VolumeBinds="@model.VolumeBinds" />
-
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.ConfigureEnvironmentVariables)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-                    <MudText Typo="Typo.h6">Environment Variables</MudText>
-                    <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables" />
-                </MudCardContent>
-            </MudCard>
-        }
-        else if (_wizardPage == Pages.ValidateAndConfirm)
-        {
-            <MudCard Class="pa-5 mt-5">
-                <MudCardContent>
-            @if(!_validationResult.IsValid)
+            @if (_wizardPage == Pages.SelectTemplate)
             {
-                <MudStack Spacing="2">
-                @foreach(var error in _validationResult.Errors)
-                {
-                    if(error.Severity == FluentValidation.Severity.Error)
+                <MudText Typo="Typo.h6">Select template</MudText>
+
+                <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
+                    @foreach (var category in _categories)
                     {
-                        <MudAlert Severity="Severity.Error">@error.ErrorMessage</MudAlert>
+                        <MudTabPanel Text="@category">
+                            <div class="templates mt-5">
+                                @foreach (var template in _templates.Where(x => x.Category == category))
+                                {
+                                    <MudPaper Class="pa-4 hover-elevation" @onclick="async () => await ApplyTemplateAsync(template)">
+                                        <div class="template">
+                                            <img src="@template.IconUrl" />
+                                            <div>@template.Name</div>
+                                        </div>
+                                    </MudPaper>
+                                }
+                            </div>
+                        </MudTabPanel>
                     }
-                    else if(error.Severity == FluentValidation.Severity.Warning)
-                    {
-                        <MudAlert Severity="Severity.Warning">@error.ErrorMessage</MudAlert>
-                    }
-                    else
-                    {
-                        <MudAlert Severity="Severity.Info">@error.ErrorMessage</MudAlert>
-                    }
-                }
-                </MudStack>
+                </MudTabs>
+            } 
+            else if (_wizardPage == Pages.SelectDomainName)
+            {
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Define deployment</MudText>
+
+                        <MudTextField Label="Deployment Name" Class="mt-5"
+                                        @bind-Value="model.Name" For="@(() => model.Name)" />
+
+                        <MudTextField Label="Domain Name" Class="mt-5"
+                                        @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                    </MudCardContent>
+                </MudCard>
             }
-            else
+            else if (_wizardPage == Pages.EditComposePlan)
             {
-                <MudText Typo="Typo.h6">Ready for deployment</MudText>
-                <MudItem Class="ml-5 mt-5">
-                    <ol>
-                        @if(model.CreateIngress)
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">@model.Kind</MudText>
+                        <DockerComposeEditor @bind-Value="model.Plan" />
+                    </MudCardContent>
+                </MudCard>
+            }
+            else if (_wizardPage == Pages.ConfigureServers)
+            {
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+
+                        <MudStack Row="true" AlignItems="AlignItems.Center">
+                            <MudText Typo="Typo.h6">Ingress Server</MudText>
+                            <MudSpacer />
+                            <MudSwitch Color="Color.Primary" Class="mt-5" @bind-Value="model.CreateIngress"></MudSwitch>
+                        </MudStack>
+
+                        @if (model.CreateIngress)
                         {
-                            <li>Create DNS entry @model.DomainName for Ingress</li>
-                            <li>Create ingress service @model.DomainName at @model.IngressNode?.IpAddress</li>
-                            <li>Generate HTTPS certificates for SAN: @model.DomainName</li>
-                            <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                            <MudStack Spacing="0">
+
+                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                    <MudText>Ingress Node</MudText>
+                                    <MudSpacer />
+                                    <MudItem Style="width: 300px">
+                                        <SelectNode MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
+                                    </MudItem>
+                                </MudStack>
+
+                                <MudStack Row="true" AlignItems="AlignItems.Center">
+                                    <MudText>Regional Deployment</MudText>
+                                    <MudSpacer />
+                                    <MudSwitch Color="Color.Primary" Class="mt-5" @bind-Value="model.IsRegional"></MudSwitch>
+                                </MudStack>
+                                @if (model.IsRegional)
+                                {
+                                    <MudStack Row="true" AlignItems="AlignItems.Center">
+                                        <MudText>Limited Region</MudText>
+                                        <MudSpacer />
+                                        <MudItem Style="width: 300px"><MudTextField @bind-Value="model.Region" Label="Region" /></MudItem>
+                                    </MudStack>
+                                    <MudText Typo="Typo.subtitle1">DNS entry for the ingress will only be created in the specific region</MudText>
+                                }
+                            </MudStack>
+                        }
+
+                    </MudCardContent>
+                </MudCard>
+
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Application Server</MudText>
+                        <MudText Typo="Typo.subtitle1">Containers will be deployed here</MudText>
+                        <MudItem xs="12" sm="6" md="4" Class="mt-5">
+                            <SelectNode MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
+                        </MudItem>
+
+                        <MudItem xs="12" sm="6" md="4" Class="mt-5">
+                            <MudTextField @bind-Value="model.ApplicationPort" Label="Host Port" />
+                        </MudItem>
+
+                    </MudCardContent>
+                </MudCard>
+            }
+            else if (_wizardPage == Pages.ConfigureResources)
+            {
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+
+                        <MudText Typo="Typo.h6">Dependencies</MudText>
+                        <DependencyEditor @bind-Dependencies="@model.Resources"
+                                          EnvironmentVariables="@model.EnvironmentVariables" />
+
+                        <MudText Typo="Typo.h6" Class="mt-5">Volumes</MudText>
+                        <VolumesEditor @bind-VolumeBinds="@model.VolumeBinds" />
+
+                    </MudCardContent>
+                </MudCard>
+            }
+            else if (_wizardPage == Pages.ConfigureEnvironmentVariables)
+            {
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+                        <MudText Typo="Typo.h6">Environment Variables</MudText>
+                        <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables" />
+                    </MudCardContent>
+                </MudCard>
+            }
+            else if (_wizardPage == Pages.ValidateAndConfirm)
+            {
+                <MudCard Class="pa-5 mt-5">
+                    <MudCardContent>
+                @if(!_validationResult.IsValid)
+                {
+                    <MudStack Spacing="2">
+                    @foreach(var error in _validationResult.Errors)
+                    {
+                        if(error.Severity == FluentValidation.Severity.Error)
+                        {
+                            <MudAlert Severity="Severity.Error">@error.ErrorMessage</MudAlert>
+                        }
+                        else if(error.Severity == FluentValidation.Severity.Warning)
+                        {
+                            <MudAlert Severity="Severity.Warning">@error.ErrorMessage</MudAlert>
                         }
                         else
                         {
-                            <li>Create DNS entry @model.DomainName for application</li>
-                            <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                            <MudAlert Severity="Severity.Info">@error.ErrorMessage</MudAlert>
                         }
-
-                        @if(_workPlan is not null)
-                        {
-                            foreach(var container in _workPlan.ContainerImages)
+                    }
+                    </MudStack>
+                }
+                else
+                {
+                    <MudText Typo="Typo.h6">Ready for deployment</MudText>
+                    <MudItem Class="ml-5 mt-5">
+                        <ol>
+                            @if(model.CreateIngress)
                             {
-                                <li>Create container '@container' at @model.ApplicationNode?.IpAddress</li>
+                                <li>Create DNS entry @model.DomainName for Ingress</li>
+                                <li>Create ingress service @model.DomainName at @model.IngressNode?.IpAddress</li>
+                                <li>Generate HTTPS certificates for SAN: @model.DomainName</li>
+                                <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
                             }
-                        }
-                    </ol>
-                    <MudButton Class="ml-auto mt-5"
-                                OnClick="CreateDeploymentAsync"
-                                ButtonType="ButtonType.Submit"
-                                Variant="Variant.Filled"
-                                Color="Color.Primary">Create</MudButton>
+                            else
+                            {
+                                <li>Create DNS entry @model.DomainName for application</li>
+                                <li>Generate HTTPS certificates for SAN: @model.ApplicationNode?.IpAddress</li>
+                            }
+
+                            @if(_workPlan is not null)
+                            {
+                                foreach(var container in _workPlan.ContainerImages)
+                                {
+                                    <li>Create container '@container' at @model.ApplicationNode?.IpAddress</li>
+                                }
+                            }
+                        </ol>
+                        <MudButton Class="ml-auto mt-5"
+                                    OnClick="CreateDeploymentAsync"
+                                    ButtonType="ButtonType.Submit"
+                                    Variant="Variant.Filled"
+                                    Color="Color.Primary">Create</MudButton>
 
 
-                </MudItem>
-            }
+                    </MudItem>
+                }
                 </MudCardContent>
             </MudCard>
         }
@@ -236,6 +259,9 @@
     {
         [Required]
         public string Name { get; set; } = "";
+
+        public bool IsRegional {get;set;}
+        public string Region{ get; set; }
 
         [Required]
         public string DomainName { get; set; } = "";
@@ -328,6 +354,7 @@
                 Kind = model.Kind,
                 CreateIngress = model.CreateIngress,
                 CreateDnsEntry = true,
+                Region = model.IsRegional ? model.Region : null,
                 IngressServerIp = model.IngressNode?.IpAddress,
                 ApplicationServerIps = [model.ApplicationNode?.IpAddress],
                 ApplicationServerPort = model.ApplicationPort,

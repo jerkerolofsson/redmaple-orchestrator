@@ -36,6 +36,12 @@ else if(!_loading)
                              Items="@_filteredPlans"
                              SortMode="SortMode.Multiple">
                     <Columns>
+                        <PropertyColumn StickyLeft="true" Property="x => x.Region" HeaderStyle="width: 10px">
+                            <HeaderTemplate>
+                                <MudIcon Icon="@Icons.Material.Filled.LocationOn"/>
+                            </HeaderTemplate>
+                        </PropertyColumn>
+
                         <TemplateColumn StickyLeft="true" HeaderStyle="width: 1rem">
                             <CellTemplate>
                                 @if (context.Item.IconUrl is not null)

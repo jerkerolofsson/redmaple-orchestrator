@@ -24,24 +24,37 @@
 
         <MudCard Class="pa-5 mt-5">
             <MudCardContent>
-                <MudItem>
-                    <MudText Typo="Typo.h6">Deployment Name</MudText>
-                    <MudTextField Class="pa-5"
-                                  @bind-Value="_plan.Name"/>
+                <MudStack Spacing="3">
+                    <MudStack Spacing="0">
+                        <MudText>Deployment Name</MudText>
+                        <MudTextField @bind-Value="_plan.Name" />
+                    </MudStack>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Ingress Server</MudText>
-                    <SelectNode Class="pa-5" MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+                    <MudStack Spacing="0">
+                        <MudText>Ingress Node</MudText>
+                        <SelectNode MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+                    </MudStack>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Application Server</MudText>
-                    <SelectNode Class="pa-5" MustBeApplicationHost="true" Value="@_applicationNode" ValueChanged="OnApplicationNodeChanged" Label="" />
+                    <MudStack Spacing="0">
+                        <MudText>Application Node</MudText>
+                        <SelectNode MustBeApplicationHost="true" Value="@_applicationNode" ValueChanged="OnApplicationNodeChanged" Label="" />
+                    </MudStack>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Category</MudText>
-                    <MudTextField Class="pa-5"
-                                  @bind-Value="_plan.Category"/>
+                    <MudStack Spacing="0">
+                        <MudText>Region</MudText>
+                        <MudTextField @bind-Value="_plan.Region" />
+                    </MudStack>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Icon</MudText>
-                    <MudTextField Class="pa-5"
-                                  @bind-Value="_plan.IconUrl" />
+                    <MudStack  Spacing="0">
+                        <MudText>Category</MudText>
+                        <MudTextField @bind-Value="_plan.Category" />
+                    </MudStack>
+
+
+                    <MudStack  Spacing="0">
+                        <MudText>Icon</MudText>
+                        <MudTextField @bind-Value="_plan.IconUrl" />
+                    </MudStack>
 
                     <MudText Class="mt-5" Typo="Typo.h6">Docker Compose</MudText>
                     <DockerComposeEditor @bind-Value="_plan.Plan" />
@@ -49,7 +62,7 @@
                     <MudText Class="mt-5" Typo="Typo.h6">Environment Variables</MudText>
                     <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />
 
-                </MudItem>
+                </MudStack>
             </MudCardContent>
             <MudCardActions>
                 <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Variant="Variant.Filled">Save</MudButton>

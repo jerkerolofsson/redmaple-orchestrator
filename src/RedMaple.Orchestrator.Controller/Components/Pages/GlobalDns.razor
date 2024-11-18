@@ -17,6 +17,7 @@
     <MudDataGrid Bordered="true" Dense="true"
                     ReadOnly="false"
                     EditMode="DataGridEditMode.Cell"
+                    Filterable="true"
                     Items="@_entries"
                     SortMode="SortMode.Multiple">
         <Columns>
@@ -26,18 +27,23 @@
                 </EditTemplate>
             </TemplateColumn>
 
-            <PropertyColumn Property="x => x.Hostname" Title="Name"/>
+            <PropertyColumn Property="x => x.Region" Title="Region" Required="false" />
+            <PropertyColumn Property="x => x.Hostname" Title="Name" />
             <PropertyColumn Property="x => x.IpAddress" Title="IP Address" />
 
             <TemplateColumn StickyRight="true">
                 <EditTemplate>
-                    <MudButton OnClick="async() => RemoveItem(context.Item)" Class="btn-delete">
-                        <i class="fa fa-trash"></i>&nbsp;Delete
-                    </MudButton>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="async() => RemoveItem(context.Item)">
+                    </MudIconButton>
                 </EditTemplate>
             </TemplateColumn>
 
         </Columns>
+
+        <PagerContent>
+            <MudDataGridPager T="DeploymentPlanTemplate" PageSizeOptions=@(new int[] {10, 25, 50}) />
+        </PagerContent>
+
     </MudDataGrid>
 
     <MudCardActions>

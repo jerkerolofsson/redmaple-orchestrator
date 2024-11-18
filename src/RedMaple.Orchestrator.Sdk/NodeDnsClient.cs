@@ -19,6 +19,11 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
         
+        /// <summary>
+        /// Sets DNS entries for the specified node
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <returns></returns>
         public async Task SetDnsEntriesAsync(List<DnsEntry> entries)
         {
             string url = $"/api/dns/table";

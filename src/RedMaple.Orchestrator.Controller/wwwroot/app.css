@@ -1,5 +1,7 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+
+    --mud-typography-subtitle1-size: 7pt;
 }
 
 .mud-input-text {

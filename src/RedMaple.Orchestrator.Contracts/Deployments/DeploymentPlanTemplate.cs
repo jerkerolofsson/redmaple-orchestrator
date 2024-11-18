@@ -9,8 +9,14 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
 {
     public class DeploymentPlanTemplate
     {
+        /// <summary>
+        /// Icon for the template
+        /// </summary>
         public required string IconUrl { get; set; }
 
+        /// <summary>
+        /// Default domain name prefix
+        /// </summary>
         public string? DomainNamePrefix { get; set; }
         public string ApplicationProtocol { get; set; } = "https";
 
