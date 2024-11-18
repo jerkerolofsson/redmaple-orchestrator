@@ -25,10 +25,10 @@ namespace RedMaple.Orchestrator.Sdk
             _httpClient.Dispose();
         }
 
-        public Task PullImageAsync(string id, IProgress<JSONMessage> progress, CancellationToken cancellationToken)
+        public Task PullImageAsync(string image, IProgress<JSONMessage> progress, CancellationToken cancellationToken = default)
         {
             var tcs = new TaskCompletionSource();
-            string url = $"/api/images/{WebUtility.UrlEncode(id)}/pull";
+            string url = $"/api/images/{WebUtility.UrlEncode(image)}/pull";
             Task.Factory.StartNew(async () =>
             {
                 try
@@ -176,6 +176,17 @@ namespace RedMaple.Orchestrator.Sdk
                 throw new Exception("null returned from GetContainers end-point");
             }
             return containers;
+        }
+
+        public async Task<Container> GetContainerByIdAsync(string id)
+        {
+            string url = $"/api/containers/{id}";
+            var container = await _httpClient.GetFromJsonAsync<Container>(url);
+            if (container is null)
+            {
+                throw new Exception("null returned from GetContainer end-point");
+            }
+            return container;
         }
 
         public async Task<List<Container>> GetContainersAsync()

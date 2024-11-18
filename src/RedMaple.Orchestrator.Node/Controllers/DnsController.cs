@@ -28,7 +28,6 @@ namespace RedMaple.Orchestrator.Node.Controllers
             return await _dns.GetDnsEntriesAsync();
         }
 
-
         [HttpPost("/api/dns/table")]
         public async Task SetDnsEntriesAsync([FromBody] List<DnsEntry> entries, CancellationToken cancellationToken)
         {

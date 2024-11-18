@@ -619,7 +619,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             await _appDeploymentRepository.SaveDeploymentAsync(appDeployment);
 
             await WaitUntilReadyzAsync(plan, appDeployment, progress, cancellationToken);
-            await _mediator.Publish(new AppDeploymentReadyNotification(appDeployment));
+            await _mediator.Publish(new AppDeploymentReadyNotification(appDeployment, plan));
 
             // Save state
             plan.Up = true;

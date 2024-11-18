@@ -52,5 +52,10 @@ namespace RedMaple.Orchestrator.Contracts.Resources
         /// Volume options, specific to a volume
         /// </summary>
         public VolumeResource? Volume { get; set; }
+
+        /// <summary>
+        /// Icon. Related to deployment plan
+        /// </summary>
+        public string? IconUrl { get; set; }
     }
 }

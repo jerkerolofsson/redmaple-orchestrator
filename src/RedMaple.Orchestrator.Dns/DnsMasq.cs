@@ -87,29 +87,45 @@ namespace RedMaple.Orchestrator.Dns
         /// are located
         /// </summary>
         /// <returns></returns>
-        private string CreateDnsmasqConfIfItDoesntExist()
+        private async Task<string> CreateDnsmasqConfIfItDoesntExistAsync()
         {
             string path = GetLocalConfigDir();
             var filePath = Path.Combine(path, "dnsmasq.conf");
             if (!File.Exists(filePath))
             {
                 _logger.LogDebug("Creating default {path}", filePath);
-
-                using var writer = File.CreateText(filePath);
-                writer.WriteLine("""
-                    no-resolv
-
-                    #use google as default nameservers
-                    server=8.8.4.4
-                    server=8.8.8.8
-
-                    conf-file=/etc/dnsmasq.d/global.conf
-                    conf-file=/etc/dnsmasq.d/managed.conf
-                    
-                    """);
-
+                await SetUpstreamDnsServersAsync("8.8.8.8", "1.1.1.1");
             }
             return filePath;
+        }
+
+        /// <summary>
+        /// Sets upstream DNS servers
+        /// </summary>
+        /// <param name="dns1"></param>
+        /// <param name="dns2"></param>
+        /// <returns></returns>
+        public async Task SetUpstreamDnsServersAsync(string? dns1,string? dns2)
+        {
+            string path = GetLocalConfigDir();
+            var filePath = Path.Combine(path, "dnsmasq.conf");
+            _logger.LogDebug("Creating default {path}", filePath);
+
+            dns1 ??= "8.8.8.8";
+            dns2 ??= "8.8.4.4";
+
+            using var writer = File.CreateText(filePath);
+            await writer.WriteAsync($"""
+                no-resolv
+
+                # Upstream DNS servers
+                server={dns1}
+                server={dns2}
+
+                conf-file=/etc/dnsmasq.d/global.conf
+                conf-file=/etc/dnsmasq.d/managed.conf
+                    
+                """);
         }
 
         /// <summary>
@@ -171,7 +187,7 @@ namespace RedMaple.Orchestrator.Dns
                 {
                     string dnsmasqD = GetLocalDnsmasqDDir();
                     var managedConf = CreateManagedConfIfItDoesntExist();
-                    var dnsmasqDotConf = CreateDnsmasqConfIfItDoesntExist();
+                    var dnsmasqDotConf = await CreateDnsmasqConfIfItDoesntExistAsync();
 
                     _logger.LogInformation("Creating DNS container, dnsmasq.conf={DnsMasqConf}, dnsmasq.d={DnsMasqD}, managed.conf={ManagedConf}", dnsmasqDotConf, dnsmasqD, managedConf);
 

@@ -11,11 +11,15 @@ namespace RedMaple.Orchestrator.Node.Controllers
     {
         private readonly ILogger _logger;
         private readonly INodeSettingsProvider _settingsProvider;
-
-        public SettingsController(ILogger<SettingsController> logger, INodeSettingsProvider settingsProvider)
+        private readonly IDns _dns;
+        public SettingsController(
+            ILogger<SettingsController> logger,
+            INodeSettingsProvider settingsProvider,
+            IDns dns)
         {
             _logger = logger;
             _settingsProvider = settingsProvider;
+            _dns = dns;
         }
 
         [HttpGet("/api/settings")]
@@ -27,6 +31,13 @@ namespace RedMaple.Orchestrator.Node.Controllers
         public async Task ApplySettingsAsync([FromBody] NodeSettings settings)
         {
             await _settingsProvider.ApplySettingsAsync(settings);
+
+            // DNS 
+            if(settings.EnableDns)
+            {
+                await _dns.SetUpstreamDnsServersAsync(settings.UpstreamDns1, settings.UpstreamDns2);
+                await _dns.ReloadConfigurationAsync(CancellationToken.None);
+            }
         }
     }
 }

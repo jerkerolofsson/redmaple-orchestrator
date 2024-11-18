@@ -15,6 +15,16 @@ namespace RedMaple.Orchestrator.Contracts.Node
         public bool EnableDns { get; set; }
 
         /// <summary>
+        /// Add upstream DNS server on DNS server
+        /// </summary>
+        public string? UpstreamDns1 { get; set; }
+
+        /// <summary>
+        /// Add upstream DNS server on DNS server
+        /// </summary>
+        public string? UpstreamDns2 { get; set; }
+
+        /// <summary>
         /// Can the node host ingress services
         /// </summary>
         public bool IngressHost { get; set; }

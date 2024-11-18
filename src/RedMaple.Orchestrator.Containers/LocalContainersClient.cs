@@ -90,12 +90,17 @@ namespace RedMaple.Orchestrator.Containers
             }
             return false;
         }
-
-        public async Task<Container?> GetContainerByIdAsync(string containerId, CancellationToken cancellationToken)
+        public async Task<Container?> GetContainerByIdAsync(string id, CancellationToken cancellationToken)
         {
             var containers = await GetContainersAsync(null, cancellationToken);
-            return containers.Where(x => x.Id == containerId).FirstOrDefault();
+            return containers.Where(x => x.Id == id).FirstOrDefault();
         }
+
+        //public async Task<Container?> GetContainerByIdAsync(string containerId, CancellationToken cancellationToken)
+        //{
+        //    var containers = await GetContainersAsync(null, cancellationToken);
+        //    return containers.Where(x => x.Id == containerId).FirstOrDefault();
+        //}
         public async Task<Container?> GetContainerByNameAsync(string name, CancellationToken cancellationToken)
         {
             var containers = await GetContainersAsync(null, cancellationToken);
@@ -367,6 +372,15 @@ namespace RedMaple.Orchestrator.Containers
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             await client.Containers.StartContainerAsync(id, new ContainerStartParameters
             {
+            }, cancellationToken);
+        }
+
+        public async Task RestartAsync(string id, CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            await client.Containers.RestartContainerAsync(id, new ContainerRestartParameters
+            {
+                WaitBeforeKillSeconds = 30
             }, cancellationToken);
         }
 

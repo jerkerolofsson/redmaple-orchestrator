@@ -1,4 +1,5 @@
 ﻿@page "/node/{id}/containers"
+@using Docker.DotNet.Models
 @using RedMaple.Orchestrator.Controller.Domain.Aggregations
 @using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 @using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
@@ -8,6 +9,8 @@
 @inject INodeManager nodeManager
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
+
+<ProgressView Visible="_loading" @ref="_progress" />
 
 <div class="buttons">
     <MudButton Variant="Variant.Filled"
@@ -65,6 +68,7 @@
                     {
                         <MudButton OnClick="async () => await StartContainerAsync(context.Item.Container.Id)">Start</MudButton>
                     }
+                    <MudButton OnClick="async () => await UpgradeContainerAsync(context.Item.Container.Id)">Upgrade</MudButton>
                     <MudButton OnClick="() => ReadLogs(context.Item.Container.Id)">Logs</MudButton>
                 </CellTemplate>
             </TemplateColumn>
@@ -75,6 +79,9 @@
 
 @code {
     [Parameter] public string Id { get; set; } = null!;
+
+    private bool _loading = false;
+    private ProgressView _progress = null!;
 
     private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
     private NodeInfo? _nodeInfo = null;
@@ -95,8 +102,35 @@
     {
         if (_nodeInfo is not null)
         {
+            _loading = true;
+            this.StateHasChanged();
+
             using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
             await client.StartAsync(id);
+
+            _loading = false;
+            this.StateHasChanged();
+
+        }
+    }
+    private async Task UpgradeContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            _loading = true;
+            this.StateHasChanged();
+
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+
+            Container? container = await client.GetContainerByIdAsync(id);
+            if (container?.Image is not null)
+            {
+                await client.PullImageAsync(container.Image, _progress);
+            }
+            await client.RestartAsync(id);
+
+            _loading = false;
+            this.StateHasChanged();
         }
     }
 
@@ -113,6 +147,21 @@
             await client.StopAsync(id);
         }
     }
+
+    private async Task PullImageFromContainerAsync(string id, IProgress<JSONMessage> progress)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+
+            Container? container = await client.GetContainerByIdAsync(id);
+            if(container?.Image is not null)
+            {
+                await client.PullImageAsync(container.Image, progress);
+            }
+        }
+    }
+
     private async Task RestartContainerAsync(string id)
     {
         if (_nodeInfo is not null)

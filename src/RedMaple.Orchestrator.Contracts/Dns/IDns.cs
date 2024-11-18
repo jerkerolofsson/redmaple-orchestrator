@@ -42,5 +42,6 @@
         /// </summary>
         /// <returns></returns>
         Task<List<DnsEntry>> GetDnsEntriesAsync();
+        Task SetUpstreamDnsServersAsync(string? dns1, string? dns2);
     }
 }

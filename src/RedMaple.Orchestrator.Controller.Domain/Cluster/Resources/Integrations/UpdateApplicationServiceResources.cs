@@ -2,10 +2,12 @@
 using MediatR;
 using RedMaple.Orchestrator.Contracts.Resources;
 using RedMaple.Orchestrator.Controller.Domain.Deployments;
+using RedMaple.Orchestrator.DockerCompose;
 using RedMaple.Orchestrator.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -55,7 +57,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                 env[key] = $"{protocol}://{notification.Deployment.ApplicationServerIp}:{port}";
             }
 
-            if (notification.Deployment.Resource?.Exported is not null)
+            // Add resource variables
+            var resourceOptions = notification.Deployment.Resource;
+            if (resourceOptions?.Create == true && resourceOptions?.Exported is not null)
             {
                 foreach (var exportEnv in notification.Deployment.Resource.Exported)
                 {
@@ -64,22 +68,34 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                         env[exportEnv] = value;
                     }
                 }
+
+                if(resourceOptions.ConnectionStringFormat is not null)
+                {
+                    var connectionStringName = $"ConnectionStrings__{notification.Deployment.Slug}";
+                    if(resourceOptions.ConnectionStringVariableNameFormat is not null)
+                    {
+                        connectionStringName = DockerComposeParser.ReplaceEnvironmentVariables(resourceOptions.ConnectionStringVariableNameFormat, notification.Deployment.EnvironmentVariables);
+                    }
+                    var connectionString = DockerComposeParser.ReplaceEnvironmentVariables(resourceOptions.ConnectionStringFormat, notification.Deployment.EnvironmentVariables);
+                    env[connectionStringName] = connectionString;
+                }
+
+                var resourceId = "app__" + notification.Deployment.Id;
+                var slug = notification.Deployment.Slug;
+                var resource = new ClusterResource
+                {
+                    Id = resourceId,
+                    IconUrl = notification.Plan?.IconUrl,
+                    Slug = slug,
+                    Kind = resourceOptions.Kind ?? ResourceKind.ApplicationService,
+                    Name = notification.Deployment.Slug,
+                    IsGlobal = false,
+                    Persist = false,
+                    EnvironmentVariables = env
+                };
+
+                await _resources.AddResourceAsync(resource);
             }
-
-            var resourceId = "app__" + notification.Deployment.Id;
-            var slug = notification.Deployment.Slug;
-            var resource = new ClusterResource
-            {
-                Id = resourceId,
-                Slug = slug,
-                Kind = ResourceKind.ApplicationService,
-                Name = notification.Deployment.Slug,
-                IsGlobal = false,
-                Persist = false,
-                EnvironmentVariables = env
-            };
-
-            await _resources.AddResourceAsync(resource);
         }
     }
 }

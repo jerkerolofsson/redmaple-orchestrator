@@ -49,7 +49,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments.State
                     {
                         _logger.LogError(ex, $"Error during DeploymentStartupService for {plan.Slug}");
                     }
-                    await _mediator.Publish(new AppDeploymentReadyNotification(deployment));
+                    await _mediator.Publish(new AppDeploymentReadyNotification(deployment, plan));
                 }
             }
         }

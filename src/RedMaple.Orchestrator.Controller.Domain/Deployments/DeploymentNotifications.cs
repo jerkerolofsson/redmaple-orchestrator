@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 {
-    public record class AppDeploymentReadyNotification(Deployment Deployment) : INotification;
+    public record class AppDeploymentReadyNotification(Deployment Deployment, DeploymentPlan Plan) : INotification;
 
     /// <summary>
     /// Raised when the deployment is starting (up)
