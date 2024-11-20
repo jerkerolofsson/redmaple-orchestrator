@@ -69,8 +69,8 @@ namespace RedMaple.Orchestrator.DockerCompose
                 var volumeCreateParameters = new VolumesCreateParameters
                 {
                     Name = name,
-                    Driver = composeVolume.driver ?? "local",
-                    DriverOpts = composeVolume.driver_opts,
+                    Driver = composeVolume?.driver ?? "local",
+                    DriverOpts = composeVolume?.driver_opts,
                     Labels = new Dictionary<string, string>
                     {
                         [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName

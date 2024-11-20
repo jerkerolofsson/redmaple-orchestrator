@@ -14,7 +14,7 @@ namespace RedMaple.Orchestrator.Containers
     {
         private const string LABEL_PROJECT = "com.docker.compose.project";
 
-        private ILogger<LocalContainersClient> _logger;
+        private readonly ILogger<LocalContainersClient> _logger;
 
         public LocalContainersClient(ILogger<LocalContainersClient> logger)
         {
@@ -199,7 +199,7 @@ namespace RedMaple.Orchestrator.Containers
 
         private class StatsProgressCollector : IProgress<ContainerStatsResponse>
         {
-            private IProgress<string> _callback;
+            private readonly IProgress<string> _callback;
 
             public StatsProgressCollector(IProgress<string> callback)
             {
@@ -217,7 +217,7 @@ namespace RedMaple.Orchestrator.Containers
         /// </summary>
         private class LogsProgressCollector : IProgress<string>
         {
-            private IProgress<string> _callback;
+            private readonly IProgress<string> _callback;
 
             public LogsProgressCollector(IProgress<string> callback)
             {

@@ -1,4 +1,6 @@
-﻿using RedMaple.Orchestrator.Contracts.Deployments;
+﻿using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Resources;
 using RedMaple.Orchestrator.DockerCompose.Converters;
 using System;
@@ -13,32 +15,68 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
     public class ClusterResourceManager : IClusterResourceManager
     {
         private readonly ConcurrentDictionary<string, ClusterResource> _resources = new();
+        private readonly ILogger<ClusterResourceManager> _logger;
         private readonly IClusterResourceRepository _repo;
         private bool _isInitialized = false;
-        private SemaphoreSlim _lock = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _lock = new SemaphoreSlim(1);
 
-        public ClusterResourceManager(IClusterResourceRepository repo)
+        public ClusterResourceManager(ILogger<ClusterResourceManager> logger, IClusterResourceRepository repo)
         {
+            _logger = logger;
             _repo = repo;
         }
 
-        public async Task<List<ClusterResource>> GetClusterResourcesAsync(Dictionary<string, string> environmentVariables)
+        public async Task<List<ClusterResource>> GetClusterResourcesAsync(Dictionary<string, string> environmentVariables, string? region)
         {
             var assignedResources = new List<ClusterResource>();
-            var missingEnvironmentVariables = environmentVariables.Where(x => string.IsNullOrEmpty(x.Value)).Select(x => x.Key).ToList();
+            //var missingEnvironmentVariables = environmentVariables.Where(x => string.IsNullOrEmpty(x.Value)).Select(x => x.Key).ToList();
 
             // Find cluster resources that define the variable
-            if (missingEnvironmentVariables.Count > 0)
+            //if (missingEnvironmentVariables.Count > 0)
             {
                 var resources = await GetClusterResourcesAsync();
-                foreach (var envVar in missingEnvironmentVariables)
+                var matched = new HashSet<string>();
+                foreach (var envVar in environmentVariables.Keys)
                 {
+                    // First match the region
                     foreach (var resource in resources)
                     {
-                        if (resource.EnvironmentVariables.ContainsKey(envVar))
+                        if (resource.EnvironmentVariables.ContainsKey(envVar) && region == resource.ResourceRegion && !matched.Contains(envVar))
                         {
+                            matched.Add(envVar);
                             if (!assignedResources.Contains(resource))
                             {
+                                _logger.LogInformation("Assigning resource {resourceName} (region={region}) to plan", resource.Name, resource.ResourceRegion);
+                                assignedResources.Add(resource);
+                            }
+                            break;
+                        }
+                    }
+
+                    // Secoind match global resource
+                    foreach (var resource in resources)
+                    {
+                        if (resource.EnvironmentVariables.ContainsKey(envVar) && resource.ResourceRegion is null && !matched.Contains(envVar))
+                        {
+                            matched.Add(envVar);
+                            if (!assignedResources.Contains(resource))
+                            {
+                                _logger.LogInformation("Assigning resource {resourceName} (region={region}) to plan", resource.Name, resource.ResourceRegion);
+                                assignedResources.Add(resource);
+                            }
+                            break;
+                        }
+                    }
+
+                    // Second, any resource 
+                    foreach (var resource in resources)
+                    {
+                        if (resource.EnvironmentVariables.ContainsKey(envVar) && !matched.Contains(envVar))
+                        {
+                            matched.Add(envVar);
+                            if (!assignedResources.Contains(resource))
+                            {
+                                _logger.LogInformation("Assigning resource {resourceName} (region={region}) to plan", resource.Name, resource.ResourceRegion);
                                 assignedResources.Add(resource);
                             }
                             break;
@@ -132,6 +170,19 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
             }
         }
 
+        public async Task<List<ClusterResource>> GetClusterResourcesByPlanAsync(string planId)
+        {
+            await _lock.WaitAsync();
+            try
+            {
+                await EnsureInitializedAsync();
+                return _resources.Values.Where(x => x.PlanId == planId).ToList();
+            }
+            finally
+            {
+                _lock.Release();
+            }
+        }
         public async Task<ClusterResource?> GetClusterResourceAsync(string id)
         {
             await _lock.WaitAsync();
@@ -146,5 +197,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources
                 _lock.Release();
             }
         }
+
     }
 }

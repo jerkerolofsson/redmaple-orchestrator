@@ -2,15 +2,15 @@
 @using MudExtensions
 @inject INodeManager nodeManager
 
-    <MudSelectExtended  T="NodeInfo"
-        Class="@Class"
-        ItemCollection="_nodes"
-        Label="@Label" HelperText="" Value="@Value" ValueChanged="OnValueChanged">
+<MudSelectExtended  T="NodeInfo"
+Class="@Class"
+ItemCollection="_nodes"
+Label="@Label" HelperText="" Value="@Value" ValueChanged="OnValueChanged">
 
-        <ItemTemplate>
-            <MudStack Class="mud-width-full" Justify="Justify.SpaceBetween">
-                <MudText><b>@context.Value?.Name</b></MudText>
-                <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
+    <ItemTemplate>
+        <MudStack Class="mud-width-full" Justify="Justify.SpaceBetween">
+            <MudText><b>@context.Value?.Name</b></MudText>
+            <MudStack Row="true" Justify="Justify.SpaceBetween" AlignItems="AlignItems.Center">
                 <MudStack Row="true">
                     <MudIcon Icon="@Icons.Material.Outlined.Computer" />
                     <MudText>@(context.Value?.IpAddress)</MudText>
@@ -19,8 +19,8 @@
                 {
                     <MudStack Row="true">
                         <MudIcon Icon="@Icons.Material.Outlined.Map" />
-                    <MudText>@(context.Value?.Region)</MudText>
-                </MudStack>
+                        <MudText>@(context.Value?.Region)</MudText>
+                    </MudStack>
                 }
                 <MudChipSet T="string">
                     @if (context.Value?.Tags is not null)
@@ -32,9 +32,9 @@
                     }
                 </MudChipSet>
             </MudStack>
-            </MudStack>
-        </ItemTemplate>
-    </MudSelectExtended>
+        </MudStack>
+    </ItemTemplate>
+</MudSelectExtended>
 
 @code {
     [Parameter]
@@ -56,6 +56,8 @@
     public NodeInfo Value { get; set; } = null!;
 
     [Parameter] public string Class { get; set; } = "";
+
+    [Parameter] public string? Region { get; set; } = null;
 
     [Parameter]
     public EventCallback<NodeInfo?> ValueChanged { get; set; }
@@ -86,6 +88,11 @@
         {
             nodes = nodes.Where(x => x.IsLoadBalancerEnabled);
         }
+        if (Region is not null)
+        {
+            nodes = nodes.Where(x => x.Region == Region);
+        }
+
         _nodes = nodes.ToList();
 
         if(Value is null && _nodes.Count > 0)

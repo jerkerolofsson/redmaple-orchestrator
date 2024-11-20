@@ -12,14 +12,27 @@
 <MudCard Class="pa-5 mt-5">
 
     <MudText Typo="Typo.h6">Global DNS entries</MudText>
-    <MudText Typo="Typo.subtitle2">These DNS entries are provisioned to all DNS servers</MudText>
+    @if (_region is null)
+    {
+        <MudText Typo="Typo.subtitle2">These DNS entries are provisioned to all DNS servers</MudText>
+    }
+    else
+    {
+        <MudText Typo="Typo.subtitle2">These DNS entries are provisioned to DNS servers in the @_region region.</MudText>
+    }
 
-    <MudDataGrid Bordered="true" Dense="true"
-                    ReadOnly="false"
-                    EditMode="DataGridEditMode.Cell"
-                    Filterable="true"
-                    Items="@_entries"
-                    SortMode="SortMode.Multiple">
+    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
+        <MudSpacer />
+        <SelectRegion Region="@_region" RegionChanged="OnRegionChangedAsync" Regions="@_regions" />
+    </MudStack>
+
+    <MudDataGrid Bordered="true" 
+    Dense="true"
+    ReadOnly="false"
+    EditMode="DataGridEditMode.Cell"
+    Filterable="true"
+    Items="@_entries"
+    SortMode="SortMode.Multiple">
         <Columns>
             <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
                 <EditTemplate>
@@ -41,7 +54,7 @@
         </Columns>
 
         <PagerContent>
-            <MudDataGridPager T="DeploymentPlanTemplate" PageSizeOptions=@(new int[] {10, 25, 50}) />
+            <MudDataGridPager T="DnsEntry" PageSizeOptions=@(new int[] {10, 25, 50}) />
         </PagerContent>
 
     </MudDataGrid>
@@ -51,7 +64,7 @@
         <MudButton OnClick="@AddItem" Color="Color.Primary" Class="add-item-btn">Add Item</MudButton>
 
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto"
-                    OnClick="@(async () => await SaveTableAsync())">Save</MudButton>
+        OnClick="@(async () => await SaveTableAsync())">Save</MudButton>
     </MudCardActions>
 </MudCard>
 
@@ -60,22 +73,45 @@
 
     private List<DnsEntry> _entries = new();
 
-    void AddItem()
+    private string[]? _regions = null;
+    private string? _region = null;
+
+    private async Task OnRegionChangedAsync(string? region)
+    {
+        _region = region;
+        await LoadTableAsync();
+    }
+
+    private void AddItem()
     {
         _entries.Add(new DnsEntry { Hostname = "name", IpAddress = "192.168.0.202" });
     }
 
-    void RemoveItem(DnsEntry entry)
+    private void RemoveItem(DnsEntry entry)
     {
         _entries.Remove(entry);
     }
     private async Task LoadTableAsync()
     {
-        _entries = (await dns.GetDnsEntriesAsync()).Where(x => x.IsGlobal).ToList();
+        var entries = (await dns.GetDnsEntriesAsync()).Where(x => x.IsGlobal);
+
+        if(_regions is null)
+        {
+            _regions = ["Global", .. entries.Where(x => x.Region != null).Select(x => x.Region!).OrderBy(x => x).Distinct().ToArray()];
+        }
+
+        if(_region is not null)
+        {
+            entries = entries.Where(x => x.Region == _region);
+        }
+        _entries = entries.ToList();
     }
     private async Task SaveTableAsync()
     {
-        await dns.SetDnsEntriesAsync(_entries);
+        if (_entries.Count > 0)
+        {
+            await dns.SetDnsEntriesAsync(_entries);
+        }
     }
 
     protected override async Task OnInitializedAsync()

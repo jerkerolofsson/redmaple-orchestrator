@@ -7,13 +7,17 @@
 @using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
 @using RedMaple.Orchestrator.Controller.ViewModels
 @using System.Globalization
+@inject IClusterResourceManager clusterResourceManager
 @inject IDeploymentManager deploymentManager
 @inject INodeManager nodeManager
 @inject NavigationManager navigationManager
 @inject ISnackbar Snackbar
+@inject IDialogService dialogService
 
-<MudSnackbarProvider />
+<MudThemeProvider IsDarkMode="true" />
 <MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <MudText Typo="Typo.h3">Edit @Slug</MudText>
 
@@ -21,19 +25,26 @@
 {
     <EditForm Model="@_plan" OnValidSubmit="async () => await OnValidSubmitAsync()">
         <DataAnnotationsValidator />
-
-        <MudCard Class="pa-5 mt-5">
-            <MudCardContent>
+        <MudStack Spacing="5">
+            <MudPaper Class="pa-3">
                 <MudStack Spacing="3">
+                    <MudStack Spacing="0">
+                        <MudText Typo="Typo.h6">Deployment</MudText>
+                        <MudText Typo="Typo.subtitle2">Changes to the deployment properties will take effect when the deployment is restarted</MudText>
+                    </MudStack>
+
                     <MudStack Spacing="0">
                         <MudText>Deployment Name</MudText>
                         <MudTextField @bind-Value="_plan.Name" />
                     </MudStack>
 
-                    <MudStack Spacing="0">
-                        <MudText>Ingress Node</MudText>
-                        <SelectNode MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
-                    </MudStack>
+                    @if(_plan.CreateIngress)
+                    {
+                        <MudStack Spacing="0">
+                            <MudText>Ingress Node</MudText>
+                            <SelectNode MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+                        </MudStack>
+                    }
 
                     <MudStack Spacing="0">
                         <MudText>Application Node</MudText>
@@ -42,35 +53,62 @@
 
                     <MudStack Spacing="0">
                         <MudText>Region</MudText>
-                        <MudTextField @bind-Value="_plan.Region" />
+                        <MudStack Row="true">
+                            <SelectRegion Region="@_plan.Region" RegionChanged="OnRegionChangedAsync"/>
+                        </MudStack>
                     </MudStack>
+                </MudStack>
+            </MudPaper>
+
+            <MudPaper Class="pa-3">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Metadata</MudText>
 
                     <MudStack  Spacing="0">
                         <MudText>Category</MudText>
                         <MudTextField @bind-Value="_plan.Category" />
                     </MudStack>
 
-
                     <MudStack  Spacing="0">
                         <MudText>Icon</MudText>
                         <MudTextField @bind-Value="_plan.IconUrl" />
                     </MudStack>
+                </MudStack>
+            </MudPaper>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Docker Compose</MudText>
+            <MudPaper Class="pa-3">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Resource</MudText>
+
+                    <MudSwitchM3 Color="Color.Secondary" Label="Create Resource" @bind-Value="_plan.Resource.Create" />
+                    <MudTextField Label="Service Name" @bind-Value="_plan.Resource.ServiceName" />
+                    <MudSelectExtended Label="Kind" @bind-Value="_plan.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
+
+                    <MudTextField Label="Connection String Format" @bind-Value="_plan.Resource.ConnectionStringFormat" />
+                    <MudTextField Label="Connection String Variable Name Format" @bind-Value="_plan.Resource.ConnectionStringVariableNameFormat" />
+                </MudStack>
+            </MudPaper>
+
+            <MudPaper Class="pa-3">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Docker Compose</MudText>
                     <DockerComposeEditor @bind-Value="_plan.Plan" />
+                </MudStack>
+            </MudPaper>
 
-                    <MudText Class="mt-5" Typo="Typo.h6">Environment Variables</MudText>
+            <MudPaper Class="pa-3">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Environment Variables</MudText>
                     <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />
 
                 </MudStack>
-            </MudCardContent>
-            <MudCardActions>
+            </MudPaper>
+            <MudStack Row="true">
                 <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Variant="Variant.Filled">Save</MudButton>
-            </MudCardActions>
-        </MudCard>
+            </MudStack>
+        </MudStack>
     </EditForm>
 }
-
 
 @code {
     [Parameter]
@@ -79,6 +117,47 @@
     private DeploymentPlan? _plan = null;
     private NodeInfo? _ingressNode = null;
     private NodeInfo? _applicationNode = null;
+    private ResourceKind?[] _resourceKinds =
+    [
+    ResourceKind.API,
+    ResourceKind.ConnectionString,
+    ResourceKind.ApplicationService,
+    ResourceKind.MessageBroker,
+    ResourceKind.OidcServer,
+    ResourceKind.OtlpServer,
+    ];
+
+    private async Task OnRegionChangedAsync(string? region)
+    {
+        if(_plan is null)
+        {
+            return;
+
+        }
+        _plan.Region = region;
+
+        string regionName = region ?? "global";
+
+        bool? result = await dialogService.ShowMessageBox(
+          "Confirm",
+          $"Would you like to update variables from resources in the {region} region?",
+          yesText: "Yeah", cancelText: "Cancel");
+        if (result == true)
+        {
+            var resources = await clusterResourceManager.GetClusterResourcesAsync(_plan.EnvironmentVariables, region);
+            foreach(var resource in resources)
+            {
+                foreach (var envVar in resource.EnvironmentVariables)
+                {
+                    if(_plan.EnvironmentVariables.ContainsKey(envVar.Key) &&  _plan.EnvironmentVariables[envVar.Key] != envVar.Value)
+                    {
+                        Snackbar.Add($"Changed {envVar.Key} from {_plan.EnvironmentVariables[envVar.Key]} to {envVar.Value}");
+                        _plan.EnvironmentVariables[envVar.Key] = envVar.Value;
+                    }
+                }
+            }
+        }
+    }
 
     private void OnApplicationNodeChanged(NodeInfo node)
     {

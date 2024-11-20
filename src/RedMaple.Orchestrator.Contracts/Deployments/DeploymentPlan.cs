@@ -4,6 +4,7 @@ using RedMaple.Orchestrator.Controller.Domain.Healthz.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Numerics;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -34,9 +35,13 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public string? DomainName { get; set; }
 
         /// <summary>
-        /// Region identifier. Should match node regions.
         /// If region is set then a DNS entry is added on nodes with the same region. 
         /// This allows multiple deployments with the same domain name
+        /// </summary>
+        public bool OnlyRegionDnsEntry { get; set; }
+
+        /// <summary>
+        /// Region identifier. 
         /// </summary>
         public string? Region { get; set; }
 
@@ -163,5 +168,6 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// Key is the environment variable name, and value is the resource id
         /// </summary>
         public Dictionary<string, string> ResourceVariableMap { get; set; } = new();
+
     }
 }

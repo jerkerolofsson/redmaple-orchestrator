@@ -11,6 +11,9 @@ namespace RedMaple.Orchestrator.Contracts.Resources
         UserDefined,
         OidcServer,
         OtlpServer,
+        MessageBroker,
+        LargeLanguageModel,
+        API,
 
         Volume,
 

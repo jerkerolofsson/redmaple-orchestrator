@@ -14,16 +14,37 @@
         <DataAnnotationsValidator />
         <MudCard Class="pa-5 mt-5">
             <MudItem>
-                <MudText Typo="Typo.h6">Resource Name</MudText>
-                <MudTextField Label="Name"
-                              Class="mt-5 pa-5"
-                              @bind-Value="model.Name"
-                              For="@(() => model.Name)" />
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Resource Name</MudText>
+                    <MudTextField @bind-Value="model.Name"
+                                  For="@(() => model.Name)" />
+                </MudStack>
 
-                @if(model.Persist)
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Kind</MudText>
+                    <MudSelectExtended @bind-Value="model.Kind" T="ResourceKind" ItemCollection="@_resourceKinds"></MudSelectExtended>
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Region</MudText>
+                    <MudStack Row="true">
+                    <SelectRegion @bind-Region="model.ResourceRegion" />
+                    </MudStack>
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Icon</MudText>
+                    <MudTextField Label="Icon"
+                                  @bind-Value="model.IconUrl"
+                                  For="@(() => model.IconUrl)" />
+                </MudStack>
+
+                @if (model.Persist)
                 {
-                    <MudText Typo="Typo.h6">Options</MudText>
-                    <MudSwitch @bind-Value="model.IsGlobal" Label="Global Resource" Color="Color.Primary"/>
+                    <MudStack Spacing="1" Class="mt-3">
+                        <MudText Typo="Typo.h6">Global</MudText>
+                        <MudSwitchM3 @bind-Value="model.IsGlobal"Color="Color.Primary" />
+                    </MudStack>
                 }
             </MudItem>
         </MudCard>
@@ -34,42 +55,41 @@
                 <MudItem>
                     <MudText Typo="Typo.h6">Volume</MudText>
                     <MudTextField Label="Driver"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.Driver"
                                   For="@(() => model.Volume.Driver)" />
 
                     <MudTextField Label="Type"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.Type"
                                   For="@(() => model.Volume.Type)" />
 
                     <MudTextField Label="Directory mode"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.DirMode"
                                   For="@(() => model.Volume.DirMode)" />
 
                     <MudTextField Label="File mode"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.FileMode"
                                   For="@(() => model.Volume.FileMode)" />
 
                     <MudTextField Label="Location"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.Location"
                                   For="@(() => model.Volume.Location)" />
 
                     <MudTextField Label="Username"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.Username"
                                   For="@(() => model.Volume.Username)" />
 
                     <MudTextField Label="Password"
-                                  Class="mt-5 pa-5"
+                                  Class="mt-3"
                                   @bind-Value="model.Volume.Password"
                                   For="@(() => model.Volume.Password)" />
                 </MudItem>
             </MudCard>
-
         }
 
         <MudCard Class="pa-5 mt-5">
@@ -93,6 +113,12 @@
         }
         else
         {
+            <MudStack Row="true" AlignItems="AlignItems.Start" Class="mt-5">
+                <MudButton
+                    OnClick="async () => await DeleteAsync()"
+                    ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
+            </MudStack>
+
             <MudAlert class="mt-5" Variant="Variant.Text">This resource is read-only</MudAlert>
         }
     </EditForm>
@@ -103,6 +129,17 @@
 
     [Parameter]
     public string Id { get; set; } = null!;
+
+    private ResourceKind[] _resourceKinds = 
+    [
+        ResourceKind.API,
+        ResourceKind.ConnectionString,
+        ResourceKind.ApplicationService,
+        ResourceKind.MessageBroker,
+        ResourceKind.OidcServer,
+        ResourceKind.OtlpServer,
+    ];
+
 
     protected override async Task OnInitializedAsync()
     {

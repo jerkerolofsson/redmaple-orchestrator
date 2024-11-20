@@ -5,7 +5,7 @@ namespace RedMaple.Orchestrator.Infrastructure
     public abstract class DocumentStore<T>
     {
         private List<T>? _items;
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(1);
+        private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
         private readonly static JsonSerializerOptions _jsonSerializerOptions = new JsonSerializerOptions() { WriteIndented = true };
 
         protected abstract string SaveFilePath { get; }
@@ -62,7 +62,7 @@ namespace RedMaple.Orchestrator.Infrastructure
         }
 
         private Thread? _commitToDiskThread;
-        private ManualResetEventSlim _wakeCommitToDiskEvent = new(false);
+        private readonly ManualResetEventSlim _wakeCommitToDiskEvent = new(false);
         private void ScheduleCommitToDisk()
         {
             if(_commitToDiskThread is null)

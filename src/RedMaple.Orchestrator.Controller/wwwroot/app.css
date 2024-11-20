@@ -9,6 +9,10 @@ html, body {
     background: rgba(0,0,0,0.2);
 }
 
+.mud-input-text .mud-input-adornment-start .mud-icon-root.mud-svg-icon  {
+    margin-left: 10px;
+}
+
 .btn-delete {
     border-radius: 10px;
     background: var(--mud-palette-error);

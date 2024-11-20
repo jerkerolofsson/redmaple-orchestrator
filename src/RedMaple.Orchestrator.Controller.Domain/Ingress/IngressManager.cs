@@ -101,26 +101,28 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
             var dnsEntries = await _globalDns.GetDnsEntriesAsync();
 
             var existingEntry = dnsEntries.FirstOrDefault(x => x.Hostname == service.DomainName && x.Region == service.Region);
+            var newEntry = new DnsEntry { Region = service.Region, IsGlobal = true, Hostname = service.DomainName, IpAddress = service.IngressIp };
             if (existingEntry is null)
             {
                 progress.Report($"Creating DNS entry {service.Region}::{service.DomainName} to {service.IngressIp}..");
                 _logger.LogWarning("Deployment plan DNS entry creeated for {DomainName}={IpAddress}", service.DomainName, service.IngressIp);
-                dnsEntries.Add(new Contracts.Dns.DnsEntry { Region = service.Region, IsGlobal = true, Hostname = service.DomainName, IpAddress = service.IngressIp });
-                await _globalDns.SetDnsEntriesAsync(dnsEntries);
+                await _globalDns.AddDnsEntriesAsync(newEntry);
             }
             else if (existingEntry.IpAddress != service.IngressIp)
             {
                 progress.Report($"Updating DNS for {service.DomainName} from {existingEntry.IpAddress} to {service.IngressIp}..");
 
                 _logger.LogWarning("Deployment plan DNS entry changed from {old} to {IpAddress}", existingEntry.IpAddress, service.IngressIp);
-                existingEntry.IpAddress = service.IngressIp;
-                await _globalDns.SetDnsEntriesAsync(dnsEntries);
+                await _globalDns.TryDeleteDnsEntryByDomainNameAsync(existingEntry.Hostname, existingEntry.Region);
+                await _globalDns.AddDnsEntriesAsync(newEntry);
+                //await _globalDns.SetDnsEntriesAsync(dnsEntries);
             }
+            /*
             else
             {
                 _logger.LogDebug("DNS entry already exists,{DomainName}={IpAddress}", service.DomainName, service.IngressIp);
                 await _globalDns.SetDnsEntriesAsync(dnsEntries);
-            }
+            }*/
 
             /*
             dnsEntries.RemoveAll(x => x.Hostname == dnsEntry.Hostname);
@@ -146,7 +148,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
         public async Task<IngressServiceDescription?> GetIngressServiceByDomainNameAsync(string domainName, string? region)
         {
             var services = await _repository.GetServicesAsync();
-            return services.FirstOrDefault(x => x.Id == domainName && x.Region == region);
+            return services.FirstOrDefault(x => x.DomainName == domainName && x.Region == region);
         }
 
         private async Task DeleteIngressServiceNoLockAsync(string id)
@@ -180,9 +182,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Ingress
 
         private async Task RemoveDnsEntryAsync(IngressServiceDescription service)
         {
-            var entries = await _globalDns.GetDnsEntriesAsync();
-            entries.RemoveAll(x => x.Hostname == service.DomainName && x.Region == service.Region);
-            await _globalDns.SetDnsEntriesAsync(entries);
+            //var entries = await _globalDns.GetDnsEntriesAsync();
+
+            await _globalDns.TryDeleteDnsEntryByDomainNameAsync(service.DomainName, service.Region);
+
+            //entries.RemoveAll(x => x.Hostname == service.DomainName && x.Region == service.Region);
+            //await _globalDns.SetDnsEntriesAsync(entries);
             /*
             foreach (var dnsNode in await _nodeManager.GetNodesAsync())
             {

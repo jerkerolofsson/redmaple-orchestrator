@@ -1,4 +1,5 @@
-﻿using RedMaple.Orchestrator.Contracts.Healthz;
+﻿using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Contracts.Healthz;
 using RedMaple.Orchestrator.Controller.Domain.Healthz.Models;
 using System;
 using System.Collections.Generic;
@@ -57,5 +58,17 @@ namespace RedMaple.Orchestrator.Contracts.Resources
         /// Icon. Related to deployment plan
         /// </summary>
         public string? IconUrl { get; set; }
+
+        /// <summary>
+        /// Region of a resource.
+        /// 
+        /// Resources matching a deployment have precedence over global resources (global: ResourceRegion == null)
+        /// </summary>
+        public string? ResourceRegion { get; set; }
+
+        /// <summary>
+        /// ID of the deployment plan
+        /// </summary>
+        public string? PlanId { get; set; }
     }
 }

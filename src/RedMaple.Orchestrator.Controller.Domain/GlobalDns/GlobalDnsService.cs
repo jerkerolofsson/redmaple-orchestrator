@@ -29,33 +29,71 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns
 
         public async Task<List<DnsEntry>> GetDnsEntriesAsync()
         {
-            return await _repository.GetDnsEntriesAsync();
+            await _lock.WaitAsync();
+            try
+            {
+                return (await _repository.GetDnsEntriesAsync()).ToList();
+            }
+            finally 
+            { 
+                _lock.Release();
+            }
         }
 
-        public async Task<bool> TryDeleteDnsEntryByDomainNameAsync(string? domainName)
+        public async Task<bool> TryDeleteDnsEntryByDomainNameAsync(string? domainName, string? region)
         {
             if(string.IsNullOrEmpty(domainName))
             {
                 return false;
             }
 
-            var entries = (await GetDnsEntriesAsync()).Where(x => x.Hostname == domainName).ToList();
-            if(entries.Count > 0)
+            bool removed = false;
+            List<DnsEntry> entries;
+            await _lock.WaitAsync();
+            try
             {
-                await _lock.WaitAsync();
-                try
+                entries = (await _repository.GetDnsEntriesAsync()).ToList();
+                int count = entries.RemoveAll(x=>x.Hostname == domainName && x.Region == region);
+                if (count > 0)
                 {
-                    entries.RemoveAll(x=>x.Hostname == domainName);
+                    removed = true;
                     await _repository.SetDnsEntriesAsync(entries);
                 }
-                finally
-                {
-                    _lock.Release();
-                }
+            }
+            finally
+            {
+                _lock.Release();
+            }
+            if (removed)
+            {
                 await SendNotificationAsync(entries);
             }
-            return entries.Count > 0;
+            return removed;
         }
+
+        public async Task AddDnsEntriesAsync(params DnsEntry[] newEntries)
+        {
+            List<DnsEntry> entries;
+            await _lock.WaitAsync();
+            try
+            {
+                entries = (await _repository.GetDnsEntriesAsync()).ToList();
+                entries.AddRange(newEntries);
+                EnsureAllEntriesAreGlobal(entries);
+                await _repository.SetDnsEntriesAsync(entries);
+            }
+            finally
+            {
+                _lock.Release();
+            }
+            await SendNotificationAsync(entries);
+        }
+
+        /// <summary>
+        /// Dangerous!
+        /// </summary>
+        /// <param name="entries"></param>
+        /// <returns></returns>
         public async Task SetDnsEntriesAsync(List<DnsEntry> entries)
         {
             await _lock.WaitAsync();

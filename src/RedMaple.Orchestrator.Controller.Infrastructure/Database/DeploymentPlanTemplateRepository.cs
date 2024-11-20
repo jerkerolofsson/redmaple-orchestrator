@@ -116,6 +116,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     },
                     Resource = new ResourceCreationOptions
                     {
+                        Kind = ResourceKind.MessageBroker,
                         Create = true,
                         Exported = ["RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS"]
                     },
@@ -140,11 +141,20 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Category = "Services",
+                    Category = "AI",
                     Name = "Ollama",
                     IconUrl = "/apps.png",
                     CreateIngress = true,
                     ApplicationProtocol = "http",
+                    DefaultDomainPrefix = "ollama",
+
+                    Resource = new ResourceCreationOptions
+                    {
+                        Kind = ResourceKind.LargeLanguageModel,
+                        Create = true,
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_SLUG}",
+                        ConnectionStringFormat = "Endpoint=${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
+                    },
                     HealthChecks = new()
                     {
                         new DeploymentHealthCheck()
@@ -167,15 +177,68 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                     Plan = """
                     services:
-                      libetranslate:
+                      ollama:
                         container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
                         image: "ollama/ollama:latest"
                         restart: unless-stopped
-                        environment:
-                          LT_LOAD_ONLY: en,zh,zt,ja,ko,sv,de,fr
                         ports:
                         - target: 11434
                           published: ${REDMAPLE_APP_PORT}
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
+                    Category = "AI",
+                    Name = "Ollama GPU",
+                    IconUrl = "/apps.png",
+                    CreateIngress = true,
+                    ApplicationProtocol = "http",
+                    DefaultDomainPrefix = "ollama-gpu",
+
+                    Resource = new ResourceCreationOptions
+                    {
+                        Kind = ResourceKind.LargeLanguageModel,
+                        Create = true,
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_SLUG}",
+                        ConnectionStringFormat = "Endpoint=${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
+                    },
+                    HealthChecks = new()
+                    {
+                        new DeploymentHealthCheck()
+                        {
+                            Type = HealthCheckType.Livez,
+                            RelativeUrl = "/",
+                            HealthyStatusCode = 200,
+                            Method = HealthCheckMethod.HttpGet,
+                            Target = HealthCheckTarget.Application,
+                        },
+                        new DeploymentHealthCheck()
+                        {
+                            Type = HealthCheckType.Readyz,
+                            RelativeUrl = "/",
+                            HealthyStatusCode = 200,
+                            Method = HealthCheckMethod.HttpGet,
+                            Target = HealthCheckTarget.Application,
+                        }
+                    },
+
+                    Plan = """
+                    services:
+                      ollama_gpu:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "ollama/ollama:latest"
+                        restart: unless-stopped
+                        ports:
+                        - target: 11434
+                          published: ${REDMAPLE_APP_PORT}
+                        deploy:
+                          resources:
+                            reservations:
+                              devices:
+                                - driver: nvidia
+                                  count: 1
+                                  capabilities: [gpu]
                     """
                 },
                 new DeploymentPlanTemplate
@@ -256,7 +319,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     {
                         Create = true,
                         Kind = ResourceKind.ConnectionString,
-                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_NAME}",
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_SLUG}",
                         ConnectionStringFormat = "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
                         Exported = ["MONGODB_USERNAME", "MONGODB_PASSWORD"]
                     },

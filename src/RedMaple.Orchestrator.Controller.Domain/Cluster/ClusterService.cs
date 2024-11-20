@@ -18,7 +18,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster
         private readonly ILogger<ClusterService> _logger;
         private readonly INodeManager _repository;
         private readonly IMediator _mediator;
-        private ConcurrentDictionary<string, NodeInfo> _nodes = new ConcurrentDictionary<string, NodeInfo>();
+        private readonly ConcurrentDictionary<string, NodeInfo> _nodes = new ConcurrentDictionary<string, NodeInfo>();
 
         public ClusterService(
             ILogger<ClusterService> logger,

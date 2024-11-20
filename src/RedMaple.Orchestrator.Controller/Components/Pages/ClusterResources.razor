@@ -33,27 +33,66 @@ else if(!_loading)
                    Color="Color.Primary"
                    @onclick="async () => await AddOidcServerAsync()">Add OIDC Server</MudButton>
 
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddAppServiceAsync()">Add App. Service</MudButton>
+
     </MudStack>
-    <MudDataGrid Bordered="true" Dense="true"
+
+    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
+        <MudSpacer/>
+        <SelectRegion Region="@_region" RegionChanged="OnRegionChangedAsync" Regions="@_regions" />
+    </MudStack>
+    <MudDataGrid Bordered="true" Dense="true" Hover="true"
                     EditMode="DataGridEditMode.Cell"
                     Items="@_resources"
                     SortMode="SortMode.Multiple">
         <Columns>
 
+            <TemplateColumn Title="Region" HeaderStyle="width: 10px">
+                <HeaderTemplate>
+                    <MudIcon Icon="@Icons.Material.Filled.LocationOn" />
+                </HeaderTemplate>
+                <CellTemplate>
+                    @if(!string.IsNullOrEmpty(context.Item.ResourceRegion))
+                    {
+                        <MudChip Color="Color.Secondary" Size="Size.Small">@context.Item.ResourceRegion</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
             <TemplateColumn Title="Name">
+
                 <CellTemplate>
                     @{
                         var url = $"/resources/{context.Item.Id}";
                         var icon = "/resource-icons/resource.png";
-                        if(context.Item.Kind == ResourceKind.Volume)
+                        if(context.Item.Kind == ResourceKind.ConnectionString)
+                        {
+                            icon = "/resource-icons/database.png";
+                        }
+                        if (context.Item.Kind == ResourceKind.LargeLanguageModel)
+                        {
+                            icon = "/resource-icons/ai.png";
+                        }
+                        if (context.Item.Kind == ResourceKind.API)
+                        {
+                            icon = "/resource-icons/api.png";
+                        }
+                        if (context.Item.Kind == ResourceKind.Volume)
                         {
                             icon = "/resource-icons/volume.png";
                         }
+                        if (context.Item.IconUrl is not null)
+                        {
+                            icon = context.Item.IconUrl;
+                        }
+
                     }
                     <a href="@url">
                         <div style="display: flex; align-items: center">
-                        <img src="@icon" class="icon" alt="@context.Item.Kind.ToString()" />
-                        <div>@context.Item.Name</div>
+                            <img src="@icon" class="icon" alt="@context.Item.Kind.ToString()" />
+                            <div>@context.Item.Name</div>
                         </div>
                     </a>
                 </CellTemplate>
@@ -96,6 +135,27 @@ else if(!_loading)
                     EnvironmentVariables = new Dictionary<string, string>
                     {
                         ["OIDC_AUTHORITY"] = "https://identityserver"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/{resource.Id}");
+        }
+    }
+
+    private async Task AddAppServiceAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Persist = true,
+                    Slug = SlugGenerator.Generate(name),
+                    Kind = ResourceKind.ApplicationService,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
                     }
                 };
             await resourceManager.AddResourceAsync(resource);
@@ -165,6 +225,15 @@ else if(!_loading)
         _cancellationTokenSource = null;
     }
 
+    private string[]? _regions = null;
+    private string? _region = null;
+
+    private async Task OnRegionChangedAsync(string? region)
+    {
+        _region = region;
+        await LoadResourcesAsync();
+    }
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -173,6 +242,17 @@ else if(!_loading)
 
     private async Task LoadResourcesAsync()
     {
-        _resources = (await resourceManager.GetClusterResourcesAsync()).OrderBy(x => x.Name).ToList();
+        var resources = (await resourceManager.GetClusterResourcesAsync()).OrderBy(x => x.Name).AsEnumerable();
+
+        if (_regions is null)
+        {
+            _regions = ["Global", .. resources.Where(x => x.ResourceRegion != null).Select(x => x.ResourceRegion!).OrderBy(x => x).Distinct().ToArray()];
+        }
+
+        if (_region is not null)
+        {
+            resources = resources.Where(x => x.ResourceRegion == _region);
+        }
+        _resources = resources.ToList();
     }
 }

@@ -23,8 +23,13 @@ else if(!_loading)
         <MudText Typo="Typo.h6">Deployments</MudText>
         <MudSpacer/>
         <MudButton Variant="Variant.Filled"
-                Color="Color.Primary"
-                @onclick="OnCreate"><i class="fa fa-plus"/>&nbsp;Create</MudButton>
+        Color="Color.Primary"
+        @onclick="OnCreate"><i class="fa fa-plus"/>&nbsp;Create</MudButton>
+    </MudStack>
+
+    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
+        <MudSpacer />
+        <SelectRegion Region="@_region" RegionChanged="OnRegionChanged" Regions="@_regions" />
     </MudStack>
 
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndex="@_activeTabIndex" ActivePanelIndexChanged="FilterDeployments">
@@ -32,15 +37,21 @@ else if(!_loading)
         {
             <MudTabPanel Text="@category">
                 <MudDataGrid Bordered="true" Dense="true"
-                             EditMode="DataGridEditMode.Cell"
-                             Items="@_filteredPlans"
-                             SortMode="SortMode.Multiple">
+                EditMode="DataGridEditMode.Cell"
+                Items="@_filteredPlans"
+                SortMode="SortMode.Multiple">
                     <Columns>
-                        <PropertyColumn StickyLeft="true" Property="x => x.Region" HeaderStyle="width: 10px">
+                        <TemplateColumn StickyLeft="true"HeaderStyle="width: 10px">
                             <HeaderTemplate>
                                 <MudIcon Icon="@Icons.Material.Filled.LocationOn"/>
                             </HeaderTemplate>
-                        </PropertyColumn>
+                            <CellTemplate>
+                                @if(!string.IsNullOrEmpty(context.Item.Region))
+                                {
+                                    <MudChip Color="Color.Secondary" Size="Size.Small">@context.Item.Region</MudChip>
+                                }
+                            </CellTemplate>
+                        </TemplateColumn>
 
                         <TemplateColumn StickyLeft="true" HeaderStyle="width: 1rem">
                             <CellTemplate>
@@ -358,6 +369,12 @@ else if(!_loading)
     private async Task LoadPlansAsync()
     {
         _plans = await deploymentManager.GetDeploymentPlansAsync();
+
+        if (_regions is null)
+        {
+            _regions = ["Global", .. _plans.Where(x => x.Region != null).Select(x => x.Region!).OrderBy(x => x).Distinct().ToArray()];
+        }
+
         _categories.Clear();
         _categories.Add("Apps");
         _categories.Add("Services");
@@ -377,6 +394,27 @@ else if(!_loading)
 
     private int _activeTabIndex = 0;
 
+    private string[]? _regions = null;
+    private string? _region = null;
+
+    private void OnRegionChanged(string? region)
+    {
+        _region = region;
+
+        var category = _categories[_activeTabIndex];
+
+        _filteredPlans.Clear();
+        if (_region is null)
+        {
+            _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
+        }
+        else
+        {
+            _filteredPlans.AddRange(_plans.Where(x => x.Category == category && x.Region == _region));
+        }
+    }
+
+
     private void FilterDeployments(int index)
     {
         _activeTabIndex = index;
@@ -385,10 +423,10 @@ else if(!_loading)
         {
             var category = _categories[index];
             _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
-            InvokeAsync(() =>
-            {
-                this.StateHasChanged();
-            });
         }
+        InvokeAsync(() =>
+        {
+            this.StateHasChanged();
+        });
     }
 }

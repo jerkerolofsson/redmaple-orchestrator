@@ -13,8 +13,8 @@ namespace RedMaple.Orchestrator.Node.Enrollment
     {
         private readonly IServer _server;
         private readonly HttpClient _httpClient;
-        private ILogger<EnrollAtStartup> _logger;
-        private INodeSettingsProvider _settingsProvider;
+        private readonly ILogger<EnrollAtStartup> _logger;
+        private readonly INodeSettingsProvider _settingsProvider;
 
         public EnrollAtStartup(
             IServer server, 

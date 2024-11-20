@@ -259,7 +259,8 @@ namespace RedMaple.Orchestrator.Dns
                 Image = "strm/dnsmasq",
                 ExposedPorts = new Dictionary<string, EmptyStruct>
                     {
-                        { "53/udp", new EmptyStruct() }
+                        { "53/udp", new EmptyStruct() },
+                        { "53/tcp", new EmptyStruct() },
                     },
                 HostConfig = new HostConfig
                 {
@@ -270,7 +271,8 @@ namespace RedMaple.Orchestrator.Dns
                         },
                     PortBindings = new Dictionary<string, IList<PortBinding>>
                         {
-                            { "53/udp", new List<PortBinding>() { new PortBinding() { HostPort = "53" } } }
+                            { "53/udp", new List<PortBinding>() { new PortBinding() { HostPort = "53" } } },
+                            { "53/tcp", new List<PortBinding>() { new PortBinding() { HostPort = "53" } } }
                         },
                     CapAdd = new List<string> { "NET_ADMIN" }
                 }

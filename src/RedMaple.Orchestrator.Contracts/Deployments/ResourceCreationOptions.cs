@@ -11,9 +11,14 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
     public class ResourceCreationOptions
     {
         /// <summary>
+        /// If null, deployment plan will be used
+        /// </summary>
+        public string? ServiceName { get; set; }
+
+        /// <summary>
         /// Type of resource
         /// </summary>
-        public ResourceKind? Kind { get; set; }
+        public ResourceKind? Kind { get; set; } = ResourceKind.ApplicationService;
 
         /// <summary>
         /// True to create a resource

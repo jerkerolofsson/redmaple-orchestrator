@@ -1,0 +1,59 @@
+﻿@using MudBlazor
+@using MudExtensions
+@inject INodeManager nodeManager
+
+<MudToggleGroup Color="Color.Secondary" T="string" ValueChanged="OnRegionChanged" Value="@_selectedRegion">
+    @foreach(var region in _regions)
+    {
+        <MudToggleItem Value="@region">@region</MudToggleItem>
+    }
+</MudToggleGroup>
+
+@code {
+
+    [Parameter]
+    public string Region { get; set; } = null!;
+
+    [Parameter]
+    public string[] Regions { get; set; } = null!;
+
+    [Parameter]
+    public EventCallback<string?> RegionChanged { get; set; }
+
+    private List<string> _regions = [];
+    private string _selectedRegion = "Global";
+
+    private async Task OnRegionChanged(string? region)
+    {
+        _selectedRegion = region == null ? "Global" : region;
+        if (region == "Global")
+        {
+            region = null;
+        }
+        await RegionChanged.InvokeAsync(region);
+    }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        if (Regions is not null)
+        {
+            _regions = Regions.ToList();
+        }
+        else
+        {
+            IEnumerable<NodeInfo> nodes = await nodeManager.GetNodesAsync();
+
+            if (Region is not null)
+            {
+                _selectedRegion = Region;
+            }
+            else
+            {
+                _selectedRegion = "Global";
+            }
+
+            _regions = ["Global", .. nodes.Where(x => !string.IsNullOrEmpty(x.Region)).Select(x => x.Region).Distinct()];
+        }
+    }
+
+}

@@ -6,7 +6,7 @@
     {
         <MudChip OnClose="async () => await RemoveDependencyAsync(dependency)" Color="Color.Tertiary" T="ClusterResource">@dependency.Slug</MudChip>
     }
-    
+
     <MudButton>Add Dependency</MudButton>
 }
 
@@ -18,12 +18,14 @@
     public Dictionary<string, string>? EnvironmentVariables { get; set; }
 
     [Parameter] public List<ClusterResource> Dependencies { get; set; } = new();
+    [Parameter] public List<ClusterResource> RemovedDependencies { get; set; } = new();
     [Parameter] public EventCallback<List<ClusterResource>> DependenciesChanged { get; set; }
 
     private List<string> _missingEnvironmentVariables = new();
 
     private async Task RemoveDependencyAsync(ClusterResource resource)
     {
+        RemovedDependencies.Add(resource);
         Dependencies.Remove(resource);
         await DependenciesChanged.InvokeAsync(Dependencies);
     }

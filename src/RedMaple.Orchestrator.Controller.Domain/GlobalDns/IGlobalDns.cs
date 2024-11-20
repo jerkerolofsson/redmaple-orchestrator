@@ -24,6 +24,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.GlobalDns
         /// </summary>
         /// <returns></returns>
         Task<List<DnsEntry>> GetDnsEntriesAsync();
-        Task<bool> TryDeleteDnsEntryByDomainNameAsync(string? domainName);
+        Task<bool> TryDeleteDnsEntryByDomainNameAsync(string? domainName, string? region);
+        Task AddDnsEntriesAsync(params DnsEntry[] newEntries);
     }
 }

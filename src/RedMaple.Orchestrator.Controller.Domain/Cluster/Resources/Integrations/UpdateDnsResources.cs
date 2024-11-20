@@ -30,6 +30,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                     Name = notification.Node.IpAddress,
                     IsGlobal = true,
                     Persist = false,
+                    ResourceRegion = notification.Node.Region,
                     EnvironmentVariables = new Dictionary<string, string>
                     {
                         ["REDMAPLE_DNS"] = notification.Node.IpAddress

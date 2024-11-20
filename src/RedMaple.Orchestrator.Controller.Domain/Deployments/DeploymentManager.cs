@@ -5,6 +5,7 @@ using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
 using RedMaple.Orchestrator.Contracts.Containers;
 using RedMaple.Orchestrator.Contracts.Deployments;
+using RedMaple.Orchestrator.Contracts.Dns;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Contracts.Node;
 using RedMaple.Orchestrator.Controller.Domain.Domain;
@@ -194,7 +195,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             var plans = await GetDeploymentPlansAsync();
             var planNames = plans.Where(x=>x.Id != plan.Id).Select(x => x.Name).ToHashSet();
             var planSlugs = plans.Where(x => x.Id != plan.Id).Select(x => x.Slug).ToHashSet();
-            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Where(x => x.Hostname == plan.DomainName && x.Region == plan.Region).ToList();
+            var dnsEntries = (await _dns.GetDnsEntriesAsync()).Where(x => x.Hostname == plan.DomainName && (plan.Region is null || x.Region is null || x.Region == plan.Region)).ToList();
             var result = new ValidationResult();
 
             if (plan.CreateDnsEntry || plan.CreateIngress)
@@ -425,24 +426,25 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             }
 
             var appDeployments = await GetApplicationDeploymentsAsync(plan.Slug);
-            foreach (var deployment in appDeployments)
+            foreach (var appDeployment in appDeployments)
             {
                 // Gets the currently deployed server
-                var currentNode = await GetApplicationHostAsync(deployment);
+                var currentNode = await GetApplicationHostAsync(appDeployment);
                 if (currentNode is null)
                 {
-                    _logger.LogWarning("Application host was not found for deployment {DeploymentSlug}", deployment.Slug);
+                    _logger.LogWarning("Application host was not found for deployment {DeploymentSlug}", appDeployment.Slug);
                 }
                 else
                 {
                     try
                     {
+                        await _mediator.Publish(new AppDeploymentStoppingNotification(appDeployment, plan));
                         await DownDeploymentOnTargetAsync(plan, progress, currentNode, cancellationToken);
                         await DeleteDeploymentFromTargetAsync(plan, progress, currentNode, cancellationToken);
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Failed to bring down deployment {DeploymentSlug} on node: {Node}", deployment.Slug, currentNode.IpAddress);
+                        _logger.LogError(ex, "Failed to bring down deployment {DeploymentSlug} on node: {Node}", appDeployment.Slug, currentNode.IpAddress);
                     }
                 }
 
@@ -455,7 +457,13 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 try
                 {
                     await AddDeploymentOnTargetAsync(plan, progress, destinationNode);
+
+                    await _mediator.Publish(new AppDeploymentStartingNotification(appDeployment));
                     await UpDeploymentOnTargetAsync(plan, progress, destinationNode, cancellationToken);
+
+                    await WaitUntilReadyzAsync(plan, appDeployment, progress, cancellationToken);
+                    await _mediator.Publish(new AppDeploymentReadyNotification(appDeployment, plan));
+
                     plan.Up = true;
 
                     // Replace deployment record (in case ingress or application ip has changed..)
@@ -463,14 +471,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     progress.Report($"Deployment record for {plan.Slug} saved for {destinationNode.IpAddress}");
 
                     // Delete previous deployment record
-                    await _appDeploymentRepository.DeleteDeploymentAsync(deployment.Id);
+                    await _appDeploymentRepository.DeleteDeploymentAsync(appDeployment.Id);
 
                     var newDeploymentRecord = CreateAppDeploymentRecord(plan, destinationNode.IpAddress);
                     await _appDeploymentRepository.SaveDeploymentAsync(newDeploymentRecord);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to bring up deployment {DeploymentSlug} on node: {Node}", deployment.Slug, destinationNode.IpAddress);
+                    _logger.LogError(ex, "Failed to bring up deployment {DeploymentSlug} on node: {Node}", appDeployment.Slug, destinationNode.IpAddress);
                     throw;
                 }
             }
@@ -546,7 +554,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             }
             else if(plan.CreateDnsEntry)
             {
-                await _dns.TryDeleteDnsEntryByDomainNameAsync(plan.DomainName);
+                await _dns.TryDeleteDnsEntryByDomainNameAsync(plan.DomainName, plan.Region);
             }
 
             foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
@@ -557,7 +565,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     throw new ArgumentException("Application node not found: " + deployment.ApplicationServerIp);
                 }
 
-                await _mediator.Publish(new AppDeploymentStoppingNotification(deployment));
+                await _mediator.Publish(new AppDeploymentStoppingNotification(deployment, plan));
 
                 try
                 {
@@ -811,12 +819,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 var entries = await _dns.GetDnsEntriesAsync();
                 var existingEntry = entries.FirstOrDefault(x => x.Hostname == plan.DomainName);
-                if(existingEntry is null)
+                var newEntry = new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = plan.DomainName, IpAddress = applicationServerIp };
+                if (existingEntry is null)
                 {
                     progress.Report($"Creating DNS entry {plan.Slug} for {plan.DomainName} to {applicationServerIp}..");
                     _logger.LogInformation("Deployment plan DNS entry created for {domainName}={new}", plan.DomainName, applicationServerIp);
-                    entries.Add(new Contracts.Dns.DnsEntry { IsGlobal = true, Hostname = plan.DomainName, IpAddress = applicationServerIp });
-                    await _dns.SetDnsEntriesAsync(entries);
+                    await _dns.AddDnsEntriesAsync(newEntry);
                 }
                 else if(existingEntry.IpAddress != applicationServerIp)
                 {
@@ -824,7 +832,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
                     _logger.LogWarning("Deployment plan DNS entry changed from {old} to {new}", existingEntry.IpAddress, applicationServerIp);
                     existingEntry.IpAddress = applicationServerIp;
-                    await _dns.SetDnsEntriesAsync(entries);
+                    await _dns.TryDeleteDnsEntryByDomainNameAsync(existingEntry.Hostname, existingEntry.Region);
+                    await _dns.AddDnsEntriesAsync(newEntry);
                 }
                 else
                 {

@@ -3,19 +3,27 @@
 @using MudExtensions
 @using RedMaple.Orchestrator.Contracts.Ingress
 @using RedMaple.Orchestrator.Controller.Domain;
+@using RedMaple.Orchestrator.Controller.Domain.GlobalDns
 @using RedMaple.Orchestrator.Controller.Domain.Ingress;
 @rendermode InteractiveServer
 @inject IIngressManager ingressManager
 @inject NavigationManager navigationManager
 @inject INodeManager nodeManager
+@inject IGlobalDns dns
+@inject ISnackbar Snackbar
 
+<MudThemeProvider IsDarkMode="true" />
 <MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
 
 <div class="buttons">
     <MudButton 
-        Variant="Variant.Filled" 
-        Color="Color.Primary" 
-        @onclick="OnCreate">Create</MudButton>
+    Variant="Variant.Filled" 
+    Color="Color.Primary" 
+    @onclick="OnCreate">Create</MudButton>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Error" OnClick="RepairAsync">Repair</MudButton>
 </div>
 
 <MudPaper Class="pa-5">
@@ -28,11 +36,10 @@
     }
     else
     {
-
         <MudDataGrid Bordered="true" Dense="true"
-                     ReadOnly="false"
-                     Items="@_services"
-                     SortMode="SortMode.Multiple">
+        ReadOnly="false"
+        Items="@_services"
+        SortMode="SortMode.Multiple">
             <Columns>
                 <TemplateColumn Title="Ingress">
                     <CellTemplate>
@@ -54,12 +61,12 @@
 
                 <TemplateColumn StickyRight="true">
                     <CellTemplate>
-                          <MudLoadingButton 
-                              Class="btn-delete"
-                              ButtonVariant="ButtonVariant.Button"
-                                          @bind-Loading="@context.Item.IsLoading"
-                                          LoadingCircularColor="Color.Primary" 
-                                          OnClick="async () => await DeleteAsync(context.Item)">
+                        <MudLoadingButton 
+                        Class="btn-delete"
+                        ButtonVariant="ButtonVariant.Button"
+                        @bind-Loading="@context.Item.IsLoading"
+                        LoadingCircularColor="Color.Primary" 
+                        OnClick="async () => await DeleteAsync(context.Item)">
                             <ChildContent>
                                 <i class="fa fa-trash"></i>&nbsp;Delete
                             </ChildContent>
@@ -97,7 +104,7 @@
 
         await ingressManager.DeleteIngressServiceAsync(service.Id, CancellationToken.None);
         await LoadServicesAsync();
-            model.IsLoading = false;
+        model.IsLoading = false;
         this.StateHasChanged();
     }
 
@@ -118,6 +125,30 @@
         // Add a services
         var services = await ingressManager.GetServicesAsync();
         _services = services.Where(x => x.IngressIp == node.IpAddress).Select(x=>new Model() { Service = x}).ToList();
+    }
+
+    private async Task RepairAsync()
+    {
+        var entries = await dns.GetDnsEntriesAsync();
+        List<DnsEntry> newEntries = new();
+        foreach(var service in _services)
+        {
+            var entry = entries.Where(x => x.Hostname == service.Service.DomainName).FirstOrDefault();
+
+            if(entry is null)
+            {
+                Snackbar.Add($"Repairing {service.Service.DomainName}");
+                newEntries.Add(new DnsEntry
+                    {
+                        Hostname = service.Service.DomainName,
+                        IpAddress = service.Service.DestinationIp,
+                        Region = service.Service.Region,
+                        IsGlobal = true
+                    });
+            }
+        }
+
+        await dns.AddDnsEntriesAsync(newEntries.ToArray());
     }
 
     protected override async Task OnInitializedAsync()

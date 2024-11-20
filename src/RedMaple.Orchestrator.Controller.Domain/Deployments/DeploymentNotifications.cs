@@ -20,7 +20,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
     /// Raised when the deployment is stopping (down)
     /// </summary>
     /// <param name="Deployment"></param>
-    public record class AppDeploymentStoppingNotification(Deployment Deployment) : INotification;
+    public record class AppDeploymentStoppingNotification(Deployment Deployment, DeploymentPlan Plan) : INotification;
 
 
     /// <summary>
