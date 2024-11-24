@@ -14,11 +14,11 @@ namespace RedMaple.Orchestrator.Security.Builder
 {
     public class CertificateBuilder
     {
-        private CertificateBuilderData mCertificate = new();
-        private List<CertificateSanBuilder> mSanBuilders = new();
+        private readonly CertificateBuilderData mCertificate = new();
+        private readonly List<CertificateSanBuilder> mSanBuilders = new();
 
-        private HashAlgorithmName mHashAlgorithmName = HashAlgorithmName.SHA256;
-        private RSASignaturePadding mRsaSignaturePadding = RSASignaturePadding.Pkcs1;
+        private readonly HashAlgorithmName mHashAlgorithmName = HashAlgorithmName.SHA256;
+        private readonly RSASignaturePadding mRsaSignaturePadding = RSASignaturePadding.Pkcs1;
 
         public const string OID_TLS_WEB_SERVER_AUTHENTICATION = "1.3.6.1.5.5.7.3.1";
         public const string OID_TLS_WEB_CLIENT_AUTHENTICATION = "1.3.6.1.5.5.7.3.2";
@@ -234,6 +234,7 @@ namespace RedMaple.Orchestrator.Security.Builder
             }
 #endif
             string? password = null;
+
             var cert = new X509Certificate2(certificate.Export(X509ContentType.Pfx, mCertificate.Password), password, X509KeyStorageFlags.Exportable);
             return cert;
         }

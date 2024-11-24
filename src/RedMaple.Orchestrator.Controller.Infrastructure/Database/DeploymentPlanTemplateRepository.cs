@@ -97,14 +97,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Category = "Test",
-                    Name = "Blank",
-                    IconUrl = "/logo.png",
-                    Plan = ""
-                },
-
-                new DeploymentPlanTemplate
-                {
                     Category = "Services",
                     Name = "Rabbit MQ",
                     IconUrl = "/brands/rabbitmq.png",
@@ -458,37 +450,6 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     """
                 },
 
-                new DeploymentPlanTemplate
-                {
-                    Category = "Test",
-                    Name = "ASP.net",
-                    IconUrl = "/brands/aspnet.png",
-                    ApplicationProtocol = "https",
-                    Plan = """
-                    services:
-                      portal:
-                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
-                        image: ${IMAGE_NAME}
-                        environment:
-                          OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EXCEPTION_LOG_ATTRIBUTES: "true"
-                          OTEL_DOTNET_EXPERIMENTAL_OTLP_EMIT_EVENT_LOG_ATTRIBUTES: "true"
-                          OTEL_DOTNET_EXPERIMENTAL_OTLP_RETRY: "in_memory"
-                          ASPNETCORE_FORWARDEDHEADERS_ENABLED: "true"
-                          ASPNETCORE_URLS: https://+:8081;http://+:8080
-                          ASPNETCORE_Kestrel__Certificates__Default__Password: ${REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD}
-                          ASPNETCORE_Kestrel__Certificates__Default__Path: /certs/https.pfx
-                          OIDC_IDENTITY_SERVER_URL: ${OIDC_AUTHORITY}
-                          AUTH_CLIENT_ID: ${OIDC_CLIENT_ID}
-                          AUTH_CLIENT_SECRET: ${OIDC_CLIENT_SECRET}
-                        ports:
-                        - target: 8081
-                          published: ${REDMAPLE_APP_PORT}
-                        restart: unless-stopped
-                        volumes:
-                          - ${REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH}:/certs/https.pfx:ro
-                    """
-                },
-
             new DeploymentPlanTemplate
             {
                 Category = "Development",
@@ -558,7 +519,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 Category = "Apps",
                 Name = "mediawiki",
-                IconUrl = "https://djeqr6to3dedg.cloudfront.net/repo-logos/library/mediawiki/live/logo-1720462231938.png",
+                IconUrl = "/brands/mediawiki.png",
                 ApplicationProtocol = "http",
                 Plan = """
                 services:
@@ -586,6 +547,134 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                 volumes:
                   images:
                   db:
+                """
+            },
+
+            new DeploymentPlanTemplate
+            {
+                Category = "Services",
+                Name = "Keycloak",
+                IconUrl = "/brands/keycloak.png",
+                ApplicationProtocol = "http",
+
+                HealthChecks = new()
+                {
+                    new DeploymentHealthCheck()
+                    {
+                        Type = HealthCheckType.Readyz,
+                        RelativeUrl = "/health/ready",
+                        HealthyStatusCode = 200,
+                        Method = HealthCheckMethod.HttpGet,
+                        Target = HealthCheckTarget.Application,
+                    },
+                    new DeploymentHealthCheck()
+                    {
+                        Type = HealthCheckType.Livez,
+                        RelativeUrl = "/health/live",
+                        HealthyStatusCode = 200,
+                        Method = HealthCheckMethod.HttpGet,
+                        Target = HealthCheckTarget.Application,
+                    },
+                },
+
+                Resource = new ResourceCreationOptions
+                {
+                    Create = true,
+                    Kind = ResourceKind.OidcServer,
+                    Exported = ["OIDC_AUTHORITY"]
+                },
+
+                Plan = """
+                name: 
+                services:
+                  keycloak_web:
+                    image: quay.io/keycloak/keycloak:26.0.6
+                    container_name: keycloak_web
+                    hostname: 
+                    domainname: 
+                    restart: 
+                    ports:
+                    - published: ${REDMAPLE_APP_PORT}
+                      target: 8080
+                    deploy: 
+                    dns:
+                    - 192.168.0.202
+                    dns_opt: 
+                    dns_search: 
+                    depends_on:
+                    - keycloakdb
+                    command: start-dev
+                    cap_add: 
+                    networks: 
+                    volumes: []
+                    environment:
+                      OIDC_AUTHORITY: "https://${REDMAPLE_DOMAIN_NAME}/realms/master"
+                      KC_DB: "postgres"
+                      KC_DB_URL: "jdbc:postgresql://keycloakdb:5432/keycloak"
+                      KC_DB_USERNAME: "keycloak"
+                      KC_DB_PASSWORD: "password"
+                      KC_HOSTNAME: "https://${REDMAPLE_DOMAIN_NAME}"
+                      KC_HOSTNAME_PORT: "443"
+                      KC_HOSTNAME_STRICT: "true"
+                      KC_HOSTNAME_STRICT_HTTPS: "true"
+                      KC_HTTP_ENABLED: "false"
+                      KC_LOG_LEVEL: "info"
+                      KC_METRICS_ENABLED: "true"
+                      KC_HEALTH_ENABLED: "true"
+                      KC_BOOTSTRAP_ADMIN_USERNAME: "admin"
+                      KC_BOOTSTRAP_ADMIN_PASSWORD: "admin"
+                      KC_PROXY_HEADERS: "xforwarded"
+
+                  keycloakdb:
+                    image: postgres:15
+                    container_name: 
+                    hostname: 
+                    domainname: 
+                    restart: 
+                    ports: []
+                    deploy: 
+                    dns: 
+                    dns_opt: 
+                    dns_search: 
+                    depends_on: 
+                    command: 
+                    cap_add: 
+                    networks: 
+                    volumes:
+                    - source: /data/keycloak/postgres
+                      target: /var/lib/postgresql/data
+                    environment:
+                      POSTGRES_DB: "keycloak"
+                      POSTGRES_USER: "keycloak"
+                      POSTGRES_PASSWORD: "password"
+                networks: {}
+                volumes: {}
+                
+                """
+            },
+
+            new DeploymentPlanTemplate
+            {
+                Category = "Apps",
+                Name = "wikijs",
+                IconUrl = "https://elest.io/images/softwares/58/logo.png",
+                ApplicationProtocol = "http",
+                Plan = """
+                services:
+                  wikijs:
+                    image: lscr.io/linuxserver/wikijs:latest
+                    container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                    environment:
+                      - PUID=1000
+                      - PGID=1000
+                      - TZ=Etc/UTC
+                      - DB_TYPE=sqlite #optional
+                    volumes:
+                      - /data/wikijs/config:/config
+                      - /data/wikijs/data:/data
+                    ports:
+                      - ${REDMAPLE_APP_PORT}:3000
+                    restart: unless-stopped
                 """
             },
 

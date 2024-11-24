@@ -86,7 +86,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
 
 
             var name = notification.Deployment.Slug;
-            if (!string.IsNullOrEmpty(notification.Deployment.Resource.ServiceName))
+            if (!string.IsNullOrEmpty(notification.Deployment.Resource?.ServiceName))
             {
                 name = notification.Deployment.Resource.ServiceName;
             }

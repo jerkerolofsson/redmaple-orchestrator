@@ -179,6 +179,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                     Name = service.container_name,
                     Hostname = service.hostname,
                     Domainname = service.domainname,
+                    Cmd = service.command == null ? [] : service.command,
                     NetworkingConfig = networkingConfig,
                     Volumes = MapVolumes(service),
                     ExposedPorts = GetExposedPorts(service),

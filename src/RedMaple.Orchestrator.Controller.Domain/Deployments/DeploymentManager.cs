@@ -745,6 +745,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                             if(imageParts.Length > 0)
                             {
                                 plan.Version = imageParts[^1];
+                                break;
                             }
                         }
                     }

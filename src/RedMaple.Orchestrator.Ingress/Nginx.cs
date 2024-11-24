@@ -54,6 +54,7 @@ namespace RedMaple.Orchestrator.Ingress
                 conf.Append("""
                 proxy_redirect     off;
                 proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
                 """);
 
                 await File.WriteAllTextAsync(path, conf.ToString());
@@ -144,6 +145,7 @@ namespace RedMaple.Orchestrator.Ingress
                     
                         location / {
                             proxy_pass {{service.Scheme}}://{{service.DestinationIp}}:{{service.DestinationPort}};
+
                             include /etc/nginx/conf.d/common_location.conf;
                         }
                     }

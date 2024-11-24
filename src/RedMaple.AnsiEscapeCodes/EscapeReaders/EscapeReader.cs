@@ -10,10 +10,10 @@ namespace RedMaple.AnsiEscapeCodes.EscapeReaders
 {
     public class EscapeReader
     {
-        private List<char> _chars = new List<char>();
+        private readonly List<char> _chars = [];
         private char? _endCharStart;
         private char? _endCharEnd;
-        private List<char> _endChars;
+        private List<char> _endChars = [];
 
         public EscapeReader(char endCharStart, char endCharEnd)
         {
