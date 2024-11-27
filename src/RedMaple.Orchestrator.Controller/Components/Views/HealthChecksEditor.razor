@@ -1,0 +1,97 @@
+﻿<h3>HealthChecksEditor</h3>
+
+@if(Checks is not null)
+{
+
+    <MudDataGrid Bordered="true"
+    Dense="true"
+    ReadOnly="false"
+    EditMode="DataGridEditMode.Cell"
+    Filterable="true"
+    Items="@Checks"
+    SortMode="SortMode.Multiple">
+        <Columns>
+
+            <TemplateColumn Title="Type">
+                <EditTemplate>
+                    <MudSelect Value="@context.Item.Type" T="HealthCheckType" ValueChanged="async (x) => await SetHealthCheckType(context.Item, x)">
+                        <MudSelectItem Value="@HealthCheckType.Livez">Live</MudSelectItem>
+                        <MudSelectItem Value="@HealthCheckType.Readyz">Ready</MudSelectItem>
+                    </MudSelect>
+                </EditTemplate>
+            </TemplateColumn>
+
+            <TemplateColumn Title="Target">
+                <EditTemplate>
+                    <MudSelect Value="@context.Item.Target" T="HealthCheckTarget" ValueChanged="async (x) => await SetHealthCheckTarget(context.Item, x)">
+                        <MudSelectItem Value="@HealthCheckTarget.Application">Application</MudSelectItem>
+                        <MudSelectItem Value="@HealthCheckTarget.Ingress">Ingress</MudSelectItem>
+                    </MudSelect>
+                </EditTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.RelativeUrl" Title="Relative URL" Required="false" />
+
+            <TemplateColumn Title="Method">
+                <EditTemplate>
+                    <MudSelect Value="@context.Item.Method" T="HealthCheckMethod" ValueChanged="async (x) => await SetHealthCheckMethod(context.Item, x)">
+                        <MudSelectItem Value="@HealthCheckMethod.TcpConnect">TCP</MudSelectItem>
+                        <MudSelectItem Value="@HealthCheckMethod.HttpGet">HTTP</MudSelectItem>
+                    </MudSelect>
+                </EditTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.HealthyStatusCode" Title="Healthy Status Code" Required="false" />
+            <PropertyColumn Property="x => x.UnhealthyStatusCode" Title="Unhealthy Status Code" Required="false" />
+            <PropertyColumn Property="x => x.DegradedStatusCode" Title="Degraded Status Code" Required="false" />
+
+            <TemplateColumn StickyRight="true">
+                <EditTemplate>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" OnClick="async() => DeleteCheck(context.Item)"/>
+                </EditTemplate>
+            </TemplateColumn>
+        </Columns>
+
+    </MudDataGrid>
+
+    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Add">Add</MudButton>
+}
+
+@code {
+    [Parameter] public List<DeploymentHealthCheck>? Checks { get; set;}
+    [Parameter] public EventCallback<List<DeploymentHealthCheck>> ChecksChanged { get; set; }
+
+    private async Task Add()
+    {
+        if (Checks is not null)
+        {
+            Checks.Add(new DeploymentHealthCheck());
+            await ChecksChanged.InvokeAsync(Checks);
+        }
+
+    }
+
+    private async Task SetHealthCheckMethod(DeploymentHealthCheck check, HealthCheckMethod method)
+    {
+        check.Method = method;
+        await ChecksChanged.InvokeAsync(Checks);
+    }
+    private async Task SetHealthCheckTarget(DeploymentHealthCheck check, HealthCheckTarget target)
+    {
+        check.Target = target;
+        await ChecksChanged.InvokeAsync(Checks);
+    }
+    private async Task SetHealthCheckType(DeploymentHealthCheck check, HealthCheckType type)
+    {
+        check.Type = type;
+        await ChecksChanged.InvokeAsync(Checks);
+    }
+
+    private void DeleteCheck(DeploymentHealthCheck check)
+    {
+        if(Checks is not null)
+        {
+            Checks.Remove(check);
+        }
+    }
+}

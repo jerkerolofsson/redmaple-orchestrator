@@ -60,6 +60,13 @@
                 </MudStack>
             </MudPaper>
 
+            
+            <MudPaper Class="pa-3">
+                <MudStack Spacing="3">
+                    <MudText Typo="Typo.h6">Health Checks</MudText>
+                    <HealthChecksEditor @bind-Checks="@_plan.HealthChecks"/>
+                </MudStack>
+            </MudPaper>
             <MudPaper Class="pa-3">
                 <MudStack Spacing="3">
                     <MudText Typo="Typo.h6">Metadata</MudText>

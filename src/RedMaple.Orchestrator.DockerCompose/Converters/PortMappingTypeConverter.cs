@@ -167,8 +167,8 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
                     emitter.Emit(new Scalar(port.Protocol));
                 }
                 emitter.Emit(new MappingEnd());
-
             }
+
 
             // We end the YAML object
             emitter.Emit(new SequenceEnd());

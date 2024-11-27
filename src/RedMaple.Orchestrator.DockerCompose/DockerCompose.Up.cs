@@ -177,7 +177,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                 {
                     Image = service.image,
                     Name = service.container_name,
-                    Hostname = service.hostname,
+                    Hostname = service.hostname ?? name ?? service.container_name,
                     Domainname = service.domainname,
                     Cmd = service.command == null ? [] : service.command,
                     NetworkingConfig = networkingConfig,

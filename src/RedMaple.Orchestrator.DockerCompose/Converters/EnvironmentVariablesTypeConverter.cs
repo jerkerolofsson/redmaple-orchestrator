@@ -99,7 +99,6 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
 
             // We start a new YAML object
             emitter.Emit(new MappingStart(AnchorName.Empty, TagName.Empty, isImplicit: true, MappingStyle.Block));
-
             foreach (var entry in envvars)
             {
                 // We try to determine if the value needs to be quoted if it contains special characters
@@ -111,7 +110,6 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
                 emitter.Emit(keyScalar);
                 emitter.Emit(new Scalar(AnchorName.Empty, TagName.Empty, entry.Value, ScalarStyle.DoubleQuoted, isPlainImplicit: false, isQuotedImplicit: true));
             }
-
             // We end the YAML object
             emitter.Emit(new MappingEnd());
         }

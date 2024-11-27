@@ -3,9 +3,9 @@
 <MudGrid>
     <MudItem>
         <YamlTextField Style="font-family: monospace; width: 900px; font-weight: bold;"
-                       Lines="20"
-                       ValueChanged="async(s) => await OnPlanChangedAsync(s)"
-                       Value="@Value" />
+        Lines="20"
+        ValueChanged="async(s) => await OnPlanChangedAsync(s)"
+        Value="@Value" />
         @if(_exception is not null)
         {
             <MudAlert Severity="Severity.Error">@_exception.Message</MudAlert>
@@ -21,7 +21,7 @@
                 <DockerComposeServiceEditor Service="@service" ServiceChanged="async (s) => await OnServiceUpdatedAsync(name, s)" />
             }
         }
-       
+
     </MudItem>
 </MudGrid>
 @code {
@@ -38,8 +38,12 @@
         {
             _plan.services[name] = service;
 
-            string value = DockerComposeParser.ToYaml(_plan);
-            await ValueChanged.InvokeAsync(value);
+            try
+            {
+                string value = DockerComposeParser.ToYaml(_plan);
+                await ValueChanged.InvokeAsync(value);
+            }
+            catch { }
         }
     }
 

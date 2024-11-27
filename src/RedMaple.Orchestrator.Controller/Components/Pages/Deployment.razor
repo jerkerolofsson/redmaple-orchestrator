@@ -50,7 +50,7 @@
     @foreach (var deployedContainer in _containers)
     {
         <div>
-            <div>@deployedContainer.Container.Name</div>
+            <h1>@deployedContainer.Container.Name</h1>
             <ContainerLogView NodeId="@deployedContainer.Node.Id" ContainerId="@deployedContainer.Container.Id" />
         </div>
     }

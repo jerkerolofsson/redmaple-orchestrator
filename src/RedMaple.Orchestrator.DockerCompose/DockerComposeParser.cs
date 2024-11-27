@@ -68,7 +68,9 @@ namespace RedMaple.Orchestrator.DockerCompose
             var serializer = new SerializerBuilder()
                 .WithTypeConverter(new EnvironmentVariablesTypeConverter())
                 .WithTypeConverter(new ServiceVolumeTypeConverter())
+                .WithTypeConverter(new CommandConverter())
                 .WithTypeConverter(new PortMappingTypeConverter())
+                .ConfigureDefaultValuesHandling(DefaultValuesHandling.OmitEmptyCollections | DefaultValuesHandling.OmitNull)
                 .Build();
 
             return serializer.Serialize(plan);
@@ -78,6 +80,7 @@ namespace RedMaple.Orchestrator.DockerCompose
             var deserializer = new DeserializerBuilder()
                 .WithTypeConverter(new EnvironmentVariablesTypeConverter())
                 .WithTypeConverter(new ServiceVolumeTypeConverter())
+                .WithTypeConverter(new CommandConverter())
                 .WithTypeConverter(new PortMappingTypeConverter())
                 .IgnoreUnmatchedProperties() // don't throw an exception if there are unknown properties
                 .Build();

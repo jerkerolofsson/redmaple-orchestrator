@@ -25,7 +25,8 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
         public List<string>? dns_opt { get; set; }
         public List<string>? dns_search { get; set; }
         public List<string>? depends_on { get; set; }
-        public List<string>? command { get; set; }
+
+        public Command? command { get; set; }
         public List<string>? cap_add { get; set; }
         public List<string>? networks { get; set; }
 
