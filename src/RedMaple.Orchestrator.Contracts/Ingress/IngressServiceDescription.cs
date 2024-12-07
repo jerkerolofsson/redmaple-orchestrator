@@ -6,12 +6,20 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.Contracts.Ingress
 {
+    /// <summary>
+    /// Configuration for reverse proxy
+    /// </summary>
     public class IngressServiceDescription
     {
         public required string Id { get; set; }
         public required string IngressIp { get; set; }
         public required int IngressPort { get; set; }
         public required string DomainName { get; set; }
+
+        /// <summary>
+        /// http2 will be enabled in the reverse-proxy
+        /// </summary>
+        public bool EnableHttp2 { get; set; }
 
         /// <summary>
         /// Region specific ingress

@@ -18,9 +18,12 @@
                     <MudTextField Label="Description" @bind-Value="_template.Description" Lines="5" />
                     <MudTextField Label="Icon" @bind-Value="_template.IconUrl" />
                     <MudTextField Label="Application Protocol" @bind-Value="_template.ApplicationProtocol" />
-                    <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
 
+                    <MudText Class="mt-3">Ingress</MudText>
+
+                    <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
                     <MudSwitchM3 Label="Create Ingress" Color="Color.Primary" Class="mt-5" @bind-Value="_template.CreateIngress"></MudSwitchM3>
+                    <MudSwitchM3 Label="HTTP2" Color="Color.Primary" Class="mt-5" @bind-Value="_template.EnableHttp2"></MudSwitchM3>
                 </MudStack>
             </MudCardContent>
         </MudCard>

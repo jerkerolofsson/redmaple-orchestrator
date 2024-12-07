@@ -121,6 +121,14 @@
                             </MudStack>
 
 
+                            <MudStack Row="true" AlignItems="AlignItems.Center">
+                                <MudText>HTTP2</MudText>
+                                <MudSpacer />
+                                <MudItem Style="width: 300px">
+                                    <MudSwitchM3 @bind-Value="model.EnableHttp2" />
+                                </MudItem>
+                            </MudStack>
+
                         </MudStack>
                     }
 
@@ -302,6 +310,8 @@
 
         public bool CreateIngress { get; set; }
 
+        public bool EnableHttp2 { get; set; }
+
         public NodeInfo? IngressNode { get; set; }
 
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
@@ -384,7 +394,10 @@
                 Plan = model.Plan ?? "",
                 DomainName = model.DomainName,
                 Kind = model.Kind,
+
                 CreateIngress = model.CreateIngress,
+                EnableHttp2 = model.EnableHttp2,
+
                 CreateDnsEntry = true,
                 OnlyRegionDnsEntry = model.IsRegional,
                 Region = model.IsRegional ? model.Region : null,
@@ -515,6 +528,8 @@
 
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
+        model.EnableHttp2 = template.EnableHttp2;
+
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
         model.HealthChecks = template.HealthChecks;

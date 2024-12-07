@@ -858,6 +858,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 {
                     Region = plan.Region,
                     IngressIp = plan.IngressServerIp,
+                    EnableHttp2 = plan.EnableHttp2,
                     DomainName = plan.DomainName,
                     IngressPort = 443,
                     Scheme = plan.ApplicationProtocol,

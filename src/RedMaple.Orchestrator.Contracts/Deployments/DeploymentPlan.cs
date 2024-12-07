@@ -107,6 +107,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public bool CreateIngress { get; set; }
 
         /// <summary>
+        /// HTTP2 will be enabled in the reverse proxy
+        /// </summary>
+        public bool EnableHttp2 { get; set; }
+
+        /// <summary>
         /// HTTPS certificate for the application server in PFX format
         /// </summary>
         public byte[]? ApplicationHttpsCertificatePfx { get; set; }

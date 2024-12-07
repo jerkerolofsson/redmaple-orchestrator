@@ -50,6 +50,8 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public bool CreateIngress { get; set; } = true;
 
+        public bool EnableHttp2 { get; set; }
+
         /// <summary>
         /// Format depends on kind
         /// for docker compose this is the docker-compose.yaml
