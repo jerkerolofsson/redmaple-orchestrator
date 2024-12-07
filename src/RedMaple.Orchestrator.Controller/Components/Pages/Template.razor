@@ -23,7 +23,11 @@
 
                     <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
                     <MudSwitchM3 Label="Create Ingress" Color="Color.Primary" Class="mt-5" @bind-Value="_template.CreateIngress"></MudSwitchM3>
-                    <MudSwitchM3 Label="HTTP2" Color="Color.Primary" Class="mt-5" @bind-Value="_template.EnableHttp2"></MudSwitchM3>
+
+                    @if(_template.ReverseProxy is not null)
+                    {
+                        <MudSwitchM3 Label="HTTP2" Color="Color.Primary" Class="mt-5" @bind-Value="_template.ReverseProxy.EnableHttp2"></MudSwitchM3>
+                    }
                 </MudStack>
             </MudCardContent>
         </MudCard>
@@ -57,11 +61,11 @@
     private ResourceKind?[] _resourceKinds = 
     [
         ResourceKind.API,
-        ResourceKind.ConnectionString,
-        ResourceKind.ApplicationService,
-        ResourceKind.MessageBroker,
-        ResourceKind.OidcServer,
-        ResourceKind.OtlpServer,
+    ResourceKind.ConnectionString,
+    ResourceKind.ApplicationService,
+    ResourceKind.MessageBroker,
+    ResourceKind.OidcServer,
+    ResourceKind.OtlpServer,
     ];
 
     private DeploymentPlanTemplate? _template = null;
@@ -81,6 +85,7 @@
         if (_template is not null)
         {
             _template.Resource ??= new();
+            _template.ReverseProxy ??= new();
         }
     }
 

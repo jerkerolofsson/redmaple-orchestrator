@@ -1,4 +1,6 @@
 ﻿using RedMaple.Orchestrator.Contracts.Healthz;
+using RedMaple.Orchestrator.Contracts.Ingress;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,7 +52,10 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// </summary>
         public bool CreateIngress { get; set; } = true;
 
-        public bool EnableHttp2 { get; set; }
+        /// <summary>
+        /// Settings for the reverse proxy
+        /// </summary>
+        public ReverseProxySettings? ReverseProxy { get; set; }
 
         /// <summary>
         /// Format depends on kind

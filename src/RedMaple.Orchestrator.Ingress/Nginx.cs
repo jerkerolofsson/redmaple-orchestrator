@@ -130,7 +130,7 @@ namespace RedMaple.Orchestrator.Ingress
                 File.WriteAllBytes(pemCertName, service.PemCert);
 
                 string listenProtocol = "ssl";
-                if(service.EnableHttp2)
+                if(service.ReverseProxy?.EnableHttp2 == true)
                 {
                     listenProtocol = "ssl http2";
                 }
@@ -143,7 +143,7 @@ namespace RedMaple.Orchestrator.Ingress
                         return 301 https://{{service.DomainName}}$request_uri;
                     }                    
                     server {
-                        listen {{service.IngressPort}} {{listenProtocol}}};
+                        listen {{service.IngressPort}} {{listenProtocol}};
                         server_name {{service.DomainName}};
                         ssl_certificate /etc/nginx/conf.d/{{service.DomainName}}.crt;
                         ssl_certificate_key /etc/nginx/conf.d/{{service.DomainName}}.key;

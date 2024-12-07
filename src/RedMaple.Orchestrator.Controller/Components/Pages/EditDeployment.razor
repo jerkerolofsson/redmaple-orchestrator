@@ -60,13 +60,16 @@
                 </MudStack>
             </MudPaper>
 
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Ingress</MudText>
-                    <MudSwitchM3 Color="Color.Secondary" Label="HTTP2" @bind-Value="@_plan.EnableHttp2" />
-                </MudStack>
-            </MudPaper>
-            
+            @if(_plan.ReverseProxy is not null)
+            {
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6">Ingress</MudText>
+                        <MudSwitchM3 Color="Color.Secondary" Label="HTTP2" @bind-Value="@_plan.ReverseProxy.EnableHttp2" />
+                    </MudStack>
+                </MudPaper>
+            }
+
             <MudPaper Class="pa-3">
                 <MudStack Spacing="3">
                     <MudText Typo="Typo.h6">Health Checks</MudText>
@@ -198,6 +201,8 @@
         }
         else 
         {
+            _plan.ReverseProxy ??= new();
+
             if (_plan.ApplicationServerIps.Count > 0)
             {
                 _applicationNode = await nodeManager.GetNodeByIpAddressAsync(_plan.ApplicationServerIps[0]);

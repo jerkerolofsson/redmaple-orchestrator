@@ -10,7 +10,7 @@
 	<ContainerUser>root</ContainerUser>
 	<RuntimeIdentifiers>linux-x64</RuntimeIdentifiers>
 	<EnableSdkContainerDebugging>True</EnableSdkContainerDebugging>
-	<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:8.0</ContainerBaseImage>
+	<ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:9.0</ContainerBaseImage>
 
   </PropertyGroup>
 

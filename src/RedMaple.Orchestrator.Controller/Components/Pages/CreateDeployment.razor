@@ -125,7 +125,7 @@
                                 <MudText>HTTP2</MudText>
                                 <MudSpacer />
                                 <MudItem Style="width: 300px">
-                                    <MudSwitchM3 @bind-Value="model.EnableHttp2" />
+                                    <MudSwitchM3 @bind-Value="model.ReverseProxy.EnableHttp2" />
                                 </MudItem>
                             </MudStack>
 
@@ -310,7 +310,10 @@
 
         public bool CreateIngress { get; set; }
 
-        public bool EnableHttp2 { get; set; }
+        /// <summary>
+        /// Settings for the reverse proxy
+        /// </summary>
+        public ReverseProxySettings? ReverseProxy { get; set; }
 
         public NodeInfo? IngressNode { get; set; }
 
@@ -396,7 +399,7 @@
                 Kind = model.Kind,
 
                 CreateIngress = model.CreateIngress,
-                EnableHttp2 = model.EnableHttp2,
+                ReverseProxy = model.ReverseProxy,
 
                 CreateDnsEntry = true,
                 OnlyRegionDnsEntry = model.IsRegional,
@@ -528,7 +531,7 @@
 
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
-        model.EnableHttp2 = template.EnableHttp2;
+        model.ReverseProxy = template.ReverseProxy;
 
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;

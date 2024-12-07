@@ -17,9 +17,9 @@ namespace RedMaple.Orchestrator.Contracts.Ingress
         public required string DomainName { get; set; }
 
         /// <summary>
-        /// http2 will be enabled in the reverse-proxy
+        /// Settings for the reverse proxy
         /// </summary>
-        public bool EnableHttp2 { get; set; }
+        public ReverseProxySettings? ReverseProxy { get; set; }
 
         /// <summary>
         /// Region specific ingress
