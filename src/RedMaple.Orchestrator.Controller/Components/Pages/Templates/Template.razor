@@ -1,0 +1,84 @@
+﻿@rendermode InteractiveServer
+@page "/templates/{name}"
+@inject IDeploymentTemplateProvider templateProvider
+@inject NavigationManager navigationManager
+
+<MudPopoverProvider />
+
+@if(_template is not null)
+{
+    <MudText Typo="Typo.h6">@Name</MudText>
+
+    <EditForm Model="@_template" OnValidSubmit="async () => await OnValidSubmitAsync()">            
+
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudStack Spacing="2">
+                    <MudTextField Label="Category" @bind-Value="_template.Category" />
+                    <MudTextField Label="Description" @bind-Value="_template.Description" Lines="5" />
+                    <MudTextField Label="Icon" @bind-Value="_template.IconUrl" />
+                    <MudTextField Label="Application Protocol" @bind-Value="_template.ApplicationProtocol" />
+                    <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
+
+                    <MudSwitchM3 Label="Create Ingress" Color="Color.Primary" Class="mt-5" @bind-Value="_template.CreateIngress"></MudSwitchM3>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudStack Spacing="2">
+                    <MudSwitchM3 Color="Color.Secondary" Label="Create Resource" @bind-Value="_template.Resource.Create" />
+
+                    <MudTextField Label="Service Name" @bind-Value="_template.Resource.ServiceName" />
+                    <MudSelectExtended Label="Kind" @bind-Value="_template.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
+                    <MudTextField Label="Connection String Format" @bind-Value="_template.Resource.ConnectionStringFormat" />
+                    <MudTextField Label="Connection String Variable Name Format" @bind-Value="_template.Resource.ConnectionStringVariableNameFormat" />
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+        <MudCard Class="pa-5 mt-5">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">Docker Compose</MudText>
+                <DockerComposeEditor @bind-Value="_template.Plan"/>
+            </MudCardContent>
+        </MudCard>
+
+        <MudButton Class="mt-5" ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+    </EditForm>
+}
+
+@code {
+    [Parameter] public string Name { get; set; } = null!;
+
+    private ResourceKind?[] _resourceKinds = 
+    [
+        ResourceKind.API,
+        ResourceKind.ConnectionString,
+        ResourceKind.ApplicationService,
+        ResourceKind.MessageBroker,
+        ResourceKind.OidcServer,
+        ResourceKind.OtlpServer,
+    ];
+
+    private DeploymentPlanTemplate? _template = null;
+
+    private async Task OnValidSubmitAsync()
+    {
+        if(_template is not null)
+        {
+            await templateProvider.SaveTemplateAsync(_template);
+            navigationManager.NavigateTo("/templates");
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        _template = await templateProvider.GetTemplateByNameAsync(Name);
+        if (_template is not null)
+        {
+            _template.Resource ??= new();
+        }
+    }
+
+}

@@ -1,0 +1,26 @@
+﻿<MudDialog>
+    <TitleContent>
+        Enter OIDC Authority
+    </TitleContent>
+    <DialogContent>
+
+        <MudTextField T="string" @bind-Value=_text>
+        </MudTextField>
+
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="Color.Primary" OnClick="Submit">Ok</MudButton>
+    </DialogActions>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; } = null!;
+
+    private string _text = "https://my-identity-provider.com/oidc";
+
+    private void Submit() => MudDialog.Close(DialogResult.Ok(_text));
+
+    private void Cancel() => MudDialog.Cancel();
+
+}

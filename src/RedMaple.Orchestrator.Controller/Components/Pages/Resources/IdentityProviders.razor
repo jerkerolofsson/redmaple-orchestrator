@@ -1,0 +1,110 @@
+﻿@page "/resources/idp"
+@using IdentityModel.Client
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
+@using RedMaple.Orchestrator.Utilities
+@rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IClusterResourceManager resourceManager
+@inject IDialogService dialogService
+@inject ISnackbar snackbar
+
+<MudThemeProvider IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<ClusterResourceTable Title="Identity Providers" AddClicked="AddOidcServerAsync" Kind="ResourceKind.OidcServer" />
+
+@code {
+    private async Task<string?> EnterAuthorityAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterOidcAuthorityDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is not null)
+        {
+            return result.Data.ToString();
+        }
+        return null;
+    }
+
+    private async Task AddOidcServerAsync()
+    {
+        var authority = await EnterAuthorityAsync();
+        if (authority is not null && Uri.TryCreate(authority, UriKind.Absolute, out var uri))
+        {
+            var resource = new ClusterResource
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = uri.Host,
+                Persist = true,
+                Slug = SlugGenerator.Generate(uri.Host),
+                Kind = ResourceKind.OidcServer,
+                EnvironmentVariables = new Dictionary<string, string>
+                {
+                    ["OIDC_AUTHORITY"] = authority
+                }
+            };
+
+            snackbar.Add("Connecting to " + authority);
+
+            try
+            {
+                var handler = new HttpClientHandler();
+                handler.ServerCertificateCustomValidationCallback = (_, _, _, _) => true;
+                using var httpClient = new HttpClient(handler);
+                var request = new DiscoveryDocumentRequest()
+                    {
+                        Address = authority,
+                        Policy = new DiscoveryPolicy
+                        {
+                            AuthorityValidationStrategy = new AuthorityUrlValidationStrategy()
+                        }
+                    };
+                DiscoveryDocumentResponse discovery = await httpClient.GetDiscoveryDocumentAsync(authority);
+                if (!string.IsNullOrEmpty(discovery?.Issuer))
+                {
+                    resource.EnvironmentVariables["OAUTH2_ISSUER"] = discovery.Issuer;
+                }
+                if (!string.IsNullOrEmpty(discovery?.AuthorizeEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_AUTH_ENDPOINT"] = discovery.AuthorizeEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.RegistrationEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_REGISTRATION_ENDPOINT"] = discovery.RegistrationEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.IntrospectionEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_INSTROSPECTION_ENDPOINT"] = discovery.IntrospectionEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.DeviceAuthorizationEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_DEVICE_AUTHORIZATION_ENDPOINT"] = discovery.DeviceAuthorizationEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.BackchannelAuthenticationEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_BACKCHANNEL_AUTH_ENDPOINT"] = discovery.BackchannelAuthenticationEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.TokenEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_TOKEN_ENDPOINT"] = discovery.TokenEndpoint;
+                }
+                if (!string.IsNullOrEmpty(discovery?.UserInfoEndpoint))
+                {
+                    resource.EnvironmentVariables["OAUTH2_USERINFO_ENDPOINT"] = discovery.UserInfoEndpoint;
+                }
+            }
+            catch(Exception)
+            {
+                snackbar.Add("Failed to download discovery document from " + authority);
+            }
+
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+        }
+        else
+        {
+            snackbar.Add("Invalid URL");
+        }
+    }
+}

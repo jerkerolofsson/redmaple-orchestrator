@@ -1,0 +1,175 @@
+﻿@page "/resources/resource/{id}"
+@using RedMaple.Orchestrator.Utilities
+@rendermode InteractiveServer
+@inject IClusterResourceManager resourceManager
+@inject NavigationManager navigationManager
+@inject IDialogService dialogService
+
+<MudPopoverProvider />
+<MudDialogProvider />
+
+@if(model is not null)
+{
+    <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
+        <DataAnnotationsValidator />
+        <MudCard Class="pa-5 mt-5">
+            <MudItem>
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Resource Name</MudText>
+                    <MudTextField @bind-Value="model.Name"
+                                  For="@(() => model.Name)" />
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Kind</MudText>
+                    <MudSelectExtended @bind-Value="model.Kind" T="ResourceKind" ItemCollection="@_resourceKinds"></MudSelectExtended>
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Region</MudText>
+                    <MudStack Row="true">
+                    <SelectRegion @bind-Region="model.ResourceRegion" />
+                    </MudStack>
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Icon</MudText>
+                    <MudTextField Label="Icon"
+                                  @bind-Value="model.IconUrl"
+                                  For="@(() => model.IconUrl)" />
+                </MudStack>
+            </MudItem>
+        </MudCard>
+
+        @if(model.Volume is not null)
+        {
+            <MudCard Class="pa-5 mt-5">
+                <MudItem>
+                    <MudText Typo="Typo.h6">Volume</MudText>
+                    <MudTextField Label="Driver"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.Driver"
+                                  For="@(() => model.Volume.Driver)" />
+
+                    <MudTextField Label="Type"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.Type"
+                                  For="@(() => model.Volume.Type)" />
+
+                    <MudTextField Label="Directory mode"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.DirMode"
+                                  For="@(() => model.Volume.DirMode)" />
+
+                    <MudTextField Label="File mode"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.FileMode"
+                                  For="@(() => model.Volume.FileMode)" />
+
+                    <MudTextField Label="Location"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.Location"
+                                  For="@(() => model.Volume.Location)" />
+
+                    <MudTextField Label="Username"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.Username"
+                                  For="@(() => model.Volume.Username)" />
+
+                    <MudTextField Label="Password"
+                                  Class="mt-3"
+                                  @bind-Value="model.Volume.Password"
+                                  For="@(() => model.Volume.Password)" />
+                </MudItem>
+            </MudCard>
+        }
+
+        <MudCard Class="pa-5 mt-5">
+             <MudItem>
+                <MudText Typo="Typo.h6">Environment Variables</MudText>
+                @{
+                    bool readOnly = !model.Persist;
+                }
+                <EnvironmentVariableEditor ReadOnly="@readOnly" EnvironmentVariables="@model.EnvironmentVariables" />
+            </MudItem>
+        </MudCard>
+
+        @if (model.Persist)
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Start" Class="mt-5">
+                <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+                <MudButton
+                    OnClick="async () => await DeleteAsync()"
+                    ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
+            </MudStack>
+        }
+        else
+        {
+            <MudStack Row="true" AlignItems="AlignItems.Start" Class="mt-5">
+                <MudButton
+                    OnClick="async () => await DeleteAsync()"
+                    ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
+            </MudStack>
+
+            <MudAlert class="mt-5" Variant="Variant.Text">This resource is read-only</MudAlert>
+        }
+    </EditForm>
+}
+
+@code {
+    private ClusterResource? model = null!;
+
+    [Parameter]
+    public string Id { get; set; } = null!;
+
+    private ResourceKind[] _resourceKinds = 
+    [
+        ResourceKind.API,
+        ResourceKind.ConnectionString,
+        ResourceKind.ApplicationService,
+        ResourceKind.MessageBroker,
+        ResourceKind.OidcServer,
+        ResourceKind.OtlpServer,
+    ];
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await resourceManager.GetClusterResourceAsync(Id);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (model is not null)
+        {
+            model.Slug = SlugGenerator.Generate(model.Name);
+            if(model.Volume is not null)
+            {
+                model.Volume.Name = model.Name;
+                model.Volume.Slug = model.Slug;
+            }
+            await resourceManager.SaveResourceAsync(model);
+
+            navigationManager.NavigateTo("/resources/all");
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (model is null)
+        {
+            return;
+        }
+        bool? result = await dialogService.ShowMessageBox(
+           "Confirm",
+           "Do you really want to delete the resource",
+           yesText: "Yeah", cancelText: "Cancel");
+        if (result == true)
+        {
+            await resourceManager.RemoveResourceAsync(model);
+
+            navigationManager.NavigateTo("/resources/all");
+
+        }
+    }
+}

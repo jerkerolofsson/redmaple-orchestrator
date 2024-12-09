@@ -1,0 +1,139 @@
+﻿@page "/resources/all"
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
+@using RedMaple.Orchestrator.Utilities
+@rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IClusterResourceManager resourceManager
+@inject IDialogService dialogService
+
+<MudThemeProvider IsDarkMode="true"/>
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
+    <MudText Typo="Typo.h6">Resources</MudText>
+    <MudSpacer />
+    <MudButton Variant="Variant.Filled"
+                Color="Color.Primary"
+                @onclick="async () => await AddVolumeAsync()">Add Volume</MudButton>
+
+    <MudButton Variant="Variant.Filled"
+                Color="Color.Primary"
+                @onclick="async () => await AddAppServiceAsync()">Add App. Service</MudButton>
+
+</MudStack>
+
+<ClusterResourceTable AddClicked="AddAppServiceAsync" />
+
+@code {
+    private async Task<string?> EnterNameAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterNameDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is not null)
+        {
+            return result.Data.ToString();
+        }
+        return null;
+    }
+
+    private async Task AddOidcServerAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Persist = true,
+                    Slug = SlugGenerator.Generate(name),
+                    Kind = ResourceKind.OidcServer,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                        ["OIDC_AUTHORITY"] = "https://identityserver"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+        }
+    }
+
+    private async Task AddAppServiceAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Persist = true,
+                    Slug = SlugGenerator.Generate(name),
+                    Kind = ResourceKind.ApplicationService,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+        }
+    }
+
+    private async Task AddVolumeAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var slug = SlugGenerator.Generate(name);
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Slug = slug,
+                    Persist = true,
+                    Kind = ResourceKind.Volume,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                    },
+                    Volume = new VolumeResource
+                    {
+                        Name = name,
+                        Slug  = slug,
+                        Driver = "local",
+                        FileMode = "0777",
+                        DirMode = "0777",
+                        Username = "Guest",
+                        Password = "Guest",
+                        Type = "cifs",
+                        Location = "//server-name/dir"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+        }
+    }
+
+    private async Task AddConnectionStringAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new ClusterResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Slug = SlugGenerator.Generate(name),
+                    Persist = true,
+                    Kind = ResourceKind.ConnectionString,
+                    EnvironmentVariables = new Dictionary<string, string>
+                    {
+                        ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
+                    }
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+        }
+    }
+}

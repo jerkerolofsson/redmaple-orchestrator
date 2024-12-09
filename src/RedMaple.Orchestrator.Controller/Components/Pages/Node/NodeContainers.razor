@@ -1,0 +1,233 @@
+﻿@page "/node/{id}/containers"
+@using Docker.DotNet.Models
+@using RedMaple.Orchestrator.Controller.Domain.Aggregations
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
+@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
+@using RedMaple.Orchestrator.Controller.ViewModels
+@rendermode InteractiveServer
+@inject ContainerStatsAggregator containerStatsAggregator
+@inject INodeManager nodeManager
+@inject NavigationManager navigationManager
+<MudPopoverProvider />
+
+<ProgressView Visible="_loading" @ref="_progress" />
+
+<div class="buttons">
+    <MudButton Variant="Variant.Filled"
+               Color="Color.Primary"
+               @onclick="OnCreateContainer">Create Container</MudButton>
+</div>
+
+<MudText Typo="Typo.h6">Containers</MudText>
+<MudPaper Class="pa-5">
+
+    <MudDataGrid Bordered="true" Dense="true"
+                 ReadOnly="false"
+                 Items="@_containers"
+                 SortMode="SortMode.Multiple">
+        <Columns>
+
+            <TemplateColumn HeaderStyle="width: 1rem;" StickyLeft="true">
+                <CellTemplate>
+                    @{
+                        string icon = GetContainerIcon(context.Item.Container);
+                    }
+                    <img src="@icon"/>
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Container.Name" Title="Name" />
+
+            <PropertyColumn Property="x => x.Container.Image" Title="Image" />
+            <PropertyColumn Property="x => x.CpuUsageString" Title="CPU" />
+            <PropertyColumn Property="x => x.MemoryUsageString" Title="RAM" />
+
+            <TemplateColumn Title="Ports">
+                <CellTemplate>
+                    @foreach (var port in context.Item.Container.Ports.Take(4))
+                    {
+                        if (_nodeInfo is not null && port.PublicPort > 0)
+                        {
+                            string url = $"http://{_nodeInfo.IpAddress}:{port.PublicPort}";
+                            <div><a href="@url">@(port.PublicPort):@(port.PrivatePort)</a></div>
+                        }
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Property="x => x.Container.State" Title="State" HeaderStyle="width: 1rem" />
+            <PropertyColumn Property="x => x.Container.Status" Title="Started" HeaderStyle="width: 1rem" />
+            <TemplateColumn StickyRight="true">
+                <CellTemplate>
+                    @if (context.Item.Container.IsRunning)
+                    {
+                        <MudButton OnClick="async () => await StopContainerAsync(context.Item.Container.Id)">Stop</MudButton>
+                        <MudButton OnClick="async () => await RestartContainerAsync(context.Item.Container.Id)">Restart</MudButton>
+                    }
+                    else
+                    {
+                        <MudButton OnClick="async () => await StartContainerAsync(context.Item.Container.Id)">Start</MudButton>
+                    }
+                    <MudButton OnClick="async () => await UpgradeContainerAsync(context.Item.Container.Id)">Upgrade</MudButton>
+                    <MudButton OnClick="() => ReadLogs(context.Item.Container.Id)">Logs</MudButton>
+                </CellTemplate>
+            </TemplateColumn>
+
+        </Columns>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    [Parameter] public string Id { get; set; } = null!;
+
+    private bool _loading = false;
+    private ProgressView _progress = null!;
+
+    private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
+    private NodeInfo? _nodeInfo = null;
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
+    {
+        if(firstRender)
+        {
+        }
+        return Task.CompletedTask;
+    }
+
+    private void OnCreateContainer()
+    {
+        navigationManager.NavigateTo($"/node/{Id}/create-simple-container");
+    }
+    private async Task StartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            _loading = true;
+            this.StateHasChanged();
+
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.StartAsync(id);
+
+            _loading = false;
+            this.StateHasChanged();
+
+        }
+    }
+    private async Task UpgradeContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            _loading = true;
+            this.StateHasChanged();
+
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+
+            Container? container = await client.GetContainerByIdAsync(id);
+            if (container?.Image is not null)
+            {
+                await client.PullImageAsync(container.Image, _progress);
+            }
+            await client.RestartAsync(id);
+
+            _loading = false;
+            this.StateHasChanged();
+        }
+    }
+
+    private void ReadLogs(string containerId)
+    {
+        navigationManager.NavigateTo($"/node/{Id}/containers/{containerId}/logs");
+    }
+
+    private async Task StopContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.StopAsync(id);
+        }
+    }
+
+    private async Task PullImageFromContainerAsync(string id, IProgress<JSONMessage> progress)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+
+            Container? container = await client.GetContainerByIdAsync(id);
+            if(container?.Image is not null)
+            {
+                await client.PullImageAsync(container.Image, progress);
+            }
+        }
+    }
+
+    private async Task RestartContainerAsync(string id)
+    {
+        if (_nodeInfo is not null)
+        {
+            using var client = new NodeContainersClient(_nodeInfo.BaseUrl);
+            await client.RestartAsync(id);
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var nodes = await nodeManager.GetNodesAsync();
+        _nodeInfo = nodes.FirstOrDefault(x => x.Id == Id);
+
+        if (_nodeInfo is not null)
+        {
+            _containers = await containerStatsAggregator.GetNodeContainersAsync(Id);
+        }
+    }
+
+    private string GetContainerIcon(Container container)
+    {
+        if (container.Image is not null)
+        {
+            if (container.Image.StartsWith("nginx"))
+            {
+                return "brands/nginx.png";
+            }
+            if (container.Image.Contains("redmaple-node"))
+            {
+                return "logo.png";
+            }
+            if (container.Image.Contains("redmaple-controller"))
+            {
+                return "logo.png";
+            }
+            if (container.Image.Contains("docker-registry-browser"))
+            {
+                return "brands/docker.png";
+            }
+            if (container.Image.StartsWith("registry:2"))
+            {
+                return "brands/docker.png";
+            }
+            if (container.Image.Contains("postgres"))
+            {
+                return "brands/postgres.png";
+            }
+            if (container.Image.Contains("mongo:"))
+            {
+                return "brands/mongodb.png";
+            }
+            if (container.Image.Contains("redis"))
+            {
+                return "brands/redis.png";
+            }
+            if (container.Image.Contains("rabbitmq"))
+            {
+                return "brands/rabbitmq.png";
+            }
+            if (container.Image.Contains("nodejs"))
+            {
+                return "brands/nodejs.png";
+            }
+        }
+        return "container.png";
+    }
+
+}
