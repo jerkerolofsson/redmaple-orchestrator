@@ -30,6 +30,16 @@ namespace RedMaple.Orchestrator.DockerCompose.Models
         public List<string>? cap_add { get; set; }
         public List<string>? networks { get; set; }
 
+        /// <summary>
+        /// Run in privileged  mode
+        /// </summary>
+        public bool privileged { get; set; }
+
+        /// <summary>
+        /// 'host' is supported
+        /// </summary>
+        public string? network_mode { get; set; }
+
         public List<DockerComposeServiceVolume> volumes { get; set; } = new();
 
         public EnvironmentVariables? environment { get; set; }

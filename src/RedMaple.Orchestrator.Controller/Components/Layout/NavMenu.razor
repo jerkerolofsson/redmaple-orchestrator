@@ -14,13 +14,18 @@
             </div>
         </div>
         <MudDivider Class="my-2" />
-        <MudNavLink Href="/deployments">Deployments</MudNavLink>
-        <MudNavLink Href="/resources">Resources</MudNavLink>
+        <MudNavLink Href="/deployments"><i class="fa fa-folder-tree" /> Deployments</MudNavLink>
+
+        <MudNavGroup Title="Resources">
+            <MudNavLink Href="/resources/all"><i class="fa fa-database" /> Browse Resources</MudNavLink>
+            <MudNavLink Href="/resources/idp"><i class="fa fa-address-card" /> Identity Providers</MudNavLink>
+            <MudNavLink Href="/resources/connection-strings"><i class="fa fa-database" /> Connection Strings</MudNavLink>
+        </MudNavGroup>
 
         <MudNavGroup Title="Settings" Expanded="false">
-            <MudNavLink Href="/dns">DNS</MudNavLink>
-            <MudNavLink Href="/certificates">Certificates</MudNavLink>
-            <MudNavLink Href="/templates">Templates</MudNavLink>
+            <MudNavLink Href="/dns"><i class="fa fa-globe" /> DNS</MudNavLink>
+            <MudNavLink Href="/certificates"><i class="fa fa-certificate" /> Certificates</MudNavLink>
+            <MudNavLink Href="/templates"><i class="fa fa-file-code" /> Templates</MudNavLink>
         </MudNavGroup>   
 
         <MudNavGroup Title="Nodes" Expanded="false">
@@ -28,16 +33,16 @@
             @foreach (var node in _nodes)
             {
                 <MudNavGroup Title="@node.IpAddress" Expanded="true">
-                    <MudNavLink Href="@GetNodeContainersLink(node)">Containers</MudNavLink>
+                    <MudNavLink Href="@GetNodeContainersLink(node)"><i class="fa fa-box" /> Containers</MudNavLink>
                     @if(node.IsIngressEnabled)
                     {
-                        <MudNavLink Href="@GetNodeIngressLink(node)">Ingress</MudNavLink>
+                        <MudNavLink Href="@GetNodeIngressLink(node)"><i class="fa fa-server" /> Ingress</MudNavLink>
                     }
                     @if(node.IsDnsEnabled)
                     {
-                        <MudNavLink Href="@GetNodeDnsLink(node)">DNS</MudNavLink>
+                        <MudNavLink Href="@GetNodeDnsLink(node)"><i class="fa fa-globe" /> DNS</MudNavLink>
                     }
-                    <MudNavLink Href="@GetNodeSettingsLink(node)">Settings</MudNavLink>
+                    <MudNavLink Href="@GetNodeSettingsLink(node)"><i class="fa fa-cog" /> Settings</MudNavLink>
                 </MudNavGroup>
             }
         </MudNavGroup>

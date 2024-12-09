@@ -14,7 +14,7 @@ namespace RedMaple.Orchestrator.Controller.Controllers
     public class DeploymentController : ControllerBase
     {
         private readonly IDeploymentManager _deploymentManager;
-        private ILogger<DeploymentController> _logger;
+        private readonly ILogger<DeploymentController> _logger;
 
         public DeploymentController(IDeploymentManager deploymentManager, ILogger<DeploymentController> logger)
         {

@@ -81,9 +81,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
 
         public async Task Handle(AppDeploymentReadyNotification notification, CancellationToken cancellationToken)
         {
-            var env = new Dictionary<string, string>();
+            var env = new Dictionary<string, string?>();
 
-
+            var plan = notification.Plan;
 
             var name = notification.Deployment.Slug;
             if (!string.IsNullOrEmpty(notification.Deployment.Resource?.ServiceName))
@@ -91,49 +91,33 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                 name = notification.Deployment.Resource.ServiceName;
             }
 
-            if (notification.Deployment.ApplicationProtocol is not null)
-            {
-                var port = notification.Deployment.ApplicationServerPort;
-                var protocol = "tcp";
-                if (notification.Deployment.ApplicationProtocol is not null)
-                {
-                    protocol = notification.Deployment.ApplicationProtocol.ToLower();
-                }
-                var key = $"services__{name}__{protocol}__0";
-                if (string.IsNullOrEmpty(notification.Plan.DomainName) || !notification.Plan.CreateIngress)
-                {
-                    env[key] = $"{protocol}://{notification.Deployment.ApplicationServerIp}:{port}";
-                }
-                else
-                {
-                    env[key] = $"https://{notification.Plan.DomainName}";
-                }
-            }
+            AddApplicationServiceVariable(notification, env, name);
+            AddVersion(notification, env, name);
 
-            var version = ReadVersionFromImage(notification.Plan);
-            if(version is not null)
-            {
-                env[$"version__{name}"] = version;
-            }
+            var transformedVariables = GetTransformedEnvironmentVariablesFromPlan(plan.EnvironmentVariables, plan);
 
-            // Add resource variables
+            // Add resource envuironment variables
             var resourceOptions = notification.Plan.Resource;
             if (resourceOptions?.Create == true && resourceOptions?.Exported is not null)
             {
                 foreach (var exportEnv in resourceOptions.Exported)
                 {
-                    if (notification.Deployment.EnvironmentVariables.TryGetValue(exportEnv, out var value))
+                    if (transformedVariables.TryGetValue(exportEnv, out var transformedValue))
+                    {
+                        env[exportEnv] = transformedValue;
+                    }
+                    else if (notification.Deployment.EnvironmentVariables.TryGetValue(exportEnv, out var value))
                     {
                         env[exportEnv] = value;
                     }
                 }
 
-                if(!string.IsNullOrEmpty(resourceOptions.ConnectionStringFormat) && notification.Deployment.EnvironmentVariables is not null)
+                if (!string.IsNullOrEmpty(resourceOptions.ConnectionStringFormat) && notification.Deployment.EnvironmentVariables is not null)
                 {
-                    var envVariables = new Dictionary<string, string?>(notification.Deployment.EnvironmentVariables.Select(x=> new KeyValuePair<string, string?>(x.Key, x.Value)));
+                    var envVariables = new Dictionary<string, string?>(notification.Deployment.EnvironmentVariables.Select(x => new KeyValuePair<string, string?>(x.Key, x.Value)));
 
                     var connectionStringName = $"ConnectionStrings__{notification.Deployment.Slug}";
-                    if(resourceOptions.ConnectionStringVariableNameFormat is not null)
+                    if (resourceOptions.ConnectionStringVariableNameFormat is not null)
                     {
                         connectionStringName = DockerComposeParser.ReplaceEnvironmentVariables(resourceOptions.ConnectionStringVariableNameFormat, envVariables);
                     }
@@ -153,11 +137,87 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                     Name = notification.Deployment.Slug,
                     IsGlobal = false,
                     Persist = false,
-                    EnvironmentVariables = env,
+                    EnvironmentVariables = CreateWithNonNullValues(env),
                     ResourceRegion = notification.Plan?.Region
                 };
 
                 await _resources.AddResourceAsync(resource);
+            }
+        }
+
+        /// <summary>
+        /// Replaces environment variables with actual values
+        /// </summary>
+        /// <param name="env"></param>
+        /// <param name="plan"></param>
+        private static Dictionary<string,string> GetTransformedEnvironmentVariablesFromPlan(Dictionary<string, string> input, DeploymentPlan plan)
+        {
+            Dictionary<string, string> env = new Dictionary<string, string>();
+            try
+            {
+                var transformedYaml = DockerComposeParser.ReplaceEnvironmentVariables(plan.Plan, input);
+                var composePlan = DockerComposeParser.ParseYaml(transformedYaml);
+                if (composePlan.services is not null)
+                {
+                    foreach (var service in composePlan.services.Values)
+                    {
+                        if(service.environment is not null)
+                        {
+                            foreach(var kvp in service.environment)
+                            {
+                                env[kvp.Key] = kvp.Value;
+                            }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return env;
+        }
+
+        public Dictionary<string,string> CreateWithNonNullValues(Dictionary<string, string?> input)
+        {
+            var output = new Dictionary<string, string>();
+
+            foreach(var kvp in input)
+            {
+                if(kvp.Value is not null)
+                {
+                    output[kvp.Key] = kvp.Value;
+                }
+            }
+
+            return output;
+        }
+
+        private static void AddVersion(AppDeploymentReadyNotification notification, Dictionary<string, string?> env, string name)
+        {
+            var version = ReadVersionFromImage(notification.Plan);
+            if (version is not null)
+            {
+                env[$"version__{name}"] = version;
+            }
+        }
+
+        private static void AddApplicationServiceVariable(AppDeploymentReadyNotification notification, Dictionary<string, string?> env, string name)
+        {
+            if (notification.Deployment.ApplicationProtocol is not null)
+            {
+                var port = notification.Deployment.ApplicationServerPort;
+                var protocol = "tcp";
+                if (notification.Deployment.ApplicationProtocol is not null)
+                {
+                    protocol = notification.Deployment.ApplicationProtocol.ToLower();
+                }
+                var key = $"services__{name}__{protocol}__0";
+                if (string.IsNullOrEmpty(notification.Plan.DomainName) || !notification.Plan.CreateIngress)
+                {
+                    env[key] = $"{protocol}://{notification.Deployment.ApplicationServerIp}:{port}";
+                }
+                else
+                {
+                    env[key] = $"https://{notification.Plan.DomainName}";
+                }
             }
         }
     }

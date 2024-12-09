@@ -9,6 +9,12 @@ html, body {
     background: rgba(0,0,0,0.2);
 }
 
+.mud-nav-link-text {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
 .mud-input-text .mud-input-adornment-start .mud-icon-root.mud-svg-icon  {
     margin-left: 10px;
 }
@@ -28,6 +34,12 @@ html, body {
     padding: 8px 12px;    
 }
 
+
+.mud-input-number-control .mud-input .mud-input-slot {
+    margin-left: 12px;
+}
+
+.mud-input-number-control .mud-input .mud-input-slot,
 .mud-input>input.mud-input-root.mud-input-root-margin-dense,
 .mud-input>input.mud-input-root, 
 div.mud-input-slot.mud-input-root {

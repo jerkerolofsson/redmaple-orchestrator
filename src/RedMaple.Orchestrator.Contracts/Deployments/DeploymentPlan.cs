@@ -91,6 +91,16 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public int? ApplicationServerPort { get; set; }
 
         /// <summary>
+        /// Application port (secondary port)
+        /// </summary>
+        public int? ApplicationServerApiPort { get; set; }
+
+        /// <summary>
+        /// If enabled an API port will be allocated and the REDMAPLE_API_PORT environment variable will be set
+        /// </summary>
+        public bool UseApiPort { get; set; } = false;
+
+        /// <summary>
         /// IP address of node that will host the ingress service
         /// </summary>
         public string? IngressServerIp { get; set; }

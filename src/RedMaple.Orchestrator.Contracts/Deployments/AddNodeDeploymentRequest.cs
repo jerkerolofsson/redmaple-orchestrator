@@ -14,6 +14,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public required string Slug { get; set; }
 
         /// <summary>
+        /// CA Certificate (PEM)
+        /// </summary>
+        public required byte[] CaCertificatePem { get; set; }
+
+        /// <summary>
         /// HTTPS certificate (pfx)
         /// </summary>
         public required byte[] HttpsCertificatePfx { get; set; }

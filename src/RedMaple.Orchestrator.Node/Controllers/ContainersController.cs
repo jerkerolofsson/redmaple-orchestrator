@@ -19,6 +19,13 @@ namespace RedMaple.Orchestrator.Node.Controllers
         [HttpPost("/api/containers/{id}/restart")]
         public async Task RestartContainerByIdAsync([FromRoute] string id, CancellationToken cancellationToken)
         {
+            // If the container is ourselves, we cannot restart so we exit and rely on docker restart behavior
+            var container = await _containersClient.GetContainerByIdAsync(id);
+            if (container?.Name is not null && container.Name.Contains("redmaple-node"))
+            {
+                Environment.Exit(-999);
+            }
+
             await _containersClient.RestartAsync(id, cancellationToken);
         }
 

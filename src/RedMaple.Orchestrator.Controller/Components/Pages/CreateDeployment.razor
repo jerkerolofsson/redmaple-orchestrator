@@ -110,6 +110,7 @@
                             @if (model.IsRegional)
                             {
                                 <MudText Typo="Typo.subtitle1">DNS entry for the ingress will only be created in the specific region: @model.Region</MudText>
+                                <MudAlert Severity="Severity.Warning">Selecting a region makes the service only accessible from the specified region</MudAlert>
                             }
 
                             <MudStack Row="true" AlignItems="AlignItems.Center">
@@ -305,6 +306,10 @@
         public NodeInfo? IngressNode { get; set; }
 
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
+        public int ApplicationApiPort => ApplicationPort + 1;
+
+        public bool UseApiPort { get; set; }
+
         public string ApplicationProtocol { get; set; } = "https";
 
         public string? IconUrl{ get; set; }
@@ -391,6 +396,8 @@
                 IngressServerIp = model.IngressNode?.IpAddress,
                 ApplicationServerIps = [model.ApplicationNode?.IpAddress],
                 ApplicationServerPort = model.ApplicationPort,
+                ApplicationServerApiPort = model.ApplicationApiPort,
+                UseApiPort = model.UseApiPort,
                 ApplicationProtocol = model.ApplicationProtocol,
                 EnvironmentVariables = model.EnvironmentVariables,
                 HealthChecks = model.HealthChecks,
@@ -515,6 +522,7 @@
 
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
+        model.UseApiPort = template.UseApiPort;
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
         model.HealthChecks = template.HealthChecks;

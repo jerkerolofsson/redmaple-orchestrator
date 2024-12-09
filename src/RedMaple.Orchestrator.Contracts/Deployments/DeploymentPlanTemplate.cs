@@ -51,6 +51,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public bool CreateIngress { get; set; } = true;
 
         /// <summary>
+        /// If true, an API port will be allocated
+        /// </summary>
+        public bool UseApiPort { get; set; }
+
+        /// <summary>
         /// Format depends on kind
         /// for docker compose this is the docker-compose.yaml
         /// </summary>

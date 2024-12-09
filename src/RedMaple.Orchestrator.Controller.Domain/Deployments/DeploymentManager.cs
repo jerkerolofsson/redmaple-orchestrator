@@ -22,6 +22,7 @@ using RedMaple.Orchestrator.Utilities;
 using System.Diagnostics;
 using System.Net;
 using System.Numerics;
+using System.Runtime.ConstrainedExecution;
 using System.Security.Cryptography;
 
 namespace RedMaple.Orchestrator.Controller.Domain.Deployments
@@ -317,6 +318,11 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             environmentVariables["REDMAPLE_DEPLOYMENT_SLUG"] = plan.Slug;
             environmentVariables["REDMAPLE_APP_PORT"] = plan.ApplicationServerPort?.ToString() ?? "";
 
+            if(plan.ApplicationServerApiPort is not null)
+            {
+                environmentVariables["REDMAPLE_API_PORT"] = plan.ApplicationServerApiPort?.ToString() ?? "";
+            }
+
             if (plan.ApplicationServerIps.Any())
             {
                 environmentVariables["REDMAPLE_APP_SERVER_IP"] = plan.ApplicationServerIps.First();
@@ -324,7 +330,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
             environmentVariables["REDMAPLE_APP_HTTPS_PEM_KEY_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/key.pem";
             environmentVariables["REDMAPLE_APP_HTTPS_PEM_CERT_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/cert.pem";
-
+            environmentVariables["REDMAPLE_APP_CA_CERTIFICATE_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/ca.pem";
             environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = $"/data/redmaple/node/certificates/{plan.Slug}/https.pfx";
             environmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD"] = RandomNumberGenerator.GetString(_secretCharacters, 32);
 
@@ -683,20 +689,20 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             throw new Exception($"Failed to verify that deployment is up (readyz health check) for {plan.Slug}");
         }
 
-        private static async Task DeleteDeploymentFromTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
+        private async Task DeleteDeploymentFromTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
             progress.Report($"Deleting deployment from {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
             await deploymentClient.DeleteAsync(plan.Slug, progress);
         }
-        private static async Task UpDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
+        private async Task UpDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
             progress.Report($"Starting deployment on {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
             await deploymentClient.UpAsync(plan.Slug, progress);
         }
 
-        private static async Task DownDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
+        private async Task DownDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode, CancellationToken cancellationToken)
         {
             plan.Health = new() { Status = HealthStatus.Unhealthy };
 
@@ -705,14 +711,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             await deploymentClient.DownAsync(plan.Slug, progress);
         }
 
-        private static async Task AddDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode)
+        private async Task AddDeploymentOnTargetAsync(DeploymentPlan plan, IProgress<string> progress, NodeInfo targetNode)
         {
             ArgumentNullException.ThrowIfNull(plan.ApplicationHttpsCertificatePfx);
 
             UpdateDeploymentFromYaml(plan);
 
-            // Check ingress
+            // Get CA certificate
 
+            var caCert = await _ca.GetRootCertificateAsync();
+            var caCertPem = CertificateSerializer.ExportCertificatePemsAsByteArray(caCert);
 
             progress.Report($"Adding deployment on {targetNode.IpAddress}..");
             var deploymentClient = new NodeDeploymentClient(targetNode.BaseUrl);
@@ -720,6 +728,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 VolumeBinds = plan.VolumeBinds,
                 EnvironmentVariables = plan.EnvironmentVariables,
+                CaCertificatePem = caCertPem,
                 HttpsCertificatePfx = plan.ApplicationHttpsCertificatePfx,
                 HttpsCertificatePemCert = plan.ApplicationHttpsPemCert ?? [],
                 HttpsCertificatePemKey = plan.ApplicationHttpsPemKey ?? [],
@@ -739,6 +748,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 {
                     foreach (var service in composePlan.services.Values)
                     {
+                        if(service.environment is not null)
+                        {
+                            foreach(var env in service.environment)
+                            {
+
+                            }
+                        }
+
                         if(!string.IsNullOrEmpty(service.image))
                         {
                             var imageParts = service.image.Split(':');

@@ -19,18 +19,7 @@
 }
 else if(!_loading)
 {
-    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
-        <MudText Typo="Typo.h6">Deployments</MudText>
-        <MudSpacer/>
-        <MudButton Variant="Variant.Filled"
-        Color="Color.Primary"
-        @onclick="OnCreate"><i class="fa fa-plus"/>&nbsp;Create</MudButton>
-    </MudStack>
-
-    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
-        <MudSpacer />
-        <SelectRegion Region="@_region" RegionChanged="OnRegionChanged" Regions="@_regions" />
-    </MudStack>
+   
 
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndex="@_activeTabIndex" ActivePanelIndexChanged="FilterDeployments">
         @foreach (var category in _categories)
@@ -40,15 +29,25 @@ else if(!_loading)
                 EditMode="DataGridEditMode.Cell"
                 Items="@_filteredPlans"
                 SortMode="SortMode.Multiple">
+
+                    <ToolBarContent>
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Style="width: 100%">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="OnCreate" />
+                            <MudText Typo="Typo.h6">@category</MudText>
+                            <MudSpacer />
+                            <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                            <SelectRegion Region="@_region" RegionChanged="OnRegionChanged" Regions="@_regions" />
+                        </MudStack>
+                    </ToolBarContent>
                     <Columns>
                         <TemplateColumn StickyLeft="true"HeaderStyle="width: 10px">
                             <HeaderTemplate>
-                                <MudIcon Icon="@Icons.Material.Filled.LocationOn"/>
+                                <i class="fa fa-globe" />
                             </HeaderTemplate>
                             <CellTemplate>
                                 @if(!string.IsNullOrEmpty(context.Item.Region))
                                 {
-                                    <MudChip Color="Color.Secondary" Size="Size.Small">@context.Item.Region</MudChip>
+                                    <MudChip Color="Color.Secondary" Variant="Variant.Outlined"  Size="Size.Small">@context.Item.Region</MudChip>
                                 }
                             </CellTemplate>
                         </TemplateColumn>
@@ -401,6 +400,8 @@ else if(!_loading)
     {
         _region = region;
 
+        FilterDeployments(_activeTabIndex);
+        /*
         var category = _categories[_activeTabIndex];
 
         _filteredPlans.Clear();
@@ -411,7 +412,16 @@ else if(!_loading)
         else
         {
             _filteredPlans.AddRange(_plans.Where(x => x.Category == category && x.Region == _region));
-        }
+        }*/
+    }
+
+    private string? _searchString;
+
+    private Task OnSearch(string text)
+    {
+        _searchString = text;
+        FilterDeployments(_activeTabIndex);
+        return Task.CompletedTask;
     }
 
 
@@ -422,7 +432,17 @@ else if(!_loading)
         if (index >= 0 && index < _categories.Count)
         {
             var category = _categories[index];
-            _filteredPlans.AddRange(_plans.Where(x => x.Category == category));
+
+            var plans = _plans.Where(x => x.Category == category);
+            if (!string.IsNullOrEmpty(_searchString))
+            {
+                plans = plans.Where(x => x.Name.Contains(_searchString, StringComparison.InvariantCultureIgnoreCase));
+            }
+            if (!string.IsNullOrEmpty(_region))
+            {
+                plans = plans.Where(x => x.Region == _region);
+            }
+            _filteredPlans.AddRange(plans);
         }
         InvokeAsync(() =>
         {

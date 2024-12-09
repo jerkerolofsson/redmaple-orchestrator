@@ -11,6 +11,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace RedMaple.Orchestrator.DockerCompose
 {
@@ -19,7 +20,7 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         public async Task UpAsync(IProgress<string> progress, DockerComposePlan plan, string? environmentFile, CancellationToken cancellationToken)
         {
-            if(string.IsNullOrWhiteSpace(plan.name))
+            if (string.IsNullOrWhiteSpace(plan.name))
             {
                 throw new ArgumentException("Plan name is missing", nameof(plan.name));
             }
@@ -28,7 +29,7 @@ namespace RedMaple.Orchestrator.DockerCompose
             {
                 await DownContainersAsync(progress, plan, cancellationToken);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error tearing down containers when up:ing plan: {DockerComposePlanName}", plan.name);
             }
@@ -36,10 +37,15 @@ namespace RedMaple.Orchestrator.DockerCompose
             plan = TransformPlanWithEnvironmentVariables(plan, environmentFile);
 
             progress.Report($"Creating default network: {plan.name}_default..");
-            var defaultNetwork = await CreateDefaultNetworkAsync(plan, cancellationToken);
-            if(defaultNetwork is null)
+            NetworkResponse? defaultNetwork = null;
+            if (plan.networks is null || plan.networks.Count == 0)
             {
-                throw new Exception("Failed to create network");
+                _logger.LogInformation("Creating default network..");
+                defaultNetwork = await CreateDefaultNetworkAsync(plan, cancellationToken);
+                if (defaultNetwork is null)
+                {
+                    throw new Exception("Failed to create network");
+                }
             }
 
             progress.Report("Creating volumes..");
@@ -106,12 +112,24 @@ namespace RedMaple.Orchestrator.DockerCompose
                     var network = networks.Where(x=>x.Name ==  networkName).FirstOrDefault();
                     if(network is null)
                     {
-                        throw new ArgumentException($"Network '{networkName}' was not found");
+                        network = await FindNetwork(plan, networkName, cancellationToken);
+                        if(network is null)
+                        {
+                            throw new ArgumentException($"Network '{networkName}' was not found (not defined in compose file and no existing network with that name was found)");
+                        }
                     }
-                    await _docker.ConnectNetworkAsync(network.ID, new NetworkConnectParameters
+                    if (network.Name == "host")
                     {
-                        Container = container.Id
-                    }, cancellationToken);
+                        _logger.LogInformation("Connecting container {ContainerName} cannot be connected to network {NetworkName}, skipping..", service.container_name, network.Name);
+                    }
+                    else
+                    {
+                        _logger.LogInformation("Connecting container {ContainerName} to network {NetworkName}..", service.container_name, network.Name);
+                        await _docker.ConnectNetworkAsync(network.ID, new NetworkConnectParameters
+                        {
+                            Container = container.Id
+                        }, cancellationToken);
+                    }
                 }
             }
         }
@@ -132,7 +150,7 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         private async Task<List<string>> CreateContainersAsync(
             DockerComposePlan plan, 
-            NetworkResponse network, 
+            NetworkResponse? network, 
             string? environmentFile)
         {
             var containerIds = new List<string>();
@@ -165,13 +183,34 @@ namespace RedMaple.Orchestrator.DockerCompose
                 containerLabels["com.docker.compose.container-number"] = containerNumber.ToString();
                 containerLabels["com.docker.compose.service"] = name;
 
+                var primaryServiceNetwork = network;
+                if (service.network_mode == "host")
+                {
+                    _logger.LogInformation("network_mode is 'host', using host network for container {ContainerName}", service.container_name);
+                    primaryServiceNetwork = await FindNetwork(plan, "host", CancellationToken.None);
+                }
+                else if ((service.networks is not null && service.networks.Where(x => x == "host").Any()))
+                {
+                    // We cannot connect to host network, so we'll set it here
+                    _logger.LogInformation("network is 'host', using host network for container {ContainerName}", service.container_name);
+                    primaryServiceNetwork = await FindNetwork(plan, "host", CancellationToken.None);
+                    if(service.networks.Count > 1)
+                    {
+                        throw new Exception($"Container {service.container_name} uses 'host' network and cannot use additional networks");
+                    }
+                }
+
                 var networkingConfig = new NetworkingConfig
                 {
-                    EndpointsConfig = new Dictionary<string, EndpointSettings>
-                    {
-                        [network.Name] = new EndpointSettings { NetworkID = network.ID }
-                    }
+                    
                 };
+                if(primaryServiceNetwork is not null)
+                {
+                    networkingConfig.EndpointsConfig = new Dictionary<string, EndpointSettings>
+                    {
+                        [primaryServiceNetwork.Name] = new EndpointSettings { NetworkID = primaryServiceNetwork.ID }
+                    };
+                }
 
                 var containerResponse = await _docker.CreateContainerAsync(new CreateContainerParameters
                 {
@@ -239,6 +278,8 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         private HostConfig CreateHostConfig(DockerComposeService service)
         {
+            _logger.LogInformation("Creating host config, dns={DNS}, privileged={privileged}, restart={RestartPolicy}, network_mode={network_mode}", service.dns, service.privileged, service.restart, service.network_mode);
+            
             return new HostConfig
             {
                 AutoRemove = false,
@@ -246,7 +287,9 @@ namespace RedMaple.Orchestrator.DockerCompose
                 DNSOptions = service.dns_opt,
                 DNSSearch = service.dns_search,
                 CapAdd = service.cap_add,
+                NetworkMode = service.network_mode,
                 DeviceRequests = CreateDevicesRequest(service),
+                Privileged = service.privileged,
                 RestartPolicy = (service.restart ?? "unless-stopped") switch
                 {
                     "unless-stopped" => new RestartPolicy() { Name = RestartPolicyKind.UnlessStopped },

@@ -30,6 +30,19 @@ namespace RedMaple.Orchestrator.DockerCompose
             return null;
         }
 
+        private async Task<NetworkResponse?> FindNetwork(DockerComposePlan plan, string name, CancellationToken cancellationToken)
+        {
+            var networks = await _docker.ListNetworksAsync(new NetworksListParameters(), cancellationToken);
+            foreach (var network in networks)
+            {
+                if (name == network.Name)
+                {
+                    return network;
+                }
+            }
+            return null;
+        }
+
         private async Task<List<NetworkResponse>> CreateNetworksAsync(DockerComposePlan plan, CancellationToken cancellationToken)
         {
             var ret = new List<NetworkResponse>();
@@ -53,10 +66,12 @@ namespace RedMaple.Orchestrator.DockerCompose
                         }
                     }, cancellationToken);
 
+                    _logger.LogInformation("Creating network {NetworkName}, driver={NetworkDriver}..", name, network.driver);
                     ret.Add(await FindProjectNetwork(plan, name, cancellationToken) ?? throw new Exception("Failed to create network"));
                 }
                 else
                 {
+                    _logger.LogInformation("Existing network {NetworkName} found..", name);
                     ret.Add(existingNetwork);
                 }
             }
@@ -66,31 +81,35 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         private async Task<NetworkResponse?> CreateDefaultNetworkAsync(DockerComposePlan plan, CancellationToken cancellationToken)
         {
-            var defaultNetworkName = plan.name + "_default";
-            _logger.LogInformation("Creating default network: {NetworkName}", defaultNetworkName);
-            var existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken);
-            if (existingNetwork is null)
+            if (plan.networks is null || plan.networks.Count == 0)
             {
-                _logger.LogDebug("No existing network with name {NetworkName} was found, creating a new one..", defaultNetworkName);
-                await _docker.CreateNetworkAsync(new NetworksCreateParameters
+                var defaultNetworkName = plan.name + "_default";
+                _logger.LogInformation("Creating default network: {NetworkName}", defaultNetworkName);
+                var existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken);
+                if (existingNetwork is null)
                 {
-                    Name = defaultNetworkName,
-                    Driver = "bridge",
-                    Labels = new Dictionary<string,string>
+                    _logger.LogDebug("No existing network with name {NetworkName} was found, creating a new one..", defaultNetworkName);
+                    await _docker.CreateNetworkAsync(new NetworksCreateParameters
                     {
-                        [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
-                    }
-                }, cancellationToken);
+                        Name = defaultNetworkName,
+                        Driver = "bridge",
+                        Labels = new Dictionary<string, string>
+                        {
+                            [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
+                        }
+                    }, cancellationToken);
 
-                existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken) 
-                    ?? throw new Exception("Failed to find default network after creating it");
-            }
-            else
-            {
-                _logger.LogWarning("An existing network with name {NetworkName} was already found..", defaultNetworkName);
-            }
+                    existingNetwork = await FindProjectNetwork(plan, defaultNetworkName, cancellationToken)
+                        ?? throw new Exception("Failed to find default network after creating it");
+                }
+                else
+                {
+                    _logger.LogWarning("An existing network with name {NetworkName} was already found..", defaultNetworkName);
+                }
 
-            return existingNetwork;
+                return existingNetwork;
+            }
+            return null;
         }
 
         private async Task DeleteNetworksAsync(IProgress<string> progress, DockerComposePlan plan, CancellationToken cancellationToken)

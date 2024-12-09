@@ -181,6 +181,45 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
+                    Category = "Monitoring",
+                    Name = "Aspire",
+                    IconUrl = "/brands/aspire.png",
+                    CreateIngress = true,
+                    ApplicationProtocol = "http",
+                    DefaultDomainPrefix = "aspire",
+                    UseApiPort = true,
+                    Resource = new ResourceCreationOptions
+                    {
+                        Kind = ResourceKind.OtlpServer,
+                        Create = true,
+                        Exported = ["OTEL_EXPORTER_OTLP_HEADERS", "OTEL_EXPORTER_OTLP_ENDPOINT", "OTEL_EXPORTER_OTLP_PROTOCOL", "OTEL_EXPORTER_API_KEY"]
+                    },
+                    Plan = """
+                    services:
+                      aspire:
+                        image: mcr.microsoft.com/dotnet/aspire-dashboard:9.0
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        restart: unless-stopped
+                        environment:
+                          OTEL_EXPORTER_OTLP_PROTOCOL: grpc
+                          OTEL_EXPORTER_OTLP_ENDPOINT: http://${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_API_PORT}
+                          OTEL_EXPORTER_OTLP_HEADERS: x-otlp-api-key=${OTEL_EXPORTER_API_KEY}
+                          OTEL_EXPORTER_API_KEY: ${OTEL_EXPORTER_API_KEY}
+                          DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS: true
+                          DASHBOARD__TELEMETRYLIMITS__MAXLOGCOUNT='1000'
+                          DASHBOARD__TELEMETRYLIMITS__MAXTRACECOUNT='1000'
+                          DASHBOARD__TELEMETRYLIMITS__MAXMETRICSCOUNT='1000'
+                          DOTNET_DASHBOARD_OTLP_ENDPOINT_URL: http://0.0.0.0:18889
+                        ports:
+                        - target: 18888
+                          published: ${REDMAPLE_APP_PORT}
+                        - target: 18889
+                          published: ${REDMAPLE_API_PORT}
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
                     Category = "AI",
                     Name = "Ollama GPU",
                     IconUrl = "/apps.png",
@@ -281,7 +320,61 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
                 new DeploymentPlanTemplate
                 {
-                    Category = "Services",
+                    Category = "Monitoring",
+                    Name = "Loki",
+                    Description = "Loki is a log aggregation system designed to store and query logs from all your applications and infrastructure",
+                    IconUrl = "/brands/grafana.png",
+                    ApplicationProtocol = "http",
+                    HealthChecks = new()
+                    {
+                    },
+                    Plan = """
+                    services:
+                      grafana:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "grafana/loki:latest"
+                        restart: unless-stopped
+                        volumes:
+                        - ./grafana:/etc/grafana/provisioning/datasources
+                        ports:
+                        - target: 3100
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
+                    Category = "Monitoring",
+                    Name = "Grafana",
+                    IconUrl = "/brands/grafana.png",
+                    ApplicationProtocol = "http",
+                    HealthChecks = new()
+                    {
+                    },
+                    Plan = """
+                    services:
+                      grafana:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "grafana/grafana-oss:latest"
+                        restart: unless-stopped
+                        volumes:
+                        - ./grafana:/etc/grafana/provisioning/datasources
+                        ports:
+                        - target: 3000
+                          published: ${REDMAPLE_APP_PORT}
+                        environment:
+                        - GF_PATHS_PROVISIONING=/etc/grafana/provisioning
+                        - GF_AUTH_ANONYMOUS_ENABLED=true
+                        - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
+                        - GF_FEATURE_TOGGLES_ENABLE=alertingSimplifiedRouting,alertingQueryAndExpressionsStepMode
+                    volumes:
+                      grafana:
+                    """
+                },
+
+                new DeploymentPlanTemplate
+                {
+                    Category = "Monitoring",
                     Name = "Prometheus",
                     IconUrl = "/brands/prometheus.png",
                     ApplicationProtocol = "http",
@@ -655,9 +748,13 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
 
             new DeploymentPlanTemplate
             {
+                Resource = new ResourceCreationOptions
+                {
+                    Create = false
+                },
                 Category = "Apps",
                 Name = "wikijs",
-                IconUrl = "https://elest.io/images/softwares/58/logo.png",
+                IconUrl = "/brands/wikijs.png",
                 ApplicationProtocol = "http",
                 Plan = """
                 services:
@@ -683,7 +780,7 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
             {
                 Category = "Networking",
                 Name = "unifi",
-                IconUrl = "/brands/unifi.webp",
+                IconUrl = "/brands/unifi.png",
                 ApplicationProtocol = "https",
                 HealthChecks = new()
                 {

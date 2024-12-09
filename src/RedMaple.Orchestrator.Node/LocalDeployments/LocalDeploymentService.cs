@@ -46,16 +46,23 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             // Validate it
 
             // Generate up/down scripts
-            await SaveHttpsCertificateAsync(plan, progress);
+            await SaveCertificateAsync(plan, progress);
             await GenerateScriptsAsync(plan, progress);
         }
 
-        private async Task SaveHttpsCertificateAsync(AddNodeDeploymentRequest plan, IProgress<string> progress)
+        private async Task SaveCertificateAsync(AddNodeDeploymentRequest plan, IProgress<string> progress)
         {
             progress.Report("Writing certificates..");
             var dir = GetLocalConfigDir(plan.Slug);
-            var path = Path.Combine(dir, "https.pfx");
-            await File.WriteAllBytesAsync(path, plan.HttpsCertificatePfx);
+            var httpsPfxPath = Path.Combine(dir, "https.pfx");
+            await File.WriteAllBytesAsync(httpsPfxPath, plan.HttpsCertificatePfx);
+
+            if (plan.CaCertificatePem is not null && plan.CaCertificatePem.Length > 0)
+            {
+                var caPemPath = Path.Combine(dir, "ca.pem");
+                await File.WriteAllBytesAsync(caPemPath, plan.CaCertificatePem);
+                plan.EnvironmentVariables["REDMAPLE_APP_CA_CERTIFICATE_HOST_PATH"] = caPemPath;
+            }
 
             if (plan.HttpsCertificatePemKey is not null && plan.HttpsCertificatePemKey.Length > 0)
             {
@@ -71,7 +78,7 @@ namespace RedMaple.Orchestrator.Node.LocalDeployments
             }
 
             // Change the environment variable
-            plan.EnvironmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = path;
+            plan.EnvironmentVariables["REDMAPLE_APP_HTTPS_CERTIFICATE_HOST_PATH"] = httpsPfxPath;
         }
 
         private async Task GenerateScriptsAsync(AddNodeDeploymentRequest plan, IProgress<string> progress)
