@@ -399,7 +399,7 @@
                 Kind = model.Kind,
 
                 CreateIngress = model.CreateIngress,
-                ReverseProxy = model.ReverseProxy,
+                ReverseProxy = model.ReverseProxy ?? new(),
 
                 CreateDnsEntry = true,
                 OnlyRegionDnsEntry = model.IsRegional,
@@ -531,7 +531,7 @@
 
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
-        model.ReverseProxy = template.ReverseProxy;
+        model.ReverseProxy = template.ReverseProxy ?? new();
 
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
