@@ -38,6 +38,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IClusterService, ClusterService>();
             services.AddSingleton<IClusterResourceManager, ClusterResourceManager>();
             services.AddSingleton<IInfraResourceManager, InfraResourceManager>();
+            services.AddSingleton<ISecretsManager, SecretsManager>();
 
             services.AddSingleton<ContainerStatsCollectorManager>();
             services.AddSingleton<IContainerStatsCollectorManager>(x => x.GetRequiredService<ContainerStatsCollectorManager>());

@@ -12,7 +12,7 @@
     <MudItem Style="max-width: 1200px">
         <EditForm Model="@_template" OnValidSubmit="async () => await OnValidSubmitAsync()">            
 
-            <MudCard Class="pa-5 mt-5">
+            <MudCard Class="pa-3 mt-3">
                 <MudCardContent>
                     <MudStack>
 
@@ -123,11 +123,11 @@
     private ResourceKind?[] _resourceKinds = 
     [
         ResourceKind.API,
-    ResourceKind.ConnectionString,
-    ResourceKind.ApplicationService,
-    ResourceKind.MessageBroker,
-    ResourceKind.OidcServer,
-    ResourceKind.OtlpServer,
+        ResourceKind.ConnectionString,
+        ResourceKind.ApplicationService,
+        ResourceKind.MessageBroker,
+        ResourceKind.OidcServer,
+        ResourceKind.OtlpServer,
     ];
 
     private DeploymentPlanTemplate? _template = null;

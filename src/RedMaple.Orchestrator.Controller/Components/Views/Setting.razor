@@ -4,7 +4,7 @@
         <MudText Typo="Typo.body1" Style="font-weight: bold; font-size: 10pt">@Title</MudText>
         <MudText Typo="Typo.subtitle1">@SubTitle</MudText>
     </div>
-    <div style="min-width: 400px; display: flex; justify-content: flex-end">
+    <div style="min-width: 400px; max-width: 100%; display: flex;  word-wrap: break-word; justify-content: flex-end; flex-wrap: wrap; white-space: pre-wrap; overflow: auto">
         @if (ChildContent is not null)
         {
             @ChildContent

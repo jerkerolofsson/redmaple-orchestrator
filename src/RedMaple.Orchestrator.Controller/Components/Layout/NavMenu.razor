@@ -17,6 +17,7 @@
         <MudNavLink Href="/deployments"><i class="fa fa-folder-tree" /> Deployments</MudNavLink>
 
         <MudNavGroup Title="Resources">
+            <MudNavLink Href="/secrets"><i class="fa fa-user-secret" /> Secrets</MudNavLink>
             <MudNavLink Href="/infra-resources"><i class="fa fa-server" /> Infra Resources</MudNavLink>
             <MudNavLink Href="/resources/all"><i class="fa fa-database" /> Browse Resources</MudNavLink>
             <MudNavLink Href="/resources/idp"><i class="fa fa-address-card" /> Identity Providers</MudNavLink>
@@ -33,7 +34,7 @@
 
             @foreach (var node in _nodes)
             {
-                <MudNavGroup Title="@node.IpAddress" Expanded="true">
+                <MudNavGroup Title="@node.Name" Expanded="false">
                     <MudNavLink Href="@GetNodeContainersLink(node)"><i class="fa fa-box" /> Containers</MudNavLink>
                     @if(node.IsIngressEnabled)
                     {

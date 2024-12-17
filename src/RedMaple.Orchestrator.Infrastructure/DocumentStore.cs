@@ -10,6 +10,28 @@ namespace RedMaple.Orchestrator.Infrastructure
 
         protected abstract string SaveFilePath { get; }
 
+        protected async Task<T?> FindAsync(Predicate<T> predicate)
+        {
+            await _semaphore.WaitAsync();
+
+            try
+            {
+                if (_items is null)
+                {
+                    await LoadAsync();
+                }
+                if (_items is not null)
+                {
+                    return _items.Find(predicate);
+                }
+                return default;
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+        }
+
         protected async Task<List<T>> LoadAsync()
         {
             await _semaphore.WaitAsync();

@@ -412,7 +412,7 @@
                 Kind = model.Kind,
 
                 CreateIngress = model.CreateIngress,
-                ReverseProxy = model.ReverseProxy,
+                ReverseProxy = model.ReverseProxy ?? new(),
 
                 CreateDnsEntry = true,
                 OnlyRegionDnsEntry = model.IsRegional,
