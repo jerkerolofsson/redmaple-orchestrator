@@ -1,6 +1,4 @@
-﻿<h3>HealthChecksEditor</h3>
-
-@if(Checks is not null)
+﻿@if(Checks is not null)
 {
 
     <MudDataGrid Bordered="true"
@@ -54,7 +52,9 @@
 
     </MudDataGrid>
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Add">Add</MudButton>
+    <MudStack Row="true">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="Add">Add</MudButton>
+    </MudStack>
 }
 
 @code {

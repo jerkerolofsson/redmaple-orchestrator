@@ -1,4 +1,6 @@
 ﻿using RedMaple.Orchestrator.Contracts.Healthz;
+using RedMaple.Orchestrator.Contracts.Ingress;
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -54,6 +56,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// If true, an API port will be allocated
         /// </summary>
         public bool UseApiPort { get; set; }
+
+        /// <summary>
+        /// Settings for the reverse proxy
+        /// </summary>
+        public ReverseProxySettings? ReverseProxy { get; set; }
 
         /// <summary>
         /// Format depends on kind

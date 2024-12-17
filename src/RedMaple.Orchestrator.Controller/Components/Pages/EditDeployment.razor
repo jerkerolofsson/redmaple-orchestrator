@@ -19,102 +19,104 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudText Typo="Typo.h3">Edit @Slug</MudText>
-
 @if(_plan is not null)
 {
-    <EditForm Model="@_plan" OnValidSubmit="async () => await OnValidSubmitAsync()">
-        <DataAnnotationsValidator />
-        <MudStack Spacing="5">
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudStack Spacing="0">
-                        <MudText Typo="Typo.h6">Deployment</MudText>
-                        <MudText Typo="Typo.subtitle2">Changes to the deployment properties will take effect when the deployment is restarted</MudText>
-                    </MudStack>
-
-                    <MudStack Spacing="0">
-                        <MudText>Deployment Name</MudText>
-                        <MudTextField @bind-Value="_plan.Name" />
-                    </MudStack>
-
-                    @if(_plan.CreateIngress)
-                    {
+    <MudItem Style="max-width: 1200px">
+        <EditForm Model="@_plan" OnValidSubmit="async () => await OnValidSubmitAsync()">
+            <DataAnnotationsValidator />
+            <MudStack Spacing="5">
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
                         <MudStack Spacing="0">
-                            <MudText>Ingress Node</MudText>
-                            <SelectNode MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+                            <MudText Typo="Typo.h6" Color="Color.Secondary">Deployment</MudText>
+                            <MudText Typo="Typo.subtitle2">Changes to the deployment properties will take effect when the deployment is restarted</MudText>
                         </MudStack>
-                    }
 
-                    <MudStack Spacing="0">
-                        <MudText>Application Node</MudText>
-                        <SelectNode MustBeApplicationHost="true" Value="@_applicationNode" ValueChanged="OnApplicationNodeChanged" Label="" />
+                        <Setting Title="Name"><MudTextField @bind-Value="_plan.Name" /></Setting>
+                        <Setting Title="Category"><MudTextField @bind-Value="_plan.Category" /></Setting>
+                        <Setting Title="Icon"><MudTextField @bind-Value="_plan.IconUrl" /></Setting>
+
+                        <Setting Title="Application Server">
+                            <SelectNode MustBeApplicationHost="true" Value="@_applicationNode" ValueChanged="OnApplicationNodeChanged" Label="" />
+                        </Setting>
+                        <Setting Title="Region"><SelectRegion Region="@_plan.Region" RegionChanged="OnRegionChangedAsync" /></Setting>
                     </MudStack>
+                </MudPaper>
 
-                    <MudStack Spacing="0">
-                        <MudText>Region</MudText>
-                        <MudStack Row="true">
-                            <SelectRegion Region="@_plan.Region" RegionChanged="OnRegionChangedAsync"/>
+                @if(_plan.ReverseProxy is not null && _plan.CreateIngress)
+                {
+                    <MudPaper Class="pa-3">
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.h6" Color="Color.Secondary">Ingress</MudText>
+
+                            <Setting Title="Server">
+                                <SelectNode MustBeIngress="true" Value="@_ingressNode" ValueChanged="OnIngressNodeChanged" Label="" />
+                            </Setting>
+
+                            <Setting Title="HTTP2">
+                                <MudSwitchM3 Color="Color.Primary" @bind-Value="_plan.ReverseProxy.EnableHttp2" />
+                            </Setting>
+                            <Setting Title="Proxy Buffering">
+                                <MudSwitchM3 Color="Color.Primary" @bind-Value="_plan.ReverseProxy.Buffering" />
+                            </Setting>
                         </MudStack>
+                    </MudPaper>
+                }
+
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Health Checks</MudText>
+                        <HealthChecksEditor @bind-Checks="@_plan.HealthChecks"/>
                     </MudStack>
-                </MudStack>
-            </MudPaper>
+                </MudPaper>
 
-            
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Health Checks</MudText>
-                    <HealthChecksEditor @bind-Checks="@_plan.HealthChecks"/>
-                </MudStack>
-            </MudPaper>
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Metadata</MudText>
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Resource</MudText>
 
-                    <MudStack  Spacing="0">
-                        <MudText>Category</MudText>
-                        <MudTextField @bind-Value="_plan.Category" />
+                        <Setting Title="Create Resource" SubTitle="If enabled a resource will be created">
+                            <MudSwitchM3 Color="Color.Secondary" @bind-Value="_plan.Resource.Create" />
+                        </Setting>
+
+                        @if (_plan.Resource.Create)
+                        {
+                            <Setting Title="Service Name">
+                                <MudTextField @bind-Value="_plan.Resource.ServiceName" />
+                            </Setting>
+
+                            <Setting Title="Kind">
+                                <MudSelectExtended @bind-Value="_plan.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
+                            </Setting>
+                            <Setting Title="Connection String Format">
+                                <MudTextField @bind-Value="_plan.Resource.ConnectionStringFormat" />
+                            </Setting>
+                            <Setting Title="Connection String Variable Name Format">
+                                <MudTextField @bind-Value="_plan.Resource.ConnectionStringVariableNameFormat" />
+                            </Setting>
+                        }
                     </MudStack>
+                </MudPaper>
 
-                    <MudStack  Spacing="0">
-                        <MudText>Icon</MudText>
-                        <MudTextField @bind-Value="_plan.IconUrl" />
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Docker Compose</MudText>
+                        <DockerComposeEditor @bind-Value="_plan.Plan" />
                     </MudStack>
+                </MudPaper>
+
+                <MudPaper Class="pa-3">
+                    <MudStack Spacing="3">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Environment Variables</MudText>
+                        <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />
+
+                    </MudStack>
+                </MudPaper>
+                <MudStack Row="true">
+                    <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Variant="Variant.Filled">Save</MudButton>
                 </MudStack>
-            </MudPaper>
-
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Resource</MudText>
-
-                    <MudSwitchM3 Color="Color.Secondary" Label="Create Resource" @bind-Value="_plan.Resource.Create" />
-                    <MudTextField Label="Service Name" @bind-Value="_plan.Resource.ServiceName" />
-                    <MudSelectExtended Label="Kind" @bind-Value="_plan.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
-
-                    <MudTextField Label="Connection String Format" @bind-Value="_plan.Resource.ConnectionStringFormat" />
-                    <MudTextField Label="Connection String Variable Name Format" @bind-Value="_plan.Resource.ConnectionStringVariableNameFormat" />
-                </MudStack>
-            </MudPaper>
-
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Docker Compose</MudText>
-                    <DockerComposeEditor @bind-Value="_plan.Plan" />
-                </MudStack>
-            </MudPaper>
-
-            <MudPaper Class="pa-3">
-                <MudStack Spacing="3">
-                    <MudText Typo="Typo.h6">Environment Variables</MudText>
-                    <EnvironmentVariableEditor EnvironmentVariables="@_plan.EnvironmentVariables" />
-
-                </MudStack>
-            </MudPaper>
-            <MudStack Row="true">
-                <MudButton Color="Color.Primary" ButtonType="ButtonType.Submit" Variant="Variant.Filled">Save</MudButton>
             </MudStack>
-        </MudStack>
-    </EditForm>
+        </EditForm>
+    </MudItem>
 }
 
 @code {
@@ -192,6 +194,8 @@
         }
         else 
         {
+            _plan.ReverseProxy ??= new();
+
             if (_plan.ApplicationServerIps.Count > 0)
             {
                 _applicationNode = await nodeManager.GetNodeByIpAddressAsync(_plan.ApplicationServerIps[0]);

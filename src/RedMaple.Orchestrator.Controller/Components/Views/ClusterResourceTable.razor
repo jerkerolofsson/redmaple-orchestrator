@@ -1,4 +1,5 @@
 ﻿@inject IClusterResourceManager resourceManager
+@inject NavigationManager navigationManager
 
 <ProgressView Visible="_loading" @ref="_progress" />
 @if (_error is not null)
@@ -13,6 +14,8 @@ else if (!_loading)
     </MudStack>
     <MudDataGrid Bordered="true" Dense="true" Hover="true"
     EditMode="DataGridEditMode.Cell"
+    T="ClusterResource"
+                 RowClick="e => OnRowClicked(e.Item)"
     Items="@_filteredResources"
     SortMode="SortMode.Multiple">
 
@@ -26,7 +29,7 @@ else if (!_loading)
         </ToolBarContent>
 
         <Columns>
-            <TemplateColumn Title="Region" HeaderStyle="width: 10px">
+            <TemplateColumn Title="Region" HeaderStyle="width: 10px" Sortable="true" SortBy="x => x.ResourceRegion">
                 <HeaderTemplate>
                     <i class="fa fa-globe"/>
                 </HeaderTemplate>
@@ -38,7 +41,7 @@ else if (!_loading)
                 </CellTemplate>
             </TemplateColumn>
 
-            <TemplateColumn Title="Name">
+            <TemplateColumn Title="Name" Sortable="true" SortBy="x => x.Name">
 
                 <CellTemplate>
                     @{
@@ -106,6 +109,11 @@ else if (!_loading)
     {
         _region = region;
         await LoadResourcesAsync();
+    }
+
+    private void OnRowClicked(ClusterResource resource)
+    {
+        navigationManager.NavigateTo($"/resources/resource/{resource.Id}", true);
     }
 
 

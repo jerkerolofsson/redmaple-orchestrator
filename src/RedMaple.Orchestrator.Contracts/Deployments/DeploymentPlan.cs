@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using RedMaple.Orchestrator.Contracts.Healthz;
+using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Controller.Domain.Healthz.Models;
 using System;
 using System.Collections.Generic;
@@ -115,6 +116,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         /// If true, ingress server will be created
         /// </summary>
         public bool CreateIngress { get; set; }
+
+        /// <summary>
+        /// Settings for the reverse proxy
+        /// </summary>
+        public ReverseProxySettings? ReverseProxy { get; set; }
 
         /// <summary>
         /// HTTPS certificate for the application server in PFX format

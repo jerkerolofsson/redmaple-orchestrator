@@ -1,0 +1,27 @@
+﻿.templates {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.template {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    gap: 0.5rem;
+
+    font-weight: 600;
+
+    width: 10rem;
+    cursor: pointer;
+}
+
+ ::deep .hover-elevation:hover {
+        box-shadow: var(--mud-elevation-5)
+    }
+
+.template img {
+    width: 4rem;
+    height: 4rem;
+}

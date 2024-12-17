@@ -1,6 +1,7 @@
 ﻿using RedMaple.Orchestrator.Contracts;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Controller.Domain.Cluster;
+using RedMaple.Orchestrator.Controller.Domain.Cluster.Infra;
 using RedMaple.Orchestrator.Controller.Domain.Cluster.Resources;
 using RedMaple.Orchestrator.Controller.Domain.Deployments;
 using RedMaple.Orchestrator.Controller.Domain.Deployments.State;
@@ -36,6 +37,7 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IHealthzChecker, HealthzChecker>();
             services.AddSingleton<IClusterService, ClusterService>();
             services.AddSingleton<IClusterResourceManager, ClusterResourceManager>();
+            services.AddSingleton<IInfraResourceManager, InfraResourceManager>();
 
             services.AddSingleton<ContainerStatsCollectorManager>();
             services.AddSingleton<IContainerStatsCollectorManager>(x => x.GetRequiredService<ContainerStatsCollectorManager>());

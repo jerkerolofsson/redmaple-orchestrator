@@ -38,27 +38,28 @@
         return null;
     }
 
-    private async Task AddOidcServerAsync()
-    {
-        var name = await EnterNameAsync();
-        if (name is not null)
-        {
-            var resource = new ClusterResource
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = name,
-                    Persist = true,
-                    Slug = SlugGenerator.Generate(name),
-                    Kind = ResourceKind.OidcServer,
-                    EnvironmentVariables = new Dictionary<string, string>
-                    {
-                        ["OIDC_AUTHORITY"] = "https://identityserver"
-                    }
-                };
-            await resourceManager.AddResourceAsync(resource);
-            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
-        }
-    }
+
+    // private async Task AddOidcServerAsync()
+    // {
+    //     var name = await EnterNameAsync();
+    //     if (name is not null)
+    //     {
+    //         var resource = new ClusterResource
+    //             {
+    //                 Id = Guid.NewGuid().ToString(),
+    //                 Name = name,
+    //                 Persist = true,
+    //                 Slug = SlugGenerator.Generate(name),
+    //                 Kind = ResourceKind.OidcServer,
+    //                 EnvironmentVariables = new Dictionary<string, string>
+    //                 {
+    //                     ["OIDC_AUTHORITY"] = "https:identityserver"
+    //                 }
+    //             };
+    //         await resourceManager.AddResourceAsync(resource);
+    //         navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+    //     }
+    // }
 
     private async Task AddAppServiceAsync()
     {
@@ -115,25 +116,25 @@
         }
     }
 
-    private async Task AddConnectionStringAsync()
-    {
-        var name = await EnterNameAsync();
-        if (name is not null)
-        {
-            var resource = new ClusterResource
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = name,
-                    Slug = SlugGenerator.Generate(name),
-                    Persist = true,
-                    Kind = ResourceKind.ConnectionString,
-                    EnvironmentVariables = new Dictionary<string, string>
-                    {
-                        ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
-                    }
-                };
-            await resourceManager.AddResourceAsync(resource);
-            navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
-        }
-    }
+    // private async Task AddConnectionStringAsync()
+    // {
+    //     var name = await EnterNameAsync();
+    //     if (name is not null)
+    //     {
+    //         var resource = new ClusterResource
+    //             {
+    //                 Id = Guid.NewGuid().ToString(),
+    //                 Name = name,
+    //                 Slug = SlugGenerator.Generate(name),
+    //                 Persist = true,
+    //                 Kind = ResourceKind.ConnectionString,
+    //                 EnvironmentVariables = new Dictionary<string, string>
+    //                 {
+    //                     ["ConnectionStrings__resourcename"] = "Server=127.0.0.1;User ID=admin;Password=password"
+    //                 }
+    //             };
+    //         await resourceManager.AddResourceAsync(resource);
+    //         navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
+    //     }
+    // }
 }

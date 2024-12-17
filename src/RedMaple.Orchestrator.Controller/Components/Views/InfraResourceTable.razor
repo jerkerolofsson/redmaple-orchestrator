@@ -1,0 +1,120 @@
+﻿@using RedMaple.Orchestrator.Contracts.Infra
+@using RedMaple.Orchestrator.Controller.Domain.Cluster.Infra
+@inject IInfraResourceManager resourceManager
+@inject NavigationManager navigationManager
+
+<ProgressView Visible="_loading" @ref="_progress" />
+@if (_error is not null)
+{
+    <MudAlert Severity="Severity.Error">@_error</MudAlert>
+}
+else if (!_loading)
+{
+    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
+        <MudSpacer />
+        <SelectRegion Region="@_region" RegionChanged="OnRegionChangedAsync" Regions="@_regions" />
+    </MudStack>
+    <MudDataGrid 
+    Bordered="true" Dense="true" Hover="true"
+    T="InfraResource"
+    RowClick="e => OnRowClicked(e.Item)"
+    EditMode="DataGridEditMode.Cell"
+    Items="@_filteredResources"
+    SortMode="SortMode.Multiple">
+
+        <ToolBarContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Style="width: 100%">
+                <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="async () => await AddAsync()" />
+                <MudText Typo="Typo.h6">@Title</MudText>
+                <MudSpacer />
+                <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+            </MudStack>
+        </ToolBarContent>
+
+        <Columns>
+            <TemplateColumn Title="Region" HeaderStyle="width: 10px" Sortable="true" SortBy="x => x.Region">
+                <HeaderTemplate>
+                    <i class="fa fa-globe"/>
+                </HeaderTemplate>
+                <CellTemplate>
+                    @if (!string.IsNullOrEmpty(context.Item.Region))
+                    {
+                        <MudChip Color="Color.Secondary" Variant="Variant.Outlined" Size="Size.Small">@context.Item.Region</MudChip>
+                    }
+                </CellTemplate>
+            </TemplateColumn>
+
+            <PropertyColumn Title="Category" Property="x => x.Category" />
+            <PropertyColumn Title="Type" Property="x => x.Type" />
+            <PropertyColumn Title="Name" Property="x => x.Name" />
+
+            <PropertyColumn Title="IP" Property="x => x.IpAddress"/>
+            <PropertyColumn Title="Operating System" Property="x => x.OperatingSystem" />
+        </Columns>
+    </MudDataGrid>
+}
+@code {
+    private ProgressView _progress = null!;
+
+    private List<InfraResource> _resources = new();
+    private List<InfraResource> _filteredResources = new();
+    private bool _loading = false;
+    private string? _error = null;
+    private string[]? _regions = null;
+    private string? _region = null;
+    private string? _searchString;
+
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public EventCallback AddClicked { get; set; }
+
+    private void OnRowClicked(InfraResource resource)
+    {
+        navigationManager.NavigateTo($"/infra-resources/{resource.Id}", true);
+    }
+
+    private async Task AddAsync()
+    {
+        await AddClicked.InvokeAsync();
+    }
+
+    private async Task OnRegionChangedAsync(string? region)
+    {
+        _region = region;
+        await LoadResourcesAsync();
+    }
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadResourcesAsync();
+    }
+
+    private async Task LoadResourcesAsync()
+    {
+        var resources = (await resourceManager.GetInfraResourcesAsync()).OrderBy(x => x.Name).AsEnumerable();
+
+        if (_regions is null)
+        {
+            _regions = ["Global", .. resources.Where(x => x.Region != null).Select(x => x.Region!).OrderBy(x => x).Distinct().ToArray()];
+        }
+
+        if (_region is not null)
+        {
+            resources = resources.Where(x => x.Region == _region);
+        }
+        _resources = resources.ToList();
+
+        _filteredResources = _resources;
+        if (_searchString is not null)
+        {
+            await OnSearch(_searchString);
+        }
+    }
+
+    private Task OnSearch(string text)
+    {
+        _searchString = text;
+        _filteredResources = _resources.Where(x => x.Name.Contains(_searchString, StringComparison.InvariantCultureIgnoreCase)).OrderBy(x => x.Name).ToList();
+        return Task.CompletedTask;
+    }
+}

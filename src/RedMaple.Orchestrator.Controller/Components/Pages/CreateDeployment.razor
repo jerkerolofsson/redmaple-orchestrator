@@ -43,7 +43,7 @@
 
         @if (_wizardPage == Pages.SelectTemplate)
         {
-            <MudText Typo="Typo.h6">Select template</MudText>
+            <MudText Typo="Typo.h6" Color="Color.Secondary">Select template</MudText>
 
             <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" PanelClass="pa-6">
                 @foreach (var category in _categories)
@@ -68,13 +68,15 @@
         {
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6">Define deployment</MudText>
-
-                    <MudTextField Label="Deployment Name" Class="mt-5"
-                    @bind-Value="model.Name" For="@(() => model.Name)" />
-
-                    <MudTextField Label="Domain Name" Class="mt-5"
-                    @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                    <MudStack>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Define deployment</MudText>
+                        <Setting Title="Deployment Name">
+                            <MudTextField @bind-Value="model.Name" For="@(() => model.Name)" />
+                        </Setting>
+                        <Setting Title="Domain Name">
+                            <MudTextField @bind-Value="model.DomainName" For="@(() => model.DomainName)" />
+                        </Setting>
+                    </MudStack>
                 </MudCardContent>
             </MudCard>
         }
@@ -82,7 +84,7 @@
         {
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6">@model.Kind</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">@model.Kind</MudText>
                     <DockerComposeEditor @bind-Value="model.Plan" />
                 </MudCardContent>
             </MudCard>
@@ -91,55 +93,60 @@
         {
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
+                    <MudStack>
 
-                    <MudStack Row="true" AlignItems="AlignItems.Center">
-                        <MudText Typo="Typo.h6">Ingress Server</MudText>
-                        <MudSpacer />
-                        <MudSwitchM3 Color="Color.Primary" Class="mt-5" @bind-Value="model.CreateIngress"></MudSwitchM3>
-                    </MudStack>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Ingress</MudText>
 
-                    @if (model.CreateIngress)
-                    {
-                        <MudStack Spacing="1">
+                        <Setting Title="Ingress Server" SubTitle="Domain will be mapped to this server and a reverse-proxy will be created that forwards requests to the application server">
+                            <MudSwitchM3 Color="Color.Primary" @bind-Value="model.CreateIngress"></MudSwitchM3>
+                        </Setting>
+                        
+                        @if (model.CreateIngress)
+                        {
+                            <Setting Title="Ingress Server">
+                                <SelectNode Region="@model.Region" MustBeIngress="true" @bind-Value="model.IngressNode" Label="" />
+                            </Setting>
 
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudText>Regional Deployment</MudText>
-                                <MudSpacer />
+                            @if(model.ReverseProxy is not null)
+                            {
+                                <Setting Title="HTTP2" SubTitle="Enable HTTP2 between ingress and application server">
+                                    <MudSwitchM3 Color="Color.Primary" @bind-Value="model.ReverseProxy.EnableHttp2" />
+                                </Setting>
+
+                                <Setting Title="Proxy Buffering">
+                                    <MudSwitchM3 Color="Color.Primary" @bind-Value="model.ReverseProxy.Buffering" />
+                                </Setting>
+                            }
+
+                            <Setting Title="Regional Deployment">
+                                <MudSpacer/>
                                 <SelectRegion Region="@model.Region" RegionChanged="OnRegionChanged" />
-                            </MudStack>
+                            </Setting>
+
                             @if (model.IsRegional)
                             {
                                 <MudText Typo="Typo.subtitle1">DNS entry for the ingress will only be created in the specific region: @model.Region</MudText>
                                 <MudAlert Severity="Severity.Warning">Selecting a region makes the service only accessible from the specified region</MudAlert>
                             }
-
-                            <MudStack Row="true" AlignItems="AlignItems.Center">
-                                <MudText>Ingress Node</MudText>
-                                <MudSpacer />
-                                <MudItem Style="width: 300px">
-                                    <SelectNode Region="@model.Region" MustBeIngress="true" @bind-Value="model.IngressNode" Label="Ingress Server" />
-                                </MudItem>
-                            </MudStack>
-
-
-                        </MudStack>
-                    }
-
+                        }
+                    </MudStack>
                 </MudCardContent>
             </MudCard>
 
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6">Application Server</MudText>
-                    <MudText Typo="Typo.subtitle1">Containers will be deployed here</MudText>
-                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
-                        <SelectNode Region="@model.Region" MustBeApplicationHost="true" @bind-Value="model.ApplicationNode" Label="Application Server" />
-                    </MudItem>
+                    <MudStack>
 
-                    <MudItem xs="12" sm="6" md="4" Class="mt-5">
-                        <MudTextField @bind-Value="model.ApplicationPort" Label="Host Port" />
-                    </MudItem>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">App Server</MudText>
 
+                        <Setting Title="Application Server" SubTitle="Containers will be deployed here">
+                            <SelectNode Label="" Region="@model.Region" MustBeApplicationHost="true" @bind-Value="model.ApplicationNode"/>
+                        </Setting>
+
+                        <Setting Title="Application Port">
+                            <MudTextField @bind-Value="model.ApplicationPort" />
+                        </Setting>
+                </MudStack>
                 </MudCardContent>
             </MudCard>
         }
@@ -148,11 +155,20 @@
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
 
-                    <MudText Typo="Typo.h6">Dependencies</MudText>
-                    <DependencyEditor @bind-Dependencies="@model.Resources" RemovedDependencies="@model.RemovedResources" EnvironmentVariables="@model.EnvironmentVariables" />
+                    <MudStack>
+                        @if(model.Resources?.Count > 0)
+                        {
+                            <MudStack Spacing="0">
+                                <MudText Typo="Typo.h6" Color="Color.Secondary">Dependencies</MudText>
+                                <DependencyEditor @bind-Dependencies="@model.Resources" RemovedDependencies="@model.RemovedResources" EnvironmentVariables="@model.EnvironmentVariables" />
+                            </MudStack>
+                        }
 
-                    <MudText Typo="Typo.h6" Class="mt-5">Volumes</MudText>
-                    <VolumesEditor @bind-VolumeBinds="@model.VolumeBinds" />
+                        <MudStack Spacing="0">
+                            <MudText Typo="Typo.h6"Color="Color.Secondary">Volumes</MudText>
+                            <VolumesEditor @bind-VolumeBinds="@model.VolumeBinds" />
+                        </MudStack>
+                    </MudStack>
 
                 </MudCardContent>
             </MudCard>
@@ -161,7 +177,7 @@
         {
             <MudCard Class="pa-5 mt-5">
                 <MudCardContent>
-                    <MudText Typo="Typo.h6">Environment Variables</MudText>
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">Environment Variables</MudText>
                     <EnvironmentVariableEditor EnvironmentVariables="@model.EnvironmentVariables" />
                 </MudCardContent>
             </MudCard>
@@ -303,6 +319,11 @@
 
         public bool CreateIngress { get; set; }
 
+        /// <summary>
+        /// Settings for the reverse proxy
+        /// </summary>
+        public ReverseProxySettings? ReverseProxy { get; set; }
+
         public NodeInfo? IngressNode { get; set; }
 
         public int ApplicationPort { get; set; } = Random.Shared.Next(10000, 20000);
@@ -389,7 +410,10 @@
                 Plan = model.Plan ?? "",
                 DomainName = model.DomainName,
                 Kind = model.Kind,
+
                 CreateIngress = model.CreateIngress,
+                ReverseProxy = model.ReverseProxy,
+
                 CreateDnsEntry = true,
                 OnlyRegionDnsEntry = model.IsRegional,
                 Region = model.IsRegional ? model.Region : null,
@@ -523,6 +547,7 @@
         model.Name = template.Name;
         model.CreateIngress = template.CreateIngress;
         model.UseApiPort = template.UseApiPort;
+        model.ReverseProxy = template.ReverseProxy ?? new();
         model.IconUrl = template.IconUrl;
         model.ApplicationProtocol = template.ApplicationProtocol;
         model.HealthChecks = template.HealthChecks;

@@ -1,5 +1,6 @@
 ﻿using RedMaple.Orchestrator.Contracts.Deployments;
 using RedMaple.Orchestrator.Contracts.Dns;
+using RedMaple.Orchestrator.Contracts.Infra;
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Contracts.Node;
 using RedMaple.Orchestrator.Contracts.Resources;
@@ -23,7 +24,8 @@ namespace Microsoft.Extensions.DependencyInjection
             services.AddSingleton<IDeploymentPlanRepository, DeploymentPlanRepository>();
             services.AddSingleton<IDeploymentPlanTemplateRepository, DeploymentPlanTemplateRepository>();
             services.AddSingleton<IClusterResourceRepository, ClusterResourceRepository>();
-            
+            services.AddSingleton<IInfraRepository, InfraRepository>();
+
             return services;
         }
     }

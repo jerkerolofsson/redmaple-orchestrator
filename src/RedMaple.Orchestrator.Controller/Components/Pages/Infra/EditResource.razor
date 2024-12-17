@@ -1,0 +1,151 @@
+﻿@page "/infra-resources/{id}"
+@using RedMaple.Orchestrator.Contracts.Infra
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
+@using RedMaple.Orchestrator.Controller.Domain.Cluster.Infra
+@using RedMaple.Orchestrator.Utilities
+@rendermode InteractiveServer
+@inject IInfraResourceManager resourceManager
+@inject NavigationManager navigationManager
+@inject IDialogService dialogService
+
+<MudPopoverProvider />
+<MudDialogProvider />
+
+@if(model is not null)
+{
+    <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
+        <DataAnnotationsValidator />
+        <MudCard Class="pa-5 mt-5">
+            <MudItem>
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Name</MudText>
+                    <MudTextField @bind-Value="model.Name"
+                    For="@(() => model.Name)" />
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Category</MudText>
+                    <MudTextField @bind-Value="model.Category"
+                    For="@(() => model.Category)" />
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Operating System</MudText>
+                    <MudTextField @bind-Value="model.OperatingSystem"
+                    For="@(() => model.OperatingSystem)" />
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Type</MudText>
+                    <MudTextField @bind-Value="model.Type"
+                    For="@(() => model.Type)" />
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Username</MudText>
+                    <MudTextField @bind-Value="model.Username"
+                    For="@(() => model.Username)" />
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">Password</MudText>
+                    @if (_hasEnteredAdminPassword)
+                    {
+                        <MudTextField @bind-Value="model.Password" For="@(() => model.Password)" />
+                    } 
+                    else
+                    {
+                        <MudStack Row="true">
+                            <MudButton Color="Color.Warning" OnClick="EnterAdminPasswordAsync">Show</MudButton>
+                        </MudStack>
+                    }
+                </MudStack>
+
+                <MudStack Spacing="1">
+                    <MudText Typo="Typo.h6">IP</MudText>
+                    <MudTextField @bind-Value="model.IpAddress"
+                    For="@(() => model.IpAddress)" />
+                </MudStack>
+
+                <MudStack Spacing="1" Class="mt-3">
+                    <MudText Typo="Typo.h6">Region</MudText>
+                    <MudStack Row="true">
+                        <SelectRegion @bind-Region="model.Region" />
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudCard>
+
+        <MudStack Row="true" AlignItems="AlignItems.Start" Class="mt-5">
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+            <MudButton OnClick="async () => await DeleteAsync()"
+            ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
+        </MudStack>
+    </EditForm>
+}
+
+@code {
+    private InfraResource? model = null!;
+    private bool _hasEnteredAdminPassword = false;
+
+    [Parameter]
+    public string Id { get; set; } = null!;
+
+    private async Task EnterAdminPasswordAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterAdminPasswordDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is string password)
+        {
+            if (password == Environment.GetEnvironmentVariable("REDMAPLE_SECRET_PASSWORD"))
+            {
+                _hasEnteredAdminPassword = true;
+                this.StateHasChanged();
+            }
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if(model is not null && string.IsNullOrEmpty(model.Password))
+        {
+            _hasEnteredAdminPassword = true;
+        }
+        base.OnParametersSet();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        model = await resourceManager.GetInfraResourceAsync(Id);
+    }
+
+    private async Task OnValidSubmitAsync()
+    {
+        if (model is not null)
+        {
+            
+            await resourceManager.SaveResourceAsync(model);
+
+            navigationManager.NavigateTo("/infra-resources");
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (model is null)
+        {
+            return;
+        }
+        bool? result = await dialogService.ShowMessageBox(
+           "Confirm",
+           "Do you really want to delete the resource",
+           yesText: "Yeah", cancelText: "Cancel");
+        if (result == true)
+        {
+            await resourceManager.RemoveResourceAsync(model);
+
+            navigationManager.NavigateTo("/infra-resources");
+
+        }
+    }
+}

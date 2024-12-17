@@ -129,6 +129,22 @@ namespace RedMaple.Orchestrator.Ingress
                 File.WriteAllBytes(pemKeyName, service.PemKey);
                 File.WriteAllBytes(pemCertName, service.PemCert);
 
+                string listenProtocol = "ssl";
+                if(service.ReverseProxy?.EnableHttp2 == true)
+                {
+                    listenProtocol = "ssl http2";
+                }
+
+                string buffering = "";
+                if (service.ReverseProxy?.Buffering == false)
+                {
+                    buffering = "proxy_buffering off;";
+                }
+                else
+                {
+                    buffering = "proxy_buffering on;";
+                }
+
                 conf.AppendLine($$"""
                     
                     server {
@@ -137,7 +153,7 @@ namespace RedMaple.Orchestrator.Ingress
                         return 301 https://{{service.DomainName}}$request_uri;
                     }                    
                     server {
-                        listen {{service.IngressPort}} ssl;
+                        listen {{service.IngressPort}} {{listenProtocol}};
                         server_name {{service.DomainName}};
                         ssl_certificate /etc/nginx/conf.d/{{service.DomainName}}.crt;
                         ssl_certificate_key /etc/nginx/conf.d/{{service.DomainName}}.key;
@@ -145,7 +161,15 @@ namespace RedMaple.Orchestrator.Ingress
                     
                         location / {
                             proxy_pass {{service.Scheme}}://{{service.DestinationIp}}:{{service.DestinationPort}};
-
+                            
+                            proxy_read_timeout 1d;
+                            proxy_connect_timeout 4;
+                            proxy_send_timeout 1d;
+                            proxy_set_header Upgrade $http_upgrade;
+                            proxy_set_header Connection $http_connection;
+                            proxy_set_header X-Real-IP $remote_addr;
+                            {{buffering}}
+                    
                             include /etc/nginx/conf.d/common_location.conf;
                         }
                     }

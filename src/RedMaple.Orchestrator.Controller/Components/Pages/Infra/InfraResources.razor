@@ -1,0 +1,50 @@
+﻿@page "/infra-resources"
+@using RedMaple.Orchestrator.Contracts.Infra
+@using RedMaple.Orchestrator.Controller.Components.Dialogs
+@using RedMaple.Orchestrator.Controller.Domain.Cluster.Infra
+@using RedMaple.Orchestrator.Utilities
+@rendermode InteractiveServer
+@inject NavigationManager navigationManager
+@inject IInfraResourceManager resourceManager
+@inject IDialogService dialogService
+
+<MudThemeProvider IsDarkMode="true" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
+    <MudText Typo="Typo.h6">Infra</MudText>
+    <MudSpacer />
+</MudStack>
+
+<InfraResourceTable AddClicked="AddInfraResourceAsync" />
+
+@code {
+    private async Task<string?> EnterNameAsync()
+    {
+        var dialog = await dialogService.ShowAsync<EnterNameDialog>();
+        var result = await dialog.Result;
+        if (result?.Canceled == false && result.Data is not null)
+        {
+            return result.Data.ToString();
+        }
+        return null;
+    }
+
+    private async Task AddInfraResourceAsync()
+    {
+        var name = await EnterNameAsync();
+        if (name is not null)
+        {
+            var resource = new InfraResource
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = name,
+                    Category = "Servers"
+                };
+            await resourceManager.AddResourceAsync(resource);
+            navigationManager.NavigateTo($"/infra-resources/{resource.Id}");
+        }
+    }
+}

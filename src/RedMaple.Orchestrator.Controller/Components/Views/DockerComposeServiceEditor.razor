@@ -4,20 +4,28 @@
 @if(Service is not null)
 {
     <MudStack Spacing="2" Style="width: 60ch">
-        <MudTextField Value="@Service.image" Label="Image" T="string" ValueChanged="async (s) => await UpdateImageAsync(s)" />
-        <MudTextField Value="@Service.restart" Label="Restart" T="string" ValueChanged="async (s) => await UpdateRestartAsync(s)" />
 
-        @if (Service.dns is not null && Service.dns.Count > 0)
+        <Setting Title="Image">
+            <MudTextField Value="@Service.image" T="string" ValueChanged="async (s) => await UpdateImageAsync(s)" />
+        </Setting>
+
+        <Setting Title="Restart">
+            <MudTextField Value="@Service.restart" T="string" ValueChanged="async (s) => await UpdateRestartAsync(s)" />
+        </Setting>
+
+@*         @if (Service.dns is not null && Service.dns.Count > 0)
         {
-            <MudText Typo="Typo.h6">DNS</MudText>
             for (int i = 0; i < Service.dns.Count; i++)
             {
                 int index = i;
                 string label = $"DNS{(i + 1)}";
-                <MudTextField Value="@Service.dns[i]" Label="@label" T="string" ValueChanged="async (s) => await UpdateDnsAsync(index, s)" />
+                <Setting Title="@label">
+                    <MudTextField Value="@Service.dns[i]" T="string" ValueChanged="async (s) => await UpdateDnsAsync(index, s)" />
+                </Setting>
+                
             }
         }
-
+ *@
     </MudStack>
 }
 

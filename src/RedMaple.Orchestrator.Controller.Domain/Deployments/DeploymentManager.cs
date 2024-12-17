@@ -875,6 +875,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 {
                     Region = plan.Region,
                     IngressIp = plan.IngressServerIp,
+                    ReverseProxy = plan.ReverseProxy,
                     DomainName = plan.DomainName,
                     IngressPort = 443,
                     Scheme = plan.ApplicationProtocol,

@@ -9,43 +9,112 @@
 {
     <MudText Typo="Typo.h6">@Name</MudText>
 
-    <EditForm Model="@_template" OnValidSubmit="async () => await OnValidSubmitAsync()">            
+    <MudItem Style="max-width: 1200px">
+        <EditForm Model="@_template" OnValidSubmit="async () => await OnValidSubmitAsync()">            
 
-        <MudCard Class="pa-5 mt-5">
-            <MudCardContent>
-                <MudStack Spacing="2">
-                    <MudTextField Label="Category" @bind-Value="_template.Category" />
-                    <MudTextField Label="Description" @bind-Value="_template.Description" Lines="5" />
-                    <MudTextField Label="Icon" @bind-Value="_template.IconUrl" />
-                    <MudTextField Label="Application Protocol" @bind-Value="_template.ApplicationProtocol" />
-                    <MudTextField Label="Domain name prefix" @bind-Value="_template.DomainNamePrefix" />
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudStack>
 
-                    <MudSwitchM3 Label="Create Ingress" Color="Color.Primary" Class="mt-5" @bind-Value="_template.CreateIngress"></MudSwitchM3>
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">General</MudText>
 
-        <MudCard Class="pa-5 mt-5">
-            <MudCardContent>
-                <MudStack Spacing="2">
-                    <MudSwitchM3 Color="Color.Secondary" Label="Create Resource" @bind-Value="_template.Resource.Create" />
+                        <Setting Title="Name">
+                            <MudText>@_template.Name</MudText>
+                        </Setting>
 
-                    <MudTextField Label="Service Name" @bind-Value="_template.Resource.ServiceName" />
-                    <MudSelectExtended Label="Kind" @bind-Value="_template.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
-                    <MudTextField Label="Connection String Format" @bind-Value="_template.Resource.ConnectionStringFormat" />
-                    <MudTextField Label="Connection String Variable Name Format" @bind-Value="_template.Resource.ConnectionStringVariableNameFormat" />
-                </MudStack>
-            </MudCardContent>
-        </MudCard>
-        <MudCard Class="pa-5 mt-5">
-            <MudCardContent>
-                <MudText Typo="Typo.h6">Docker Compose</MudText>
-                <DockerComposeEditor @bind-Value="_template.Plan"/>
-            </MudCardContent>
-        </MudCard>
+                        <Setting Title="Category">
+                            <MudTextField @bind-Value="_template.Category" />
+                        </Setting>
 
-        <MudButton Class="mt-5" ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
-    </EditForm>
+                        <Setting Title="Icon">
+                            <MudTextField @bind-Value="_template.IconUrl" />
+                        </Setting>
+
+                        <Setting Title="Description">
+                            <MudTextField Label="Description" @bind-Value="_template.Description" Lines="5" />
+                        </Setting>
+
+                        <Setting Title="Application Protocol">
+                            <MudTextField @bind-Value="_template.ApplicationProtocol" />
+                        </Setting>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+
+
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudStack>
+
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Ingress</MudText>
+
+                        <Setting Title="Ingress Server" SubTitle="Domain will be mapped to this server and a reverse-proxy will be created that forwards requests to the application server">
+                            <MudSwitchM3 Color="Color.Primary" @bind-Value="_template.CreateIngress"></MudSwitchM3>
+                        </Setting>
+
+                        @if (_template.CreateIngress)
+                        {
+                            <Setting Title="Domain Name" SubTitle="Default domain name prefix">
+                                <MudTextField @bind-Value="_template.DomainNamePrefix" />
+                            </Setting>
+
+
+                            @if (_template.ReverseProxy is not null)
+                            {
+                                <Setting Title="HTTP2" SubTitle="Enable HTTP2 between ingress and application server">
+                                    <MudSwitchM3 Color="Color.Primary" @bind-Value="_template.ReverseProxy.EnableHttp2" />
+                                </Setting>
+
+                                <Setting Title="Proxy Buffering">
+                                    <MudSwitchM3 Color="Color.Primary" @bind-Value="_template.ReverseProxy.Buffering" />
+                                </Setting>
+                            }
+                        }
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudStack>
+
+                        <MudStack Spacing="3">
+                            <MudText Typo="Typo.h6" Color="Color.Secondary">Resource</MudText>
+
+                            <Setting Title="Create Resource" SubTitle="If enabled a resource will be created">
+                                <MudSwitchM3 Color="Color.Secondary" @bind-Value="_template.Resource.Create" />
+                            </Setting>
+
+                            @if (_template.Resource.Create)
+                            {
+                                <Setting Title="Service Name">
+                                    <MudTextField @bind-Value="_template.Resource.ServiceName" />
+                                </Setting>
+
+                                <Setting Title="Kind">
+                                    <MudSelectExtended @bind-Value="_template.Resource.Kind" T="ResourceKind?" ItemCollection="@_resourceKinds"></MudSelectExtended>
+                                </Setting>
+                                <Setting Title="Connection String Format">
+                                    <MudTextField @bind-Value="_template.Resource.ConnectionStringFormat" />
+                                </Setting>
+                                <Setting Title="Connection String Variable Name Format">
+                                    <MudTextField @bind-Value="_template.Resource.ConnectionStringVariableNameFormat" />
+                                </Setting>
+                            }
+                        </MudStack>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+            <MudCard Class="pa-5 mt-5">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Color="Color.Secondary">Docker Compose</MudText>
+                    <DockerComposeEditor @bind-Value="_template.Plan"/>
+                </MudCardContent>
+            </MudCard>
+
+            <MudButton Class="mt-5" ButtonType="ButtonType.Submit" Color="Color.Primary" Variant="Variant.Filled">Save</MudButton>
+        </EditForm>
+    </MudItem>
 }
 
 @code {
@@ -54,11 +123,11 @@
     private ResourceKind?[] _resourceKinds = 
     [
         ResourceKind.API,
-        ResourceKind.ConnectionString,
-        ResourceKind.ApplicationService,
-        ResourceKind.MessageBroker,
-        ResourceKind.OidcServer,
-        ResourceKind.OtlpServer,
+    ResourceKind.ConnectionString,
+    ResourceKind.ApplicationService,
+    ResourceKind.MessageBroker,
+    ResourceKind.OidcServer,
+    ResourceKind.OtlpServer,
     ];
 
     private DeploymentPlanTemplate? _template = null;
@@ -78,6 +147,7 @@
         if (_template is not null)
         {
             _template.Resource ??= new();
+            _template.ReverseProxy ??= new();
         }
     }
 
