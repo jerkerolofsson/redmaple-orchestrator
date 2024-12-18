@@ -1,4 +1,6 @@
-﻿using RedMaple.Orchestrator.Contracts.Secrets;
+﻿using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Contracts.Secrets;
 using RedMaple.Orchestrator.Infrastructure;
 using System.Runtime.InteropServices;
 
@@ -8,6 +10,13 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
     {
         private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(1);
         protected override string SaveFilePath => GetConfigFilePath();
+
+        private readonly ILogger<SecretsRepository> _logger;
+
+        public SecretsRepository(ILogger<SecretsRepository> logger)
+        {
+            _logger = logger;
+        }
 
         private string GetLocalConfigDir()
         {
@@ -32,7 +41,18 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
         }
         public async Task<List<Secret>> GetSecretsAsync()
         {
-            return await LoadAsync();
+            _logger.LogInformation("GetSecretsAsync, waiting for semaphore");
+            await _semaphore.WaitAsync(); 
+            try
+            {
+                _logger.LogInformation("GetSecretsAsync, loading");
+                return await LoadAsync();
+            }
+            finally
+            {
+                _logger.LogInformation("GetSecretsAsync, loading done");
+                _semaphore.Release();
+            }
         }
 
         public async Task SaveSecretAsync(Secret secret)

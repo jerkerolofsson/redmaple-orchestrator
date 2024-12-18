@@ -19,6 +19,8 @@
 }
 else if(!_loading)
 {
+    <MudBreadcrumbs Items="_nav"></MudBreadcrumbs>
+
     <MudTabs Elevation="2" Rounded="true" ApplyEffectsToContainer="true" ActivePanelIndex="@_activeTabIndex" ActivePanelIndexChanged="FilterDeployments">
         @foreach (var category in _categories)
         {
@@ -68,7 +70,7 @@ else if(!_loading)
                                 @{
                                     string url = $"/deployments/{context.Item.Slug}";
                                 }
-                                <a target="_blank" href="@url">@context.Item.Name</a>
+                                <a href="@url">@context.Item.Name</a>
                             </CellTemplate>
                         </TemplateColumn>
 
@@ -360,6 +362,11 @@ else if(!_loading)
 
     protected override async Task OnInitializedAsync()
     {
+        // Breadcrumbs
+        _nav.Clear();
+        _nav.Add(new("Home", "/"));
+        _nav.Add(new("Deployments", "/deployments"));
+
         await LoadPlansAsync();
     }
 
@@ -393,6 +400,7 @@ else if(!_loading)
 
     private string[]? _regions = null;
     private string? _region = null;
+    private List<BreadcrumbItem> _nav = new List<BreadcrumbItem>();
 
     private void OnRegionChanged(string? region)
     {
@@ -421,7 +429,6 @@ else if(!_loading)
         FilterDeployments(_activeTabIndex);
         return Task.CompletedTask;
     }
-
 
     private void FilterDeployments(int index)
     {

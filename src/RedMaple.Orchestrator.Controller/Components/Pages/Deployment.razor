@@ -12,9 +12,18 @@
 @implements IDisposable
 @rendermode InteractiveServer
 
+<MudStack Row="true" Style="width: 100%" AlignItems="AlignItems.Center">
+    <MudBreadcrumbs Items="_nav"></MudBreadcrumbs>
+    <MudSpacer/>
+    @if(Slug is not null)
+    {
+        string editUrl = $"/deployments/{Slug}/edit";
+        <MudIconButton Icon="@Icons.Material.Filled.Edit" Href="@editUrl"/>
+    }
+</MudStack>
+
 <MudItem Class="pa-5">
     <MudStack Spacing="2">
-        <MudText Typo="Typo.h4">@Slug</MudText>
 
         <MudStack  Spacing="2" Row="true">
             @if (_plan is not null)
@@ -72,6 +81,7 @@
 @code {
     [Parameter]
     public string Slug { get; set; } = null!;
+    private List<BreadcrumbItem> _nav = new List<BreadcrumbItem>();
 
     private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
     private IReadOnlyCollection<DoubleTime> _cpuStats = Array.Empty<DoubleTime>();
@@ -85,6 +95,15 @@
     {
         _plan = await deploymentManager.GetDeploymentBySlugAsync(Slug);
         await RefreshStatsAsync();
+
+        // Breadcrumbs
+        _nav.Clear();
+        _nav.Add(new("Home", "/"));
+        _nav.Add(new("Deployments", "/deployments"));
+        if (_plan is not null)
+        {
+            _nav.Add(new(_plan.Name, $"/deployments/{_plan.Slug}"));
+        }
     }
 
     private async Task RefreshStatsAsync()

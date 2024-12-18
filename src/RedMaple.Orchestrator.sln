@@ -55,6 +55,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Infra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Utilities", "RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj", "{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Cli", "RedMaple.Orchestrator.Cli\RedMaple.Orchestrator.Cli.csproj", "{44530528-75DD-49F7-964E-CC7BE3B2942A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -141,6 +143,10 @@ Global
 		{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}.Release|Any CPU.Build.0 = Release|Any CPU
+		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -167,6 +173,7 @@ Global
 		{CDDC9983-DCA8-47A4-A063-98D049A53532} = {C57EA872-83E2-4D31-B848-49E8384344F7}
 		{97F2376F-CE06-4ECE-B6FD-7604366B3EC3} = {CDA02E31-8892-4ED3-A50B-39C30D43FB1E}
 		{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75} = {CDA02E31-8892-4ED3-A50B-39C30D43FB1E}
+		{44530528-75DD-49F7-964E-CC7BE3B2942A} = {9D47399A-AF2F-4835-925B-5E54718DF316}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0435B4F-ED5B-4352-8B77-B7BF67875B9C}

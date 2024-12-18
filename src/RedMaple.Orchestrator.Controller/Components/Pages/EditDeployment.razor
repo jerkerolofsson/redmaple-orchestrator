@@ -21,6 +21,8 @@
 
 @if(_plan is not null)
 {
+    <MudBreadcrumbs Items="_nav"></MudBreadcrumbs>
+
     <MudItem Style="max-width: 1200px">
         <EditForm Model="@_plan" OnValidSubmit="async () => await OnValidSubmitAsync()">
             <DataAnnotationsValidator />
@@ -185,7 +187,9 @@
         }
     }
 
-    protected override async Task OnInitializedAsync()
+    private List<BreadcrumbItem> _nav = new List<BreadcrumbItem>();
+
+    protected override async Task OnParametersSetAsync()
     {
         _plan = await deploymentManager.GetDeploymentBySlugAsync(Slug);
         if(_plan is null)
@@ -204,6 +208,12 @@
             {
                 _ingressNode = await nodeManager.GetNodeByIpAddressAsync(_plan.IngressServerIp);
             }
+
+            // Breadcrumbs
+            _nav.Clear();
+            _nav.Add(new("Home", "/"));
+            _nav.Add(new("Deployments", "/deployments"));
+            _nav.Add(new(_plan.Name, $"/deployments/{_plan.Slug}/edit"));
         }
     }
 

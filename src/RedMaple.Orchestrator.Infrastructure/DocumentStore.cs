@@ -10,6 +10,40 @@ namespace RedMaple.Orchestrator.Infrastructure
 
         protected abstract string SaveFilePath { get; }
 
+
+        /// <summary>
+        /// Removes all items matching the predicate aand returns the number of removed items
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
+        protected async Task<int> RemoveAllAsync(Predicate<T> predicate)
+        {
+            int removed = 0;
+            await _semaphore.WaitAsync();
+
+            try
+            {
+                if (_items is null)
+                {
+                    await LoadNoLockAsync();
+                }
+                if (_items is not null)
+                {
+                    removed = _items.RemoveAll(predicate);
+                }
+            }
+            finally
+            {
+                _semaphore.Release();
+            }
+            return removed;
+        }
+
+        /// <summary>
+        /// Searches for and returns the first item matching the predicate
+        /// </summary>
+        /// <param name="predicate"></param>
+        /// <returns></returns>
         protected async Task<T?> FindAsync(Predicate<T> predicate)
         {
             await _semaphore.WaitAsync();
@@ -18,7 +52,7 @@ namespace RedMaple.Orchestrator.Infrastructure
             {
                 if (_items is null)
                 {
-                    await LoadAsync();
+                    await LoadNoLockAsync();
                 }
                 if (_items is not null)
                 {
@@ -37,38 +71,44 @@ namespace RedMaple.Orchestrator.Infrastructure
             await _semaphore.WaitAsync();
 
             try
-            { 
-                if (_items is null)
-                {
-                    try
-                    {
-                        var json = await File.ReadAllTextAsync(SaveFilePath);
-                        _items = JsonSerializer.Deserialize<List<T>>(json) ?? new();
-                    }
-                    catch (Exception) 
-                    {
-                        try
-                        {
-                            var pending = SaveFilePath + ".pending";
-                            var json = await File.ReadAllTextAsync(pending);
-                            _items = JsonSerializer.Deserialize<List<T>>(json) ?? new();
-                        }
-                        catch (Exception)
-                        {
-                        }
-                    }
-                }
-                if(_items is null)
-                {
-                    return new();
-                }
-                return new List<T>(_items);
+            {
+                return await LoadNoLockAsync();
             }
             finally
             {
                 _semaphore.Release();
             }
         }
+
+        private async Task<List<T>> LoadNoLockAsync()
+        {
+            if (_items is null)
+            {
+                try
+                {
+                    var json = await File.ReadAllTextAsync(SaveFilePath);
+                    _items = JsonSerializer.Deserialize<List<T>>(json) ?? new();
+                }
+                catch (Exception)
+                {
+                    try
+                    {
+                        var pending = SaveFilePath + ".pending";
+                        var json = await File.ReadAllTextAsync(pending);
+                        _items = JsonSerializer.Deserialize<List<T>>(json) ?? new();
+                    }
+                    catch (Exception)
+                    {
+                    }
+                }
+            }
+            if (_items is null)
+            {
+                _items = new();
+            }
+            return new List<T>(_items);
+        }
+
         protected async Task CommitAsync(List<T> items)
         {
             await _semaphore.WaitAsync();
