@@ -15,6 +15,11 @@ cd ..
 cd RedMaple.Orchestrator.Controller
 dotnet publish --os linux --arch x64 -p ContainerRepository=$DOCKER_REGISTRY/redmaple-controller /t:PublishContainer
 docker push ${DOCKER_REGISTRY}/redmaple-controller
-
 cd ..
+
+cd RedMaple.Orchestrator.Cli
+dotnet publish --os linux --arch x64 
+dotnet publish --os win --arch x64 
+cd ..
+
 cd ..

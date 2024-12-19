@@ -6,6 +6,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
       <AssemblyName>red</AssemblyName>
+      <PublishSingleFile>true</PublishSingleFile>
+      <SelfContained>true</SelfContained>
   </PropertyGroup>
 
   <ItemGroup>
