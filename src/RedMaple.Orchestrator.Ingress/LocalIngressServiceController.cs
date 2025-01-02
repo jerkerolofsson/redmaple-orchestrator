@@ -65,7 +65,6 @@ namespace RedMaple.Orchestrator.Ingress
 
         public async Task AddIngressServiceAsync(IngressServiceDescription service, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            progress.Report("Starting ingress..");
             var services = await LoadSettingsAsync();
             services.RemoveAll(x=>x.DomainName == service.DomainName);
             services.Add(service);

@@ -6,42 +6,37 @@
 {
     <MudCard Elevation="5" Class="pa-5">
         <div class="current">
-            <MudProgressCircular Size="Size.Small" Color="Color.Default" Indeterminate="true" />
-            <div>
+            <MudProgressCircular Size="Size.Small" Color="Color.Secondary" Indeterminate="true" />
+            <div style="font-weight: bold">
                 @_message?.Text
             </div>
         </div>
 
-        @if (_jsonMessage is not null)
+        @if (_jsonMessage is not null && _jsonMessage.Progress is not null)
         {
             <div>@_jsonMessage.Status</div>
             <div>@_jsonMessage.ProgressMessage</div>
             @if(_jsonMessage.Progress is not null)
             {
-                <MudProgressLinear Value="@_jsonMessage.Progress.Current" Max="@_jsonMessage.Progress.Total"/>
+                <MudProgressLinear Value="@_jsonMessage.Progress.Current" Max="@_jsonMessage.Progress.Total" Color="Color.Secondary" />
                 <div>@_jsonMessage.Progress.Units</div>
             }
         }
 
-        <table class="completed">
-            <thead>
-                <tr>
-                    <th></th>
-                    <th>Message</th>
-                    <th>Elapsed</th>
-                </tr>
-            </thead>
-            <tbody>
+        @if(_completed.Count > 0)
+        {
+            <div style="display: grid; grid-template-columns: auto 1fr auto; width: 100%; grid-row-gap: 2px; grid-column-gap: 5px; font-size: 8pt">
+                <div></div>
+                <div style="font-weight: bold">Message</div>
+                <div style="font-weight: bold">Elapsed</div>
                 @foreach (var line in _completed)
                 {
-                    <tr>
-                        <td>✓</td>
-                        <td>@line.Text</td>
-                        <td>@line.Elapsed</td>
-                    </tr>
+                    <div style="color: yellowgreen; font-weight: bold; font-size: 12pt; padding: 5px;">✓</div>
+                    <div style="display: flex; align-items: center">@line.Text</div>
+                    <div style="display: flex; align-items: center; color: #999">@line.Elapsed</div>
                 }
-            </tbody>
-        </table>
+            </div>
+        }
     </MudCard>
 }
 @code {

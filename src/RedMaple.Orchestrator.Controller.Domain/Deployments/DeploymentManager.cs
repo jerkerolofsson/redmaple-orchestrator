@@ -554,14 +554,30 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
+            bool hasDnsOrIngress = false;
             if (plan.CreateIngress)
             {
+                hasDnsOrIngress = true;
+                progress.Report($"Removing {plan.DomainName}..");
                 await _ingressManager.TryDeleteIngressServiceByDomainNameAsync(plan.DomainName, plan.Region);
             }
             else if(plan.CreateDnsEntry)
             {
+                hasDnsOrIngress = true;
+                progress.Report($"Removing {plan.DomainName}..");
                 await _dns.TryDeleteDnsEntryByDomainNameAsync(plan.DomainName, plan.Region);
             }
+            if (hasDnsOrIngress)
+            {
+                if (plan.Region is not null)
+                {
+                    var globalDomainName = plan.Region.ToLower() + "." + plan.DomainName;
+                    progress.Report($"Removing {globalDomainName}..");
+                    await _ingressManager.TryDeleteIngressServiceByDomainNameAsync(globalDomainName, null);
+                }
+            }
+
+            progress.Report($"Collecting deployments..");
 
             foreach (var deployment in await GetApplicationDeploymentsAsync(plan.Slug))
             {
@@ -593,7 +609,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
         public async Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
-            progress.Report("Validating plan..");
             await ValidatePlanAsync(plan);
 
             plan.Health = new Healthz.Models.ResourceHealthCheckResult { Status = HealthStatus.Degraded };
@@ -871,6 +886,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
                 using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
 
+                // Add an ingress service for the regional deployment (or global if Region is null)
                 await _ingressManager.AddIngressServiceAsync(new IngressServiceDescription
                 {
                     Region = plan.Region,
@@ -883,6 +899,24 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                     DestinationIp = applicationServerIp,
                     DestinationPort = plan.ApplicationServerPort.Value
                 }, progress, cts.Token);
+
+                if(plan.Region is not null)
+                {
+                    // Global DNS deployment
+                    var globalDnsName = plan.Region.ToLower() + "." + plan.DomainName;
+                    await _ingressManager.AddIngressServiceAsync(new IngressServiceDescription
+                    {
+                        Region = null,
+                        IngressIp = plan.IngressServerIp,
+                        ReverseProxy = plan.ReverseProxy,
+                        DomainName = globalDnsName,
+                        IngressPort = 443,
+                        Scheme = plan.ApplicationProtocol,
+                        Id = plan.Slug + "-global-ingress",
+                        DestinationIp = applicationServerIp,
+                        DestinationPort = plan.ApplicationServerPort.Value
+                    }, progress, cts.Token);
+                }
             }
         }
 

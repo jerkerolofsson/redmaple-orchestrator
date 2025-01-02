@@ -380,10 +380,10 @@ else if(!_loading)
         }
 
         _categories.Clear();
-        _categories.Add("Apps");
-        _categories.Add("Services");
-        _categories.Add("Development");
-        _categories.Add("Test");
+         _categories.Add("Apps");
+        // _categories.Add("Services");
+        // _categories.Add("Development");
+        // _categories.Add("Test");
         foreach (var plan in _plans)
         {
             plan.Category ??= "Apps";
@@ -392,6 +392,7 @@ else if(!_loading)
                 _categories.Add(plan.Category);
             }
         }
+        //_categories.Sort();
         _activeTabIndex = 0;
         FilterDeployments(0);
     }

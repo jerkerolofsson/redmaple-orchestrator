@@ -12,8 +12,20 @@ namespace RedMaple.Orchestrator.Contracts.Ingress
     public class IngressServiceDescription
     {
         public required string Id { get; set; }
+
+        /// <summary>
+        /// nginx server
+        /// </summary>
         public required string IngressIp { get; set; }
+
+        /// <summary>
+        /// nginx port
+        /// </summary>
         public required int IngressPort { get; set; }
+
+        /// <summary>
+        /// Domain
+        /// </summary>
         public required string DomainName { get; set; }
 
         /// <summary>
@@ -23,7 +35,8 @@ namespace RedMaple.Orchestrator.Contracts.Ingress
 
         /// <summary>
         /// Region specific ingress
-        /// This allows multiple ingress nodes
+        /// This allows multiple ingress nodes with the same domain name.
+        /// Only DNS servers 
         /// </summary>
         public string? Region { get; set; }
 
@@ -31,7 +44,15 @@ namespace RedMaple.Orchestrator.Contracts.Ingress
         /// http or https
         /// </summary>
         public string Scheme { get; set; } = "https";
+
+        /// <summary>
+        /// Application server IP
+        /// </summary>
         public required string DestinationIp { get; set; }
+
+        /// <summary>
+        /// Application server port
+        /// </summary>
         public required int DestinationPort { get; set; }
 
         // Keys

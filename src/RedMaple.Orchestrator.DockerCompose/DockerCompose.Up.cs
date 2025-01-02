@@ -36,7 +36,7 @@ namespace RedMaple.Orchestrator.DockerCompose
 
             plan = TransformPlanWithEnvironmentVariables(plan, environmentFile);
 
-            progress.Report($"Creating default network: {plan.name}_default..");
+            progress.Report($"Creating default docker network: {plan.name}_default..");
             NetworkResponse? defaultNetwork = null;
             if (plan.networks is null || plan.networks.Count == 0)
             {
@@ -48,13 +48,13 @@ namespace RedMaple.Orchestrator.DockerCompose
                 }
             }
 
-            progress.Report("Creating volumes..");
+            progress.Report("Creating docker volumes..");
             await CreateVolumesAsync(plan, cancellationToken);
 
             var containerIds = await CreateContainersAsync(plan, defaultNetwork, environmentFile);
 
             // Create additional networks
-            progress.Report("Creating networks..");
+            progress.Report("Creating docker networks..");
             var networks = await CreateNetworksAsync(plan, cancellationToken);
             await ConnectContainersAsync(plan, networks, cancellationToken);
 
