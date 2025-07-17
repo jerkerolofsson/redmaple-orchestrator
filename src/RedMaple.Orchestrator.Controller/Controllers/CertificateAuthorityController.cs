@@ -151,6 +151,7 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                 var pksc12Bytes = CertificateSerializer.ExportCertificateChainAsByteArray(X509ContentType.Pkcs12, cert);
                 var certBytes = CertificateSerializer.ToCert(cert);
                 var certPems = CertificateSerializer.ExportCertificatePemsAsByteArray(cert, issuer, root); // nginx order
+                var certPemsReverse = CertificateSerializer.ExportCertificatePemsAsByteArray(cert, issuer, root); // nginx order
                 var keyPem = CertificateSerializer.ExportPrivateKeyToPem(cert);
 
                 var stream = new MemoryStream();
@@ -165,6 +166,11 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                     using (var entryStream = certPemsEntry.Open())
                     {
                         await entryStream.WriteAsync(certPems);
+                    }
+                    var certPemsReverseEntry = zip.CreateEntry("cert_chain_reverse.pem");
+                    using (var entryStream = certPemsReverseEntry.Open())
+                    {
+                        await entryStream.WriteAsync(certPemsReverse);
                     }
                     var keyEntry = zip.CreateEntry("key.pem");
                     using (var entryStream = keyEntry.Open())
