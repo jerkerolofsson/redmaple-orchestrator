@@ -407,7 +407,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
 
                 foreach(var containerImage in plan.ContainerImages)
                 {
-                    progress.Report($"Pulling {containerImage} on {applicationServerIp}..");
+                    progress.Report($"Pulling '{containerImage}' on '{applicationServerIp}'..");
 
                     using var client = new NodeContainersClient(targetNode.BaseUrl);
                     await client.PullImageAsync(containerImage, pullProgress, cancellationToken);
@@ -803,8 +803,14 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 .WithOid(CertificateBuilder.OID_TLS_WEB_SERVER_AUTHENTICATION)
                 .WithSubjectAlternativeName((sanBuilder) =>
                 {
+                    if(!string.IsNullOrEmpty(plan.DomainName))
+                    {
+                        progress.Report($"Adding SAN DNS entry in certificate for {plan.DomainName}");
+                        sanBuilder.AddDnsName(plan.DomainName);
+                    }
                     foreach(var ip in plan.ApplicationServerIps)
-                    { 
+                    {
+                        progress.Report($"Adding SAN IP entry in certificate for {ip}");
                         sanBuilder.AddIpAddress(IPAddress.Parse(ip));
                     }
                 });

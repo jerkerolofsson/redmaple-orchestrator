@@ -87,7 +87,7 @@ namespace RedMaple.Orchestrator.Controller.Controllers
         [HttpGet("/api/ca/generate")]
         public async Task<IActionResult> GenerateCertificateAsync(
             [FromQuery] string? cn,
-            [FromQuery] string dnsName,
+            [FromQuery] string? dnsName,
             [FromQuery] string? ipAddress,
             [FromQuery] string? password,
             [FromQuery] string? format)
@@ -95,6 +95,19 @@ namespace RedMaple.Orchestrator.Controller.Controllers
             // Get intermediate
             var root = await _ca.GetRootCertificateAsync();
             var issuer = await _ca.GetCaCertificateAsync();
+
+            if (string.IsNullOrEmpty(cn))
+            {
+                cn = null;
+            }
+            if (string.IsNullOrEmpty(dnsName))
+            {
+                dnsName = null;
+            }
+            if (string.IsNullOrEmpty(ipAddress))
+            {
+                ipAddress = null;
+            }
 
             var name = cn ?? dnsName ?? "certificate";
 

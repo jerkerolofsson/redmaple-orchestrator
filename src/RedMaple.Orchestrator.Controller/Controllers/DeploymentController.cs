@@ -62,7 +62,14 @@ namespace RedMaple.Orchestrator.Controller.Controllers
                     }
 
                     _logger.LogInformation("Deploy: Pulling images for {deploymentSlug}..", deploymentSlug);
-                    await _deploymentManager.PullImagesAsync(deployment, progress, progress, cancellationToken);
+                    try
+                    {
+                        await _deploymentManager.PullImagesAsync(deployment, progress, progress, cancellationToken);
+                    }
+                    catch(Exception ex)
+                    {
+                        _logger.LogError(ex, "Error: Failed to pull images");
+                    }
 
                     _logger.LogInformation("Deploy: Bringing up {deploymentSlug}..", deploymentSlug);
                     await _deploymentManager.BringUpAsync(deployment, progress, cancellationToken);
@@ -73,7 +80,11 @@ namespace RedMaple.Orchestrator.Controller.Controllers
 
                     cts.Cancel();
                 }
-                catch { }
+                catch(Exception ex)
+                {
+                    progress.Report("Error: " + ex.Message);
+                    cts.Cancel();
+                }
             }, cancellationToken);
 
             return progress;
