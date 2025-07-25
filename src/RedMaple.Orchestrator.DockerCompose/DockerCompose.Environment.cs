@@ -1,10 +1,13 @@
-﻿using RedMaple.Orchestrator.DockerCompose.Converters;
-using RedMaple.Orchestrator.DockerCompose.Models;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.DockerCompose.Converters;
+using RedMaple.Orchestrator.DockerCompose.Models;
 
 namespace RedMaple.Orchestrator.DockerCompose
 {
@@ -111,6 +114,8 @@ namespace RedMaple.Orchestrator.DockerCompose
             Dictionary<string, string?> envFile = new();
             if (environmentFile is not null)
             {
+                _logger.LogInformation("Loading environment file, path={environmentFile}", environmentFile);
+
                 var fileInfo = new FileInfo(environmentFile);
                 if (!fileInfo.Exists)
                 {

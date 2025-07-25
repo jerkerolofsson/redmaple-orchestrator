@@ -1,4 +1,4 @@
-$version="1.0.0"
+$version="1.0.4"
 
 $package="RedMaple.Orchestrator.Contracts"
 cd src/${package}

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace RedMaple.Orchestrator.DockerCompose
@@ -75,7 +76,7 @@ namespace RedMaple.Orchestrator.DockerCompose
 
             return serializer.Serialize(plan);
         }
-        public static DockerComposePlan ParseYaml(string text)
+        public static DockerComposePlan ParseYaml(string text, string? projectName)
         {
             var deserializer = new DeserializerBuilder()
                 .WithTypeConverter(new EnvironmentVariablesTypeConverter())
@@ -89,7 +90,17 @@ namespace RedMaple.Orchestrator.DockerCompose
             if (dockerComposePlan is not null)
             { 
                 dockerComposePlan.RequiredEnvironmentVariables = FindEnvironmentVariables(text);
+
+                dockerComposePlan.Yaml = text;
+                if(projectName is null)
+                {
+                    projectName = 
+                        dockerComposePlan.services.Values.FirstOrDefault()?.container_name ??
+                        dockerComposePlan.services.Keys.FirstOrDefault();
+                }
+                dockerComposePlan.name = projectName;
             }
+
             return dockerComposePlan ??new();
         }
     }
