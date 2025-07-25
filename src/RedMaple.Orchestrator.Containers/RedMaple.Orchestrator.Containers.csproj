@@ -10,10 +10,26 @@
     <PackageReference Include="Docker.DotNet" Version="3.125.15" />
   </ItemGroup>
 
+    <PropertyGroup>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <Description>
+            Don't use this library directly, use RedMaple.Orchestrator.DockerCompose.
+            
+            This is an implementation of ILocalContainersClient for Docker.DotNet for docker orchestration.
+        </Description>
+        <Title>RedMaple.Orchestrator.Containers</Title>
+        <Authors>Jerker Olofsson</Authors>
+        <Company>Jerker Olofsson</Company>
+        <PackageId>RedMaple.Orchestrator.Containers</PackageId>
+        <Version>1.0.0</Version>
+        <WebPage>https://github.com/jerkerolofsson/redmaple-orchestrator/tree/main/src/RedMaple.Orchestrator.Containers/readme.md</WebPage>
+    </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\RedMaple.Orchestrator.Contracts\RedMaple.Orchestrator.Contracts.csproj" />
-	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
   </ItemGroup>
 
 </Project>

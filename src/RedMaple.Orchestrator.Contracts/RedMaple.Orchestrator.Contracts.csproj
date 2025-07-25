@@ -7,7 +7,19 @@
   </PropertyGroup>
 	<ItemGroup>
 		<PackageReference Include="Docker.DotNet" Version="3.125.15" />
-		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="9.0.0" />
+		<PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="9.0.7" />
 	</ItemGroup>
+
+    <PropertyGroup>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <Description>Shared library for RedMaple.Orchestrator.Containers and RedMaple.Orchestrator.Dockercompose</Description>
+        <Title>RedMaple.Orchestrator.Contracts</Title>
+        <Authors>Jerker Olofsson</Authors>
+        <Company>Jerker Olofsson</Company>
+        <PackageId>RedMaple.Orchestrator.Contracts</PackageId>
+        <Version>1.0.0</Version>
+        <WebPage>https://github.com/jerkerolofsson/redmaple-orchestrator</WebPage>
+    </PropertyGroup>
 
 </Project>

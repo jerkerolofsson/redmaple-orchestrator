@@ -13,10 +13,10 @@
     <ProjectReference Include="..\RedMaple.Orchestrator.Security\RedMaple.Orchestrator.Security.csproj" />
     <ProjectReference Include="..\RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj" />
     <PackageReference Include="FluentValidation" Version="11.10.0" />
-	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="9.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" />
-	  <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
+	  <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="9.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.7" />
+	  <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.7" />
 
   </ItemGroup>
 
