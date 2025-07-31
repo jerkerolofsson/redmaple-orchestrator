@@ -1,8 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using RedMaple.Orchestrator.DockerCompose;
 
-using RedMaple.Orchestrator.DockerCompose;
-
-namespace Microsoft.DependencyInject.Extensions
+namespace Microsoft.Extensions.DependencyInjection
 {
     public static class DockerComposeServiceExtensions
     {

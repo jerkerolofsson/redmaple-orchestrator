@@ -235,6 +235,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                     Name = service.container_name,
                     Hostname = service.hostname ?? name ?? service.container_name,
                     Domainname = service.domainname,
+                    Entrypoint = service.entrypoint == null ? [] : service.entrypoint,
                     Cmd = service.command == null ? [] : service.command,
                     NetworkingConfig = networkingConfig,
                     Volumes = MapVolumes(service),

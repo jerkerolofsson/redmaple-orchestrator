@@ -1,6 +1,4 @@
-#$DOCKER_REGISTRY = "192.168.0.241:5000"
-#$DOCKER_REGISTRY = "docker-repo.dev.ec.lan:5005"
-$DOCKER_REGISTRY = "docker-new.ec.lan:17326"
+$DOCKER_REGISTRY = "192.168.0.241:5000"
 
 cd src
 
