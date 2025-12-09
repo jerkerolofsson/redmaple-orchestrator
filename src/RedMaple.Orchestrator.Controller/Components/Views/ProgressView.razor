@@ -31,7 +31,14 @@
                 <div style="font-weight: bold">Elapsed</div>
                 @foreach (var line in _completed)
                 {
-                    <div style="color: yellowgreen; font-weight: bold; font-size: 12pt; padding: 5px;">✓</div>
+                    if(line.Text.StartsWith("Error"))
+                    {
+                        <div style="color: firebrick; font-weight: bold; font-size: 12pt; padding: 5px;">ERR</div>
+                    }
+                    else
+                    {
+                        <div style="color: yellowgreen; font-weight: bold; font-size: 12pt; padding: 5px;">✓</div>
+                    }
                     <div style="display: flex; align-items: center">@line.Text</div>
                     <div style="display: flex; align-items: center; color: #999">@line.Elapsed</div>
                 }

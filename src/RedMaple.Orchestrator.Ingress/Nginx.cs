@@ -54,7 +54,9 @@ namespace RedMaple.Orchestrator.Ingress
                 conf.Append("""
                 proxy_redirect     off;
                 proxy_set_header Host $host;
+                proxy_set_header X-Forwarded-Host $http_host;
                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                proxy_set_header X-Forwarded-Proto $scheme;
                 """);
 
                 await File.WriteAllTextAsync(path, conf.ToString());

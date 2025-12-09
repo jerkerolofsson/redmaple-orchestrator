@@ -4,64 +4,136 @@
 @using RedMaple.Orchestrator.Containers
 @using RedMaple.Orchestrator.Contracts
 @using RedMaple.Orchestrator.Contracts.Containers
+@using RedMaple.Orchestrator.Contracts.Docker
 @using RedMaple.Orchestrator.Controller.Domain;
 @using RedMaple.Orchestrator.Controller.Domain.Node
 @inject INodeManager nodeManager
+@inject ILogger<NodeSettings> logger
 @inject NavigationManager navigationManager
 <MudPopoverProvider />
 
 @if (_nodeSettings is not null)
 {
-    <MudCard Class="pa-5 mt-5">
-        <h1>General</h1>
-        <MudCardContent>
-            <MudForm Spacing="2" Model="@_nodeSettings">
-                <MudTextField @bind-Value="_nodeSettings.Name"
-                              Label="Name"/>
+    <MudTabs Class="mt-5">
+        <MudTabPanel Text="General">
 
-                <MudTextField @bind-Value="_nodeSettings.Region"
-                              Label="Region" />
-            </MudForm>
-        </MudCardContent>
-    </MudCard>
 
-    <MudCard Class="pa-5 mt-5">
-        <h1>Tags</h1>
-        <MudCardContent>
-            <MudForm Spacing="2" Model="@_nodeSettings">
-                <MudTextField @bind-Value="_nodeSettings.Tags"
-                              Label="Tags" HelperText="Separate with space" />
-            </MudForm>
-        </MudCardContent>
-    </MudCard>
+            <MudCard Class="pa-5 mt-5">
+                <h1>General</h1>
+                <MudCardContent>
+                    <MudForm Spacing="2" Model="@_nodeSettings">
 
-    <MudCard Class="pa-5 mt-5">
-        <h1>Host</h1>
-        <MudCardContent>
-            <MudForm Spacing="2" Model="@_nodeSettings">
-                <MudSwitch @bind-Value="_nodeSettings.EnableDns"
-                           Label="DNS Server" Color="Color.Primary" />
+                        <Setting Title="Name">
+                            <MudTextField @bind-Value="_nodeSettings.Name" />
+                        </Setting>
 
-                @if(_nodeSettings.EnableDns)
-                {
-                    <MudTextField @bind-Value=_nodeSettings.UpstreamDns1 Label="Upstream DNS 1"></MudTextField>
-                    <MudTextField @bind-Value=_nodeSettings.UpstreamDns2 Label="Upstream DNS 2"></MudTextField>
-                }
+                        <Setting Title="Region">
+                            <MudTextField @bind-Value="_nodeSettings.Region" />
+                        </Setting>
 
-                <MudSwitch @bind-Value="_nodeSettings.IngressHost"
-                           Label="Ingress" Color="Color.Primary" />
+                        <Setting Title="Base URL">
+                            @_nodeInfo?.BaseUrl
+                        </Setting>
+                    </MudForm>
+                </MudCardContent>
+            </MudCard>
 
-                <MudSwitch @bind-Value="_nodeSettings.LoadBalancerHost"
-                           Label="Load Balancer" Color="Color.Primary" />
+            <MudCard Class="pa-5 mt-5">
+                <h1>Tags</h1>
+                <MudCardContent>
+                    <MudForm Spacing="2" Model="@_nodeSettings">
+                        <Setting Title="Tags" SubTitle="Separate with space">
+                            <MudTextField @bind-Value="_nodeSettings.Tags" />
+                        </Setting>
+                    </MudForm>
+                </MudCardContent>
+            </MudCard>
 
-                <MudSwitch @bind-Value="_nodeSettings.ApplicationHost"
-                           Label="Application Host" Color="Color.Primary" />
-            </MudForm>
-        </MudCardContent>
-    </MudCard>
+            <MudCard Class="pa-5 mt-5">
+                <h1>Host</h1>
+                <MudCardContent>
+                    <MudForm Spacing="2" Model="@_nodeSettings">
 
-    <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-5"
-               OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
+
+
+                        <Setting Title="DNS Host">
+                            <MudSwitch @bind-Value="_nodeSettings.EnableDns" Color="Color.Primary" />
+                        </Setting>
+
+                        @if (_nodeSettings.EnableDns)
+                        {
+                            <Setting Title="DNS1" SubTitle="Upstream DNS 1">
+                                <MudTextField @bind-Value=_nodeSettings.UpstreamDns1></MudTextField>
+                            </Setting>
+
+                            <Setting Title="DNS2" SubTitle="Upstream DNS 2">
+                                <MudTextField @bind-Value=_nodeSettings.UpstreamDns2></MudTextField>
+                            </Setting>
+                        }
+
+                        <Setting Title="Ingress">
+                            <MudSwitch @bind-Value="_nodeSettings.IngressHost" Color="Color.Primary" />
+                        </Setting>
+
+                        <Setting Title="Load Balancer">
+                            <MudSwitch @bind-Value="_nodeSettings.LoadBalancerHost" Color="Color.Primary" />
+                        </Setting>
+
+                        <Setting Title="App Host">
+                            <MudSwitch @bind-Value="_nodeSettings.ApplicationHost" Color="Color.Primary" />
+                        </Setting>
+
+                    </MudForm>
+                </MudCardContent>
+            </MudCard>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" Class="ml-auto mt-5"
+            OnClick="@(async () => await SaveSettingsAsync())">Save</MudButton>
+        </MudTabPanel>
+
+        <MudTabPanel Text="Docker">
+            <MudDataGrid 
+            Class="mt-5"
+            @ref="_grid"
+            Bordered="false"
+            Dense="true"
+            Hover="true"
+            ReadOnly="false"
+            EditMode="DataGridEditMode.Cell"
+            Filterable="true"
+            FilterMode="DataGridFilterMode.Simple"
+            T="DockerCertificate"
+            CommittedItemChanges="OnCertModifiedAsync"
+            ServerData="@GetDockerCertificatesAsync"
+            SortMode="SortMode.Single">
+
+                <ToolBarContent>
+                    <MudStack Row="true">
+                        <MudTooltip Text="Add certificate">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="AddCertificate"></MudIconButton>
+                        </MudTooltip>
+
+                        <MudSpacer />
+                    </MudStack>
+                </ToolBarContent>
+
+                <Columns>
+                    <PropertyColumn Title="Name" Property="x => x.RegistryDomain"/>
+                    <TemplateColumn Title="Cert (PEM)">
+                        <EditTemplate>
+                            <MudTextField MaxLines="20" AutoGrow="true" Value="context.Item.CaCrt" T="string" ValueChanged="async(x) => await OnCaCrtChangedAsync(context.Item, x)"/>
+                        </EditTemplate>
+                    </TemplateColumn>
+                </Columns>
+
+                <PagerContent>
+                    <MudDataGridPager T="DockerCertificate" PageSizeOptions=@(new int[] {15, 25, 50}) />
+                </PagerContent>
+
+            </MudDataGrid>
+        </MudTabPanel>
+    </MudTabs>
+
 }
 
 @code {
@@ -69,6 +141,49 @@
 
     private NodeInfo? _nodeInfo;
     private RedMaple.Orchestrator.Contracts.Node.NodeSettings? _nodeSettings;
+    private MudDataGrid<DockerCertificate>? _grid;
+    private List<DockerCertificate> _dockerCertificates = [];
+
+    private async Task OnCaCrtChangedAsync(DockerCertificate certificate, string caCrt)
+    {
+        certificate.CaCrt = caCrt;
+        await OnCertModifiedAsync();
+    }
+
+    private async Task OnCertModifiedAsync()
+    {
+        await SaveCertsAsync();
+    }
+
+    private async Task RemoveCertificate(DockerCertificate cert)
+    {
+        _dockerCertificates.Remove(cert);
+        await SaveCertsAsync();
+        _grid?.ReloadServerData();
+    }
+
+    private async Task SaveCertsAsync()
+    {
+        try
+        {
+            using var dockerDaemonClient = new NodeDockerDaemonClient(_nodeInfo!.BaseUrl);
+            await dockerDaemonClient.SetCertificatesAsync(_dockerCertificates);
+        }
+        catch(Exception ex)
+        {
+            logger.LogError(ex, "Error saving certificates");
+        }
+    }
+
+    private void AddCertificate()
+    {
+        _dockerCertificates.Add(new DockerCertificate
+            {
+                RegistryDomain = "domain-name",
+                CaCrt = ""
+            });
+        _grid?.ReloadServerData();
+    }
 
     private async Task SaveSettingsAsync()
     {
@@ -76,6 +191,31 @@
         {
             using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
             await client.ApplySettingsAsync(_nodeSettings);
+        }
+    }
+
+    protected Task<GridData<DockerCertificate>> GetDockerCertificatesAsync(GridState<DockerCertificate> gridState)
+    {
+        int offset = gridState.PageSize * gridState.Page;
+        try
+        {
+            IQueryable<DockerCertificate> certs = _dockerCertificates.AsQueryable();
+            certs = certs.OrderBy(x => x.RegistryDomain);
+            certs = certs.OrderBy(gridState.SortDefinitions);
+            certs = certs.Where(gridState.FilterDefinitions);
+
+            var gridData = new GridData<DockerCertificate>();
+            gridData.TotalItems = certs.Count();
+            gridData.Items = certs.Skip(offset).Take(gridState.PageSize).ToList();
+            return Task.FromResult(gridData);
+        }
+        catch(Exception ex)
+        {
+            logger.LogError(ex, "Error creating grid date from certs");
+            var gridData = new GridData<DockerCertificate>();
+            gridData.TotalItems = 0;
+            gridData.Items = new List<DockerCertificate>();
+            return Task.FromResult(gridData);
         }
     }
 
@@ -88,6 +228,16 @@
         {
             using var client = new NodeSettingsClient(_nodeInfo.BaseUrl);
             _nodeSettings = await client.GetSettingsAsync();
+
+            try
+            {
+                using var dockerDaemonClient = new NodeDockerDaemonClient(_nodeInfo!.BaseUrl);
+                _dockerCertificates = await dockerDaemonClient.GetCertificatesAsync();
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "Error loading certificates from {baseurl}", _nodeInfo.BaseUrl);
+            }
         }
     }
 }

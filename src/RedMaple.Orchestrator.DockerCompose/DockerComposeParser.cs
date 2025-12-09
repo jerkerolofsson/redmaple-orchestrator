@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System.Numerics;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace RedMaple.Orchestrator.DockerCompose
@@ -44,7 +45,7 @@ namespace RedMaple.Orchestrator.DockerCompose
             var projectName = fileInfo.Directory?.Name ?? "unknown";
 
             var yaml = File.ReadAllText(filename);
-            var plan = ParseYaml(yaml);
+            var plan = ParseYaml(yaml, projectName);
             plan.Yaml = yaml;
             plan.name = projectName;
             AddGlobalLabels(fileInfo, projectName, yaml, plan);
@@ -75,7 +76,7 @@ namespace RedMaple.Orchestrator.DockerCompose
 
             return serializer.Serialize(plan);
         }
-        public static DockerComposePlan ParseYaml(string text)
+        public static DockerComposePlan ParseYaml(string text, string? projectName = null)
         {
             var deserializer = new DeserializerBuilder()
                 .WithTypeConverter(new EnvironmentVariablesTypeConverter())
@@ -89,7 +90,23 @@ namespace RedMaple.Orchestrator.DockerCompose
             if (dockerComposePlan is not null)
             { 
                 dockerComposePlan.RequiredEnvironmentVariables = FindEnvironmentVariables(text);
+
+                dockerComposePlan.Yaml = text;
+                if(projectName is null)
+                {
+                    projectName = 
+                        dockerComposePlan.services.Values.FirstOrDefault()?.container_name ??
+                        dockerComposePlan.services.Keys.FirstOrDefault();
+                }
+                dockerComposePlan.name ??= projectName;
+
+                if (projectName is not null)
+                {
+                    dockerComposePlan.Labels.Add(DockerComposeConstants.LABEL_PROJECT, projectName);
+                }
+                dockerComposePlan.Labels.Add("com.docker.compose.config-hash", Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(text))));
             }
+
             return dockerComposePlan ??new();
         }
     }

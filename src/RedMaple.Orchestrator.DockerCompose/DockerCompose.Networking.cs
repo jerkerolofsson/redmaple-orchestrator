@@ -104,7 +104,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                 }
                 else
                 {
-                    _logger.LogWarning("An existing network with name {NetworkName} was already found..", defaultNetworkName);
+                    _logger.LogDebug("An existing network with name {NetworkName} was already found..", defaultNetworkName);
                 }
 
                 return existingNetwork;

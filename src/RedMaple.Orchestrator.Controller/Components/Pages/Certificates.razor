@@ -38,6 +38,9 @@
         <MudItem xs="12" sm="7">
             <MudCard>
                 <MudCardContent>
+                    <MudTextField Label="CN"
+                                  @bind-Value="model.CN" For="@(() => model.CN)" />
+
                     <MudTextField Label="Domain Name"
                                   @bind-Value="model.DnsName" For="@(() => model.DnsName)" />
 
@@ -73,21 +76,20 @@
 
     public class GenerateCertificateModel
     {
-        [Required]
+        public string CN { get; set; } = "";
         public string DnsName { get; set; } = "";
-
         public string Password { get; set; } = "hunter2";
         public string IpAddress { get; set; } = "";
     }
 
     public void GenerateZip()
     {
-        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=zip");
+        navigationManager.NavigateTo($"/api/ca/generate?cn={model.CN}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=zip");
     }
 
     public void GeneratePfx()
     {
-        navigationManager.NavigateTo($"/api/ca/generate?cn={model.DnsName}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=pfx");
+        navigationManager.NavigateTo($"/api/ca/generate?cn={model.CN}&dnsName={model.DnsName}&ipAddress={model.IpAddress}&password={model.Password}&format=pfx");
     }
 
 
