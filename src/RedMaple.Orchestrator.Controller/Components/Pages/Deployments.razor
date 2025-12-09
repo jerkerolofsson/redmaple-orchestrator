@@ -312,7 +312,19 @@ else if(!_loading)
                 }
                 catch (Exception ex)
                 {
-                    _error = ex.ToString();
+                    bool? forceResult = await dialogService.ShowMessageBox(
+                        "Cannot delete it",
+                        "Delete the deployment from the controller?\nNote that the deployment may still exist on the remote node",
+                        yesText: "Yeah", cancelText: "Cancel");
+
+                    if (forceResult == true)
+                    {
+                        await deploymentManager.ForceDeleteAsync(plan, _progress, token);
+                    }
+                    else
+                    {
+                        _error = ex.ToString();
+                    }
                 }
                 finally
                 {

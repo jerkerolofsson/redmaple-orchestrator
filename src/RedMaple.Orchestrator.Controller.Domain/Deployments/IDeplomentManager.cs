@@ -31,6 +31,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         Task BringUpAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task TakeDownAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
+        Task ForceDeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken);
         Task<DeploymentPlan?> GetDeploymentBySlugAsync(string slug);
 
         /// <summary>

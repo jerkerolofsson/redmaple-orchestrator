@@ -370,6 +370,12 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             await _deploymentPlanRepository.AddDeploymentPlanAsync(plan);
         }
 
+        public async Task ForceDeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
+        {
+            _logger.LogInformation("Deleting deployment plan for {DeploymentSlug}", plan.Slug);
+            await _deploymentPlanRepository.DeleteDeploymentPlanAsync(plan.Id);
+        }
+
         public async Task DeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)
         {
             await TakeDownAsync(plan, progress, cancellationToken);
@@ -388,8 +394,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 await DeleteDeploymentFromTargetAsync(plan, progress, targetNode, cancellationToken);
            }
 
-            _logger.LogInformation("Deleting deployment plan for {DeploymentSlug}", plan.Slug);
-            await _deploymentPlanRepository.DeleteDeploymentPlanAsync(plan.Id);
+            await ForceDeleteAsync(plan, progress, cancellationToken);
         }
 
         public async Task PullImagesAsync(
