@@ -11,20 +11,17 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-5" Spacing="2">
-    <MudText Typo="Typo.h6">Resources</MudText>
-    <MudSpacer />
-    <MudButton Variant="Variant.Filled"
-                Color="Color.Primary"
-                @onclick="async () => await AddVolumeAsync()">Add Volume</MudButton>
+<ClusterResourceTable AddClicked="AddAppServiceAsync" Title="">
+    <TitleContent>
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddVolumeAsync()">Add Volume</MudButton>
 
-    <MudButton Variant="Variant.Filled"
-                Color="Color.Primary"
-                @onclick="async () => await AddAppServiceAsync()">Add App. Service</MudButton>
-
-</MudStack>
-
-<ClusterResourceTable AddClicked="AddAppServiceAsync" />
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
+                   @onclick="async () => await AddAppServiceAsync()">Add App. Service</MudButton>
+    </TitleContent>
+</ClusterResourceTable>
 
 @code {
     private async Task<string?> EnterNameAsync()
@@ -37,29 +34,6 @@
         }
         return null;
     }
-
-
-    // private async Task AddOidcServerAsync()
-    // {
-    //     var name = await EnterNameAsync();
-    //     if (name is not null)
-    //     {
-    //         var resource = new ClusterResource
-    //             {
-    //                 Id = Guid.NewGuid().ToString(),
-    //                 Name = name,
-    //                 Persist = true,
-    //                 Slug = SlugGenerator.Generate(name),
-    //                 Kind = ResourceKind.OidcServer,
-    //                 EnvironmentVariables = new Dictionary<string, string>
-    //                 {
-    //                     ["OIDC_AUTHORITY"] = "https:identityserver"
-    //                 }
-    //             };
-    //         await resourceManager.AddResourceAsync(resource);
-    //         navigationManager.NavigateTo($"/resources/resource/{resource.Id}");
-    //     }
-    // }
 
     private async Task AddAppServiceAsync()
     {

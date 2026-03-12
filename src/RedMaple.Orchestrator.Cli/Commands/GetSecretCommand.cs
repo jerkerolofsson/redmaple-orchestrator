@@ -16,7 +16,7 @@ namespace RedMaple.Orchestrator.Cli.Commands
 {
     public class GetSecretCommand : AsyncCommand<GetSecretCommand.Settings>
     {
-        public override async Task<int> ExecuteAsync(CommandContext context, GetSecretCommand.Settings settings)
+        public override async Task<int> ExecuteAsync(CommandContext context, GetSecretCommand.Settings settings, CancellationToken cancellationToken)
         {
             if(settings.SecretId is null)
             {

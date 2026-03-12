@@ -397,9 +397,8 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     """
                 },
 
-                 new DeploymentPlanTemplate
+                new DeploymentPlanTemplate
                 {
-                     // mongodb://admin:password@localhost:15433
                     Resource = new ResourceCreationOptions
                     {
                         Create = true,
@@ -408,6 +407,11 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                         ConnectionStringFormat = "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
                         Exported = ["MONGODB_USERNAME", "MONGODB_PASSWORD"]
                     },
+                    HealthChecks = new()
+                    {
+                        DeploymentHealthCheck.TcpLivez,
+                    },
+
                     Category = "Databases",
                     CreateIngress= false,
                     Name = "MongoDB 6.0",
@@ -430,6 +434,41 @@ namespace RedMaple.Orchestrator.Controller.Infrastructure.Database
                     """
                 },
 
+                new DeploymentPlanTemplate
+                {
+                    Resource = new ResourceCreationOptions
+                    {
+                        Create = true,
+                        Kind = ResourceKind.ConnectionString,
+                        ConnectionStringVariableNameFormat = "ConnectionStrings__${REDMAPLE_DEPLOYMENT_SLUG}",
+                        ConnectionStringFormat = "mongodb://${MONGODB_USERNAME}:${MONGODB_PASSWORD}@${REDMAPLE_APP_SERVER_IP}:${REDMAPLE_APP_PORT}",
+                        Exported = ["MONGODB_USERNAME", "MONGODB_PASSWORD"]
+                    },
+                    HealthChecks = new()
+                    {
+                        DeploymentHealthCheck.TcpLivez,
+                    },
+                    Category = "Databases",
+                    CreateIngress= false,
+                    Name = "MongoDB 8.2.5",
+                    IconUrl = "/brands/mongodb.png",
+                    ApplicationProtocol = "tcp",
+                    Plan = """
+                    services:
+                      mongodb:
+                        container_name: ${REDMAPLE_DEPLOYMENT_SLUG}
+                        image: "mongo:8.2.5"
+                        restart: unless-stopped
+                        environment:
+                          MONGO_INITDB_ROOT_USERNAME: ${MONGODB_USERNAME}
+                          MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_PASSWORD}
+                        volumes:
+                        - "MONGODATA:/data/db"
+                        ports:
+                        - target: 27017
+                          published: ${REDMAPLE_APP_PORT}
+                    """
+                },
             new DeploymentPlanTemplate
             {
                  Resource = new ResourceCreationOptions

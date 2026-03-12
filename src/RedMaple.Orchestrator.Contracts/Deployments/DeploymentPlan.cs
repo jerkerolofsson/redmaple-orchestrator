@@ -47,6 +47,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public string? Region { get; set; }
 
         /// <summary>
+        /// If dynamic ports are supported by the template, then an application port will be generated and assigned to the deployment
+        /// </summary>
+        public bool EnableDynamicPorts { get; set; } = true;
+
+        /// <summary>
         /// Kind of deployment
         /// </summary>
         public DeploymentKind Kind { get; set; } = DeploymentKind.DockerCompose;

@@ -26,16 +26,72 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.Models
         /// </summary>
         public double MemoryUsagePercent { get; set; }
 
+        public long CurrentRxBytes { get; set; }
+        public long CurrentTxBytes { get; set; }
+
         public long MemoryUsage { get; set; }
         public long? MemoryLimit { get; set; }
 
         public IReadOnlyCollection<DoubleTime> CpuPercentHistory => _cpuHistory.ToList();
         public IReadOnlyCollection<LongTime> MemoryUsageHistory => _memoryUsageHistory.ToList();
         public IReadOnlyCollection<DoubleTime> MemoryUsagePercentHistory => _memoryUsagePercentHistory.ToList();
+        public IReadOnlyCollection<LongTime> NetworkRxBytes => _networkRxBytes.ToList();
+        public IReadOnlyCollection<LongTime> NetworkTxBytes => _networkTxBytes.ToList();
 
-        private LinkedList<DoubleTime> _cpuHistory = new();
-        private LinkedList<LongTime> _memoryUsageHistory = new();
-        private LinkedList<DoubleTime> _memoryUsagePercentHistory = new();
+        private readonly LinkedList<DoubleTime> _cpuHistory = new();
+        private readonly LinkedList<LongTime> _memoryUsageHistory = new();
+        private readonly LinkedList<DoubleTime> _memoryUsagePercentHistory = new();
+
+        private readonly LinkedList<LongTime> _networkRxBytes = new();
+        private readonly LinkedList<LongTime> _networkTxBytes = new();
+
+        private long _prevRxBytes = 0;
+        private long _prevTxBytes = 0;
+
+        internal void SetNetworkUsage(long rxBytes, long txBytes)
+        {
+            var now = DateTime.Now;
+
+            long accumulatedTx = txBytes;
+            long accumulatedRx = rxBytes;
+
+            // We save the delta, the accumulated is reported
+            if (_networkRxBytes.Count > 0)
+            {
+                rxBytes = Math.Max(0, rxBytes - _prevRxBytes);
+            }
+            if (_networkRxBytes.Count > 0)
+            {
+                txBytes = Math.Max(0, txBytes - _prevTxBytes);
+            }
+
+            if(_prevRxBytes == 0 || _prevTxBytes == 0)
+            {
+                // Don't include the first sample..
+                _prevRxBytes = accumulatedRx;
+                _prevTxBytes = accumulatedTx;
+
+                return;
+            }
+
+            _prevRxBytes = accumulatedRx;
+            _prevTxBytes = accumulatedTx;
+
+            _networkRxBytes.AddLast(new LongTime(now, rxBytes));
+            _networkTxBytes.AddLast(new LongTime(now, txBytes));
+
+            CurrentRxBytes = rxBytes;
+            CurrentTxBytes = txBytes;
+
+            while (_networkRxBytes.Count > MaxPoints)
+            {
+                _networkRxBytes.RemoveFirst();
+            }
+            while (_networkTxBytes.Count > MaxPoints)
+            {
+                _networkTxBytes.RemoveFirst();
+            }
+        }
 
         internal void SetMemoryUsage(long usage, long? limit)
         {

@@ -31,27 +31,27 @@ namespace RedMaple.Orchestrator.DockerCompose
                 {
                     List<string> driverOpts = new();
 
-                    if (volumeBind.Volume.Username != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.Username))
                     {
                         driverOpts.Add($"username={volumeBind.Volume.Username}");
                     }
-                    if (volumeBind.Volume.Password != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.Password))
                     {
                         driverOpts.Add($"password={volumeBind.Volume.Password}");
                     }
-                    if (volumeBind.Volume.Server != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.Server))
                     {
                         driverOpts.Add($"addr={volumeBind.Volume.Server}");
                     }
-                    if (volumeBind.Volume.FileMode != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.FileMode))
                     {
                         driverOpts.Add($"file_mode={volumeBind.Volume.FileMode}");
                     }
-                    if (volumeBind.Volume.DirMode != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.DirMode))
                     {
                         driverOpts.Add($"dir_mode={volumeBind.Volume.DirMode}");
                     }
-                    if (volumeBind.Volume.AccessMode != null)
+                    if (!string.IsNullOrWhiteSpace(volumeBind.Volume.AccessMode))
                     {
                         driverOpts.Add($"{volumeBind.Volume.AccessMode}");
                     }

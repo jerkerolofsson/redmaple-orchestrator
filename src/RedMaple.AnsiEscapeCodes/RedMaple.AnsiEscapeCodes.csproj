@@ -1,9 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+    <PropertyGroup>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <AssemblyVersion>1.0.0</AssemblyVersion>
+        <Description>Transformation of text with ansi escape codes to html</Description>
+        <Title>RedMaple.AnsiEscapeCodes</Title>
+        <Authors>Jerker Olofsson</Authors>
+        <Company>Jerker Olofsson</Company>
+        <PackageId>RedMaple.AnsiEscapeCodes</PackageId>
+        <Version>1.0.0</Version>
+        <WebPage>https://github.com/jerkerolofsson/redmaple-orchestrator</WebPage>
+    </PropertyGroup>
 
 </Project>

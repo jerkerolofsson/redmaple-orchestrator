@@ -2,7 +2,7 @@
 @using MudExtensions
 @inject INodeManager nodeManager
 
-<MudToggleGroup Color="Color.Secondary" T="string" ValueChanged="OnRegionChanged" Value="@_selectedRegion">
+<MudToggleGroup Color="Color.Secondary" T="string" ValueChanged="OnRegionChanged" Value="@_selectedRegion" Size="Size.Small">
     @foreach(var region in _regions)
     {
         <MudToggleItem Value="@region">@region</MudToggleItem>

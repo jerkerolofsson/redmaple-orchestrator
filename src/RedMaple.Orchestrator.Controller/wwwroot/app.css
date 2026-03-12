@@ -1,9 +1,40 @@
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    /*    --mud-typography-subtitle1-size: 7pt;*/
 
-    --mud-typography-subtitle1-size: 7pt;
+    --mud-palette-primary: #258cfb;
+    --mud-palette-primary-lighten: #359cff;
+    --mud-palette-primary-darken: #157ceb;
+
+    --mud-palette-secondary: #157ceb;
+    --mud-palette-secondary-rgb: #157ceb;
+    --mud-palette-secondary-lighten: #258cfb;
+    --mud-palette-secondary-darken: #056cdb;
 }
 
+body {
+    min-height: 100dvh;
+    max-height: 100dvh;
+    height: 100%;
+    overflow: hidden;
+}
+
+.mud-breadcrumbs {
+    padding: 4px 1rem;
+}
+
+.btn-delete {
+    border-radius: 10px;
+    background: var(--mud-palette-error);
+    text-transform: none;
+    padding: 2px 12px;
+}
+
+.btn-delete:hover {
+    background: var(--mud-palette-error-darken);
+}
+
+    
 .mud-input-text {
     border-radius: 16px;
     background: rgba(0,0,0,0.2);
@@ -18,18 +49,6 @@ html, body {
 .mud-input-text .mud-input-adornment-start .mud-icon-root.mud-svg-icon  {
     margin-left: 10px;
 }
-
-.btn-delete {
-    border-radius: 10px;
-    background: var(--mud-palette-error);
-    text-transform: none;
-    padding: 2px 12px;
-}
-
-.btn-delete:hover {
-    background: var(--mud-palette-error-darken);
-}
-
 .mud-input>textarea.mud-input-root {
     padding: 8px 12px;    
 }
@@ -40,10 +59,10 @@ html, body {
 }
 
 .mud-input-number-control .mud-input .mud-input-slot,
-.mud-input>input.mud-input-root.mud-input-root-margin-dense,
-.mud-input>input.mud-input-root, 
+.mud-input > input.mud-input-root.mud-input-root-margin-dense,
+.mud-input > input.mud-input-root,
 div.mud-input-slot.mud-input-root {
-    padding: 8px 12px;    
+    padding: 8px 12px;
 }
 
 .mud-input-control > .mud-input-control-input-container > .mud-input-label-inputcontrol {
@@ -137,3 +156,19 @@ table a {
 
 a:hover {
 }
+
+.container-charts {
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    gap: 8px;
+}
+
+    .container-charts > * {
+        background: #202028;
+        border-radius: 8px;
+        border: solid 1px var(--mud-palette-info);
+    }
+
+        .container-charts > *:hover {
+            background: #303038;
+        }

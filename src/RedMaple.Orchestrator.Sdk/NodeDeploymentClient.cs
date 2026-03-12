@@ -22,7 +22,12 @@ namespace RedMaple.Orchestrator.Sdk
         {
             string url = $"/api/deployments/{slug}";
             using var response = await _httpClient.DeleteAsync(url);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(errorText);
+            }
+
             var text = await response.Content.ReadAsStringAsync();
             foreach (var line in text.Split('\n'))
             {
@@ -34,7 +39,12 @@ namespace RedMaple.Orchestrator.Sdk
         {
             string url = $"/api/deployments/{slug}/down";
             using var response = await _httpClient.PostAsync(url, null);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(errorText);
+            }
+
             var text = await response.Content.ReadAsStringAsync();
             foreach (var line in text.Split('\n'))
             {
@@ -45,7 +55,12 @@ namespace RedMaple.Orchestrator.Sdk
         {
             string url = $"/api/deployments/{slug}/up";
             using var response = await _httpClient.PostAsync(url, null);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(errorText);
+            }
+
             var text = await response.Content.ReadAsStringAsync();
             foreach (var line in text.Split('\n'))
             {
@@ -56,7 +71,12 @@ namespace RedMaple.Orchestrator.Sdk
         {
             string url = $"/api/deployments";
             using var response = await _httpClient.PostAsJsonAsync(url, plan);
-            response.EnsureSuccessStatusCode();
+            if (!response.IsSuccessStatusCode)
+            {
+                var errorText = await response.Content.ReadAsStringAsync();
+                throw new InvalidOperationException(errorText);
+            }
+
             var text = await response.Content.ReadAsStringAsync();
             foreach (var line in text.Split('\n'))
             {

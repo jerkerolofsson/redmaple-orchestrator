@@ -92,6 +92,11 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
             return ports;
         }
 
+        /// <summary>
+        /// https://github.com/compose-spec/compose-spec/blob/main/spec.md#ports
+        /// </summary>
+        /// <param name="scalar"></param>
+        /// <param name="port"></param>
         private static void ParseShortFormat(Scalar scalar, DockerComposePortMapping port)
         {
             var portMapping = scalar.Value.Split('/');
@@ -111,6 +116,12 @@ namespace RedMaple.Orchestrator.DockerCompose.Converters
             {
                 port.HostPort = items[0];
                 port.ContainerPort = items[1];
+            }
+            else if (items.Length == 3)
+            {
+                port.HostIp = items[0];
+                port.HostPort = items[1];
+                port.ContainerPort = items[2];
             }
         }
 

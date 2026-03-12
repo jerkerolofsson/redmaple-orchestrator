@@ -56,6 +56,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 
                 ReportCpuUsage(response);
                 ReportMemoryUsage(response);
+                ReportNetworkUsage(response);
 
                 Owner.OnContainerStatsUpdated(ContainerId);
                 _prev = response;
@@ -65,7 +66,16 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 
             }
         }
+        private void ReportNetworkUsage(ContainerStatsResponse? response)
+        {
+            if (response?.Networks is not null)
+            {
+                long rxBytes = response.Networks.Values.Sum(net => net.RxBytes ?? 0);
+                long txBytes = response.Networks.Values.Sum(net => net.TxBytes ?? 0);
 
+                StatsManager.ReportNetworkUsage(ContainerId, rxBytes, txBytes);
+            }
+        }
         private void ReportMemoryUsage(ContainerStatsResponse? response)
         {
             if (response?.MemoryStats?.Stats is not null)

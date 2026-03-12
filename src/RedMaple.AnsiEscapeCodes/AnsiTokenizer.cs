@@ -1,14 +1,20 @@
-﻿using RedMaple.AnsiEscapeCodes.EscapeReaders;
+﻿using System.Text;
+
+using RedMaple.AnsiEscapeCodes.EscapeReaders;
 using RedMaple.AnsiEscapeCodes.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace RedMaple.AnsiEscapeCodes
 {
+    /// <summary>
+    /// Provides functionality to tokenize a string containing ANSI escape sequences into a sequence of tokens
+    /// representing text and control characters.
+    /// </summary>
+    /// <remarks>The AnsiTokenizer class processes input text character by character, yielding tokens for text
+    /// segments, line feeds, carriage returns, replacement characters, and recognized escape sequences. It is useful
+    /// for parsing terminal output or other streams that include ANSI formatting codes, enabling structured handling of
+    /// both printable text and control sequences. The tokenizer maintains internal state to accurately detect and read
+    /// escape sequences, ensuring that the output reflects the logical structure of the input. This class is not
+    /// thread-safe.</remarks>
     public class AnsiTokenizer
     {
         private const char ESCAPE = (char)0x1B;
@@ -22,6 +28,17 @@ namespace RedMaple.AnsiEscapeCodes
             ReadEscapeSequence
         }
 
+        /// <summary>
+        /// Tokenizes the specified input string into a sequence of text and control character tokens, including escape
+        /// sequences, line feeds, carriage returns, and replacement characters.
+        /// </summary>
+        /// <remarks>This method processes the input incrementally, yielding tokens as they are
+        /// identified. It recognizes and separates text segments, line feeds, carriage returns, replacement characters,
+        /// and escape sequences for further handling. This approach allows efficient processing of large or streaming
+        /// text inputs.</remarks>
+        /// <param name="text">The input string to be parsed. May contain plain text, control characters, and ANSI escape sequences.</param>
+        /// <returns>An enumerable collection of AnsiToken instances, each representing a segment of text or a recognized control
+        /// character from the input.</returns>
         public IEnumerable<AnsiToken> Tokenize(string text)
         {
             _state = State.Text;

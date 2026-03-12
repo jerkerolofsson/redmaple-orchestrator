@@ -55,10 +55,15 @@ namespace RedMaple.Orchestrator.DockerCompose
 
         private static void AddGlobalLabels(FileInfo fileInfo, string projectName, string yaml, DockerComposePlan plan)
         {
+            plan.Labels.Remove(DockerComposeConstants.LABEL_PROJECT);
+            plan.Labels.Remove("com.docker.compose.project.config-files");
+            plan.Labels.Remove("com.docker.compose.config-hash");
+
             plan.Labels.Add(DockerComposeConstants.LABEL_PROJECT, projectName);
             plan.Labels.Add("com.docker.compose.project.config-files", fileInfo.FullName);
             if (fileInfo.DirectoryName is not null)
             {
+                plan.Labels.Remove("com.docker.compose.project.working_dir");
                 plan.Labels.Add("com.docker.compose.project.working_dir", fileInfo.DirectoryName);
             }
             plan.Labels.Add("com.docker.compose.config-hash", Convert.ToHexString(SHA1.HashData(Encoding.UTF8.GetBytes(yaml))));

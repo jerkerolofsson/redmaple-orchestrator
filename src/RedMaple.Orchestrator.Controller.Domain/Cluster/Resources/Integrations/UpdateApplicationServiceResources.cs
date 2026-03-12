@@ -216,7 +216,7 @@ namespace RedMaple.Orchestrator.Controller.Domain.Cluster.Resources.Integrations
                 }
                 else
                 {
-                    env[key] = $"https://{notification.Plan.DomainName}";
+                    env[key] = $"{protocol}://{notification.Plan.DomainName}";
                 }
             }
         }

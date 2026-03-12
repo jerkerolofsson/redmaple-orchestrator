@@ -136,7 +136,7 @@
         {
             return;
         }
-        bool? result = await dialogService.ShowMessageBox(
+        bool? result = await dialogService.ShowMessageBoxAsync(
            "Confirm",
            "Do you really want to delete the resource",
            yesText: "Yeah", cancelText: "Cancel");

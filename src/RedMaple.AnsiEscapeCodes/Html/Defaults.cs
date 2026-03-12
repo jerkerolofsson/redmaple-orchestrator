@@ -6,7 +6,10 @@ using System.Threading.Tasks;
 
 namespace RedMaple.AnsiEscapeCodes.Html
 {
-    public class Defaults
+    /// <summary>
+    /// Default styles
+    /// </summary>
+    internal class Defaults
     {
         public static string Color { get; set; } = "#ffffff";
         public static string BackgroundColor { get; set; } = "#000000";

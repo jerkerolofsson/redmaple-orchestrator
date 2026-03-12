@@ -4,22 +4,14 @@
 
 <MudPaper Width="250px" Class="py-3" Elevation="0">
     <MudNavMenu>
-        <div class="container-logo">
-            <div><img src="logo.png" alt="logo"/></div>
-            <div class="title">
-                <div>
-                    <MudText Typo="Typo.h6" Class="px-4">RedMaple</MudText>
-                    <MudText Typo="Typo.subtitle1" Class="px-4">Orchestration</MudText>
-                </div>
-            </div>
-        </div>
-        <MudDivider Class="my-2" />
+      
         <MudNavLink Href="/deployments"><i class="fa fa-folder-tree" /> Deployments</MudNavLink>
 
         <MudNavGroup Title="Resources">
             <MudNavLink Href="/secrets"><i class="fa fa-user-secret" /> Secrets</MudNavLink>
             <MudNavLink Href="/infra-resources"><i class="fa fa-server" /> Infra Resources</MudNavLink>
             <MudNavLink Href="/resources/all"><i class="fa fa-database" /> Browse Resources</MudNavLink>
+            <MudNavLink Href="/resources/volumes"><i class="fa fa-address-card" /> Volumes</MudNavLink>
             <MudNavLink Href="/resources/idp"><i class="fa fa-address-card" /> Identity Providers</MudNavLink>
             <MudNavLink Href="/resources/connection-strings"><i class="fa fa-database" /> Connection Strings</MudNavLink>
         </MudNavGroup>

@@ -1,14 +1,10 @@
-﻿using RedMaple.AnsiEscapeCodes.Tokens;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Diagnostics.CodeAnalysis;
+
+using RedMaple.AnsiEscapeCodes.Tokens;
 
 namespace RedMaple.AnsiEscapeCodes.EscapeReaders
 {
-    public class EscapeReader
+    internal class EscapeReader
     {
         private readonly List<char> _chars = [];
         private char? _endCharStart;

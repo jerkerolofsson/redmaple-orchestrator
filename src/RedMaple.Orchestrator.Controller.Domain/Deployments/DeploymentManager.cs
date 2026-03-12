@@ -289,7 +289,10 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
                 plan.EnvironmentVariables.TryGetValue("REDMAPLE_APP_PORT", out string? appPort) &&
                 int.TryParse(appPort, out var port))
             {
-                plan.ApplicationServerPort = port;
+                if (plan.EnableDynamicPorts)
+                {
+                    plan.ApplicationServerPort = port;
+                }
             }
             if (plan.ApplicationServerPort is null)
             {
@@ -305,7 +308,9 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
             {
                 result.Errors.Add(new ValidationFailure("ApplicationHttpsCertificatePassword", "ApplicationHttpsCertificatePassword is missing (REDMAPLE_APP_HTTPS_CERTIFICATE_PASSWORD environment variable)"));
             }
-            
+
+            // When validating the plan, if it is not using dynamic ports, assign the app and api ports to the plan ports
+            AssignPortsToExposedIfNotUsingDynamic(plan);
 
             return result;
         }
@@ -367,7 +372,41 @@ namespace RedMaple.Orchestrator.Controller.Domain.Deployments
         public async Task SaveAsync(DeploymentPlan plan)
         {
             plan.Id = plan.Slug;
+
+            // When saving the plan, if it is not using dynamic ports, assign the app and api ports to the plan ports
+            AssignPortsToExposedIfNotUsingDynamic(plan);
+
             await _deploymentPlanRepository.AddDeploymentPlanAsync(plan);
+        }
+
+        private void AssignPortsToExposedIfNotUsingDynamic(DeploymentPlan plan)
+        {
+            if(!plan.EnableDynamicPorts)
+            {
+                try
+                {
+                    var dockerComposePlan = DockerComposeParser.ParseYaml(plan.Plan);
+                    if(dockerComposePlan.services is not null)
+                    {
+                        foreach(var service in dockerComposePlan.services)
+                        {
+                            if(service.Value.ports is not null)
+                            {
+                                for(int i = 0; i < service.Value.ports.Count; i++)
+                                {
+                                    var port = service.Value.ports[i];
+                                    if (port.HostPort is not null && int.TryParse(port.HostPort, out int hostPort))
+                                    {
+                                        plan.ApplicationServerPort = hostPort;
+                                        return;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
         }
 
         public async Task ForceDeleteAsync(DeploymentPlan plan, IProgress<string> progress, CancellationToken cancellationToken)

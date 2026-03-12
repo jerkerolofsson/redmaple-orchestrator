@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RedMaple.AnsiEscapeCodes.EscapeReaders
+﻿namespace RedMaple.AnsiEscapeCodes.EscapeReaders
 {
-    public enum FeC1SequenceType
+    internal enum FeC1SequenceType
     {
         SingleShiftTwo = 0x8E,
         SingleShiftThree = 0x8F,

@@ -17,6 +17,20 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
 
         public event EventHandler<ContainerStats>? StatsUpdated;
 
+        public void ReportNetworkUsage(string containerId, long rxBytes, long txBytes)
+        {
+            if (_stats.TryGetValue(containerId, out var stats))
+            {
+                stats.SetNetworkUsage(rxBytes, txBytes);
+            }
+            else
+            {
+                stats = new ContainerStats { ContainerId = containerId };
+                stats.SetNetworkUsage(rxBytes, txBytes);
+                _stats[containerId] = stats;
+            }
+        }
+
         public void ReportMemoryUsage(string containerId, long usage, long? limit)
         {
             if (_stats.TryGetValue(containerId, out var stats))
@@ -29,8 +43,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
                 stats.SetMemoryUsage(usage, limit);
                 _stats[containerId] = stats;
             }
-
         }
+
         public void ReportCpuUsage(string containerId, double cpuUsage)
         {
             if (_stats.TryGetValue(containerId, out var stats))

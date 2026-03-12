@@ -1,17 +1,27 @@
 ﻿@using MudBlazor
 @inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
+<div class="main">
+
+    <div class="top-header">
+        <div class="title">
+            RedMaple Orchestrator
+        </div>
     </div>
 
-    <main>
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+    <div class="page">
+        <div class="sidebar">
+            <NavMenu />
+        </div>
+
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
 </div>
+
 
 <div id="blazor-error-ui">
     An unhandled error has occurred.

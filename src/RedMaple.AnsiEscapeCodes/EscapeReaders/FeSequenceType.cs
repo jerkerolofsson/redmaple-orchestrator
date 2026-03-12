@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RedMaple.AnsiEscapeCodes.EscapeReaders
+﻿namespace RedMaple.AnsiEscapeCodes.EscapeReaders
 {
-    public  class FeSequenceType
+    internal class FeSequenceType
     {
         public  const char SingleShiftTwo = 'N';
         public  const char SingleShiftThree = 'O';

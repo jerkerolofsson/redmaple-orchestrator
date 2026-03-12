@@ -1,18 +1,36 @@
-﻿using RedMaple.AnsiEscapeCodes.Html.Tags;
+﻿using System.Text;
+
+using RedMaple.AnsiEscapeCodes.Html.Tags;
 using RedMaple.AnsiEscapeCodes.Tokens;
 using RedMaple.AnsiEscapeCodes.Tokens.Csi.Sgr;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace RedMaple.AnsiEscapeCodes.Html
 {
+    /// <summary>
+    /// Provides functionality to convert ANSI encoded text into HTML, translating ANSI escape codes into styled HTML
+    /// elements for web display.
+    /// </summary>
+    /// <remarks>Use this class to render ANSI text with formatting such as colors, font weight, and line
+    /// breaks in HTML. It supports a range of ANSI styles, including foreground and background colors, bold text, and
+    /// resets. This is useful for displaying terminal output or logs in web applications while preserving their
+    /// original formatting.</remarks>
     public class AnsiCodeHtmlRenderer
     {
-        private Style _style = new();
+        /// <summary>
+        /// Current style
+        /// </summary>
+        private readonly Style _style = new();
 
+        /// <summary>
+        /// Converts the specified ANSI text to its HTML representation by processing ANSI escape codes and generating
+        /// corresponding HTML elements.
+        /// </summary>
+        /// <remarks>Use this method to display ANSI-formatted text in web environments. The conversion
+        /// preserves formatting such as colors and styles defined by ANSI escape codes. Ensure that the input text is
+        /// properly formatted to achieve the desired HTML output.</remarks>
+        /// <param name="ansiText">The ANSI text to be converted. This string may contain ANSI escape codes, which will be interpreted and
+        /// transformed into HTML elements.</param>
+        /// <returns>A string containing the HTML representation of the provided ANSI text.</returns>
         public string RenderHtml(string ansiText)
         {
             var tokens = new AnsiTokenizer().Tokenize(ansiText).ToList();
@@ -25,6 +43,18 @@ namespace RedMaple.AnsiEscapeCodes.Html
             return html.ToString();
         }
 
+        /// <summary>
+        /// Converts a sequence of ANSI tokens into a collection of HTML elements, applying styles based on the token
+        /// types encountered.
+        /// </summary>
+        /// <remarks>This method processes text, line feed, and graphic rendition tokens to produce styled
+        /// HTML elements. Styles such as font weight, foreground color, and background color are adjusted according to
+        /// the graphic rendition codes. The method yields elements in the order they appear in the input
+        /// sequence.</remarks>
+        /// <param name="tokens">The collection of ANSI tokens to be rendered as HTML elements. Each token determines the structure and
+        /// styling of the resulting HTML output.</param>
+        /// <returns>An enumerable collection of HtmlElement instances representing the HTML elements generated from the provided
+        /// tokens.</returns>
         private IEnumerable<HtmlElement> ToHtmlElements(IEnumerable<AnsiToken> tokens)
         { 
             foreach (var token in tokens)

@@ -19,7 +19,7 @@
                         <MudText Typo="Typo.h6" Color="Color.Secondary">General</MudText>
 
                         <Setting Title="Name">
-                            <MudText>@_template.Name</MudText>
+                            <MudText Class="pr-3" Color="Color.Tertiary">@_template.Name</MudText>
                         </Setting>
 
                         <Setting Title="Category">
@@ -40,9 +40,22 @@
                     </MudStack>
                 </MudCardContent>
             </MudCard>
+            
 
+            <MudCard Class="pa-3 mt-2">
+                <MudCardContent>
+                    <MudStack>
 
-            <MudCard Class="pa-5 mt-5">
+                        <MudText Typo="Typo.h6" Color="Color.Secondary">Dynamic Ports</MudText>
+
+                        <Setting Title="Enable dynamic ports" SubTitle="Application ports will be generated for the deployment and set as environment variables REDMAPLE_APP_PORT, and REDMAPLE_API_PORT that can be used in the compose plan to expose ports on the host">
+                            <MudSwitchM3 Color="Color.Primary" @bind-Value="_template.EnableDynamicPorts"></MudSwitchM3>
+                        </Setting>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+
+            <MudCard Class="pa-3 mt-2">
                 <MudCardContent>
                     <MudStack>
 
@@ -74,7 +87,7 @@
                 </MudCardContent>
             </MudCard>
 
-            <MudCard Class="pa-5 mt-5">
+            <MudCard Class="pa-3 mt-2">
                 <MudCardContent>
                     <MudStack>
 
@@ -105,7 +118,7 @@
                     </MudStack>
                 </MudCardContent>
             </MudCard>
-            <MudCard Class="pa-5 mt-5">
+            <MudCard Class="pa-3 mt-2">
                 <MudCardContent>
                     <MudText Typo="Typo.h6" Color="Color.Secondary">Docker Compose</MudText>
                     <DockerComposeEditor @bind-Value="_template.Plan"/>
@@ -128,6 +141,7 @@
         ResourceKind.MessageBroker,
         ResourceKind.OidcServer,
         ResourceKind.OtlpServer,
+        ResourceKind.NtpServer
     ];
 
     private DeploymentPlanTemplate? _template = null;

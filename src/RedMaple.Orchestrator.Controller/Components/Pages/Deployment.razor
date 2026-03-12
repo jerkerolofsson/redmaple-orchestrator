@@ -22,61 +22,38 @@
     }
 </MudStack>
 
-<MudItem Class="pa-5">
-    <MudStack Spacing="2">
+<MudStack Spacing="2">
 
-        <MudStack  Spacing="2" Row="true">
-            @if (_plan is not null)
-            {
-                string ingressUrl = "";
-                string appUrl = "";
+    <div class="container-charts">
+        <MudItem Class="pa-3">
+            <MudText Color="Color.Info" Typo="Typo.h6">@_cpuHeader</MudText>
+            <ContainerStatsChart SeriesName="CPU (%)" Data="@_cpuStats"></ContainerStatsChart>
+        </MudItem>
 
-                if (_plan.CreateIngress && !string.IsNullOrEmpty(_plan.DomainName))
-                {
-                    ingressUrl = $"https://{_plan.DomainName}";
-                }
-                if (_plan.ApplicationServerIps?.Count > 0)
-                {
-                    appUrl = $"{_plan.ApplicationProtocol}://{_plan.ApplicationServerIps[0]}:{_plan.ApplicationServerPort}";
-                }
-                if (!string.IsNullOrEmpty(ingressUrl))
-                {
-                    <MudNavLink Href="@ingressUrl">@ingressUrl</MudNavLink>
-                }
-                if (!string.IsNullOrEmpty(appUrl))
-                {
-                    <MudNavLink Href="@appUrl">@appUrl</MudNavLink>
-                }
-            }
-        </MudStack>
+        <MudItem Class="pa-3">
+            <MudText Color="Color.Info" Typo="Typo.h6">@_memoryHeader</MudText>
+            <ContainerStatsChart SeriesName="Memory (MB)" Data="@_memoryUsage"></ContainerStatsChart>
+        </MudItem>
 
-    </MudStack>
-</MudItem>
+        <MudItem Class="pa-3">
+            <MudText Color="Color.Info" Typo="Typo.h6">RX kb/s</MudText>
+            <ContainerStatsChart SeriesName="kb/s" Data="@_networkRxUsage"></ContainerStatsChart>
+        </MudItem>
 
+        <MudItem Class="pa-3">
+            <MudText Color="Color.Info" Typo="Typo.h6">TX kb/s</MudText>
+            <ContainerStatsChart SeriesName="kb/s" Data="@_networkTxUsage"></ContainerStatsChart>
+        </MudItem>
+    </div>
 
-<MudText Typo="Typo.h6">Logs</MudText>
-<div class="container-logs">
-    @foreach (var deployedContainer in _containers)
-    {
-        <div>
-            <h1>@deployedContainer.Container.Name</h1>
+    <div class="container-logs">
+        @foreach (var deployedContainer in _containers)
+        {
             <ContainerLogView NodeId="@deployedContainer.Node.Id" ContainerId="@deployedContainer.Container.Id" />
-        </div>
-    }
-</div>
+        }
+    </div>
 
-<div class="container-charts">
-    <MudItem Class="pa-3">
-        <MudText Color="Color.Secondary" Typo="Typo.h6">@_cpuHeader</MudText>
-        <ContainerStatsChart SeriesName="CPU (%)" Data="@_cpuStats"></ContainerStatsChart>
-    </MudItem>
-
-    <MudItem Class="pa-3">
-        <MudText Color="Color.Secondary" Typo="Typo.h6">@_memoryHeader</MudText>
-        <ContainerStatsChart SeriesName="Memory (MB)" Data="@_memoryUsage"></ContainerStatsChart>
-    </MudItem>
-</div>
-
+</MudStack>
 
 @code {
     [Parameter]
@@ -86,9 +63,12 @@
     private IReadOnlyList<ContainerStatsAggregation> _containers = new List<ContainerStatsAggregation>();
     private IReadOnlyCollection<DoubleTime> _cpuStats = Array.Empty<DoubleTime>();
     private IReadOnlyCollection<DoubleTime> _memoryUsage = Array.Empty<DoubleTime>();
+    private IReadOnlyCollection<DoubleTime> _networkRxUsage = Array.Empty<DoubleTime>();
+    private IReadOnlyCollection<DoubleTime> _networkTxUsage = Array.Empty<DoubleTime>();
     private string? _monitorContainerId = null;
     private string _memoryHeader = "Memory Usage";
     private string _cpuHeader = "CPU (%)";
+    private string _networkHeader = "Network Usage";
     private DeploymentPlan? _plan;
 
     protected override async Task OnParametersSetAsync()
@@ -118,12 +98,23 @@
                 return;
             }
 
+            var networkRxHistory = container.Stats.NetworkRxBytes;
+            if (networkRxHistory is not null)
+            {
+                _networkRxUsage = networkRxHistory.Select(x => new DoubleTime(x.Time, x.Value / 1000.0)).ToList();
+            }
+
+            var networkTxHistory = container.Stats.NetworkTxBytes;
+            if (networkTxHistory is not null)
+            {
+                _networkTxUsage = networkTxHistory.Select(x => new DoubleTime(x.Time, x.Value / 1000.0)).ToList();
+            }
+
             var cpuHistory = container.Stats.CpuPercentHistory;
             if (cpuHistory is not null)
             {
                 _cpuStats = cpuHistory;
                 _cpuHeader = $"CPU {Math.Round(container.Stats.CpuPercent)}%";
-
             }
 
             var memoryUsageHistory = _containers[0].Stats?.MemoryUsageHistory;

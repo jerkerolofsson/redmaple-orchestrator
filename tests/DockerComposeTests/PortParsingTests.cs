@@ -36,6 +36,25 @@ namespace DockerComposeTests
             Assert.Equal("UDP", service.ports[0].Protocol);
         }
 
+
+        [Fact]
+        public void ParseFile_WithShortFormatHostIp()
+        {
+            var plan = DockerComposeParser.ParseFile("TestData/ports_short_format_hostip.yaml");
+            Assert.NotNull(plan?.services);
+            Assert.Single(plan.services);
+
+            var service = plan.services["test"]!;
+
+            Assert.NotNull(service.ports);
+            Assert.Single(service.ports);
+            Assert.Equal("127.0.0.1", service.ports[0].HostIp);
+            Assert.Equal("1234", service.ports[0].HostPort);
+            Assert.Equal("8081", service.ports[0].ContainerPort);
+            Assert.Equal("UDP", service.ports[0].Protocol);
+        }
+
+
         [Fact]
         public void ParseFile_WithShortPortFormatProtocolTdp()
         {

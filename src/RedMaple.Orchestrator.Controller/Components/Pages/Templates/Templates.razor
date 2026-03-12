@@ -78,7 +78,7 @@
             var existingTemplate = await templateProvider.GetTemplateByNameAsync(templateName);
             if(existingTemplate is {})
             {
-                await dialogService.ShowMessageBox(
+                await dialogService.ShowMessageBoxAsync(
                  "Conflict",
                  "A template with this name already exists",
                  cancelText: "Cancel");

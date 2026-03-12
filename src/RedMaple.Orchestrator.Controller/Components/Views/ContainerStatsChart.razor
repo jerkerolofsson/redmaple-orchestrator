@@ -1,20 +1,19 @@
 ﻿@using RedMaple.Orchestrator.Controller.Domain.Metrics.Models
 @using Humanizer
 
-<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" XAxisLabels="@XAxisLabels" Width="100%" Height="200px" ChartOptions="@Options" />
+<MudChart ChartType="ChartType.Line" ChartSeries="@Series" @bind-SelectedIndex="Index" Width="100%" Height="100px" ChartOptions="@Options" />
 
 @code {
 
     private int Index = -1; //default value cannot be 0 -> first selectedindex is 0.
     public ChartOptions Options = new ChartOptions()
     {
-        ShowLegend = false,
-        YAxisRequireZeroPoint = true
+        ShowLegend = false
     };
 
-    public List<ChartSeries> Series = new List<ChartSeries>()
+    public List<ChartSeries<double>> Series = new List<ChartSeries<double>>()
     {
-        new ChartSeries() { Name = "", Data = Array.Empty<double>() },
+        new ChartSeries<double>() { Name = "", Data = Array.Empty<double>() },
     };
     public string[] XAxisLabels = Array.Empty<string>();
 

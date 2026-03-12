@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace RedMaple.AnsiEscapeCodes.Html
+﻿namespace RedMaple.AnsiEscapeCodes.Html
 {
+    /// <summary>
+    /// Specifies the weight of a font, which determines the thickness of the characters rendered.
+    /// </summary>
     public enum FontWeight
     {
         Regular = 400,

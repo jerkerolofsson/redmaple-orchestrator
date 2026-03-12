@@ -1,18 +1,15 @@
-﻿using RedMaple.AnsiEscapeCodes.Tokens;
-using RedMaple.AnsiEscapeCodes.Tokens.Csi;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Text;
-using System.Threading.Tasks;
+
+using RedMaple.AnsiEscapeCodes.Tokens;
+using RedMaple.AnsiEscapeCodes.Tokens.Csi;
 
 namespace RedMaple.AnsiEscapeCodes.EscapeReaders
 {
-    public class FeEscapeReader : EscapeReader
+    internal class FeEscapeReader : EscapeReader
     {
         private char? _sequenceType = null;
-        private StringBuilder _chars = new StringBuilder();
+        private readonly StringBuilder _chars = new StringBuilder();
 
         public FeEscapeReader() : base((char)0x40, (char)0x5F)
         {

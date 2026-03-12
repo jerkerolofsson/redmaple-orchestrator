@@ -147,12 +147,13 @@
     private async Task OnCaCrtChangedAsync(DockerCertificate certificate, string caCrt)
     {
         certificate.CaCrt = caCrt;
-        await OnCertModifiedAsync();
+        await OnCertModifiedAsync(certificate);
     }
 
-    private async Task OnCertModifiedAsync()
+    private async Task<DataGridEditFormAction> OnCertModifiedAsync(DockerCertificate _)
     {
         await SaveCertsAsync();
+        return DataGridEditFormAction.Close;
     }
 
     private async Task RemoveCertificate(DockerCertificate cert)
@@ -194,7 +195,7 @@
         }
     }
 
-    protected Task<GridData<DockerCertificate>> GetDockerCertificatesAsync(GridState<DockerCertificate> gridState)
+    protected Task<GridData<DockerCertificate>> GetDockerCertificatesAsync(GridState<DockerCertificate> gridState, CancellationToken cancellationToken)
     {
         int offset = gridState.PageSize * gridState.Page;
         try

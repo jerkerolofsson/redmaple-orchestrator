@@ -291,7 +291,7 @@ else if(!_loading)
 
     private async Task DeleteAsync(DeploymentPlan plan)
     {
-        bool? result = await dialogService.ShowMessageBox(
+        bool? result = await dialogService.ShowMessageBoxAsync(
            "Confirm",
            "Do you really want to delete the deployment",
            yesText: "Yeah", cancelText: "Cancel");
@@ -312,7 +312,7 @@ else if(!_loading)
                 }
                 catch (Exception ex)
                 {
-                    bool? forceResult = await dialogService.ShowMessageBox(
+                    bool? forceResult = await dialogService.ShowMessageBoxAsync(
                         "Cannot delete it",
                         "Delete the deployment from the controller?\nNote that the deployment may still exist on the remote node",
                         yesText: "Yeah", cancelText: "Cancel");

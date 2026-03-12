@@ -149,7 +149,7 @@
 
         string regionName = region ?? "global";
 
-        bool? result = await dialogService.ShowMessageBox(
+        bool? result = await dialogService.ShowMessageBoxAsync(
           "Confirm",
           $"Would you like to update variables from resources in the {region} region?",
           yesText: "Yeah", cancelText: "Cancel");
@@ -172,6 +172,10 @@
 
     private void OnApplicationNodeChanged(NodeInfo node)
     {
+        if(node.IpAddress is null)
+        {
+            return;
+        }
         _applicationNode = node;
         if (_plan is not null)
         {
@@ -180,6 +184,10 @@
     }
     private void OnIngressNodeChanged(NodeInfo node)
     {
+        if (node.IpAddress is null)
+        {
+            return;
+        }
         _ingressNode = node;
         if (_plan is not null)
         {

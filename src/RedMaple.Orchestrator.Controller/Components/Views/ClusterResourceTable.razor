@@ -8,30 +8,36 @@
 }
 else if (!_loading)
 {
-    <MudStack Row="true" Class="mt-2 mb-1" AlignItems="AlignItems.Center">
-        <MudSpacer />
-        <SelectRegion Region="@_region" RegionChanged="OnRegionChangedAsync" Regions="@_regions" />
-    </MudStack>
-    <MudDataGrid Bordered="true" Dense="true" Hover="true"
-    EditMode="DataGridEditMode.Cell"
-    T="ClusterResource"
-                 RowClick="e => OnRowClicked(e.Item)"
-    Items="@_filteredResources"
-    SortMode="SortMode.Multiple">
+    <MudDataGrid 
+        Bordered Dense Hover
+        EditMode="DataGridEditMode.Cell"
+        T="ClusterResource"
+        RowClick="e => OnRowClicked(e.Item)"
+        Items="@_filteredResources"
+        SortMode="SortMode.Multiple">
 
         <ToolBarContent>
             <MudStack Row="true" AlignItems="AlignItems.Center" Style="width: 100%">
-                <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="async () => await AddAsync()" />
-                <MudText Typo="Typo.h6">@Title</MudText>
+                @if(TitleContent is not null)
+                {
+                    @TitleContent
+
+                }
+                else
+                {
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" OnClick="async () => await AddAsync()" />
+                    <MudText Typo="Typo.h6">@Title</MudText>
+                }
                 <MudSpacer />
                 <MudTextField T="string" ValueChanged="@(s=>OnSearch(s))" Placeholder="Search" Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search" IconSize="Size.Medium" Class="mt-0"></MudTextField>
+                <SelectRegion Region="@_region" RegionChanged="OnRegionChangedAsync" Regions="@_regions" />
             </MudStack>
         </ToolBarContent>
 
         <Columns>
             <TemplateColumn Title="Region" HeaderStyle="width: 10px" Sortable="true" SortBy="x => x.ResourceRegion">
                 <HeaderTemplate>
-                    <i class="fa fa-globe"/>
+                    Region
                 </HeaderTemplate>
                 <CellTemplate>
                     @if (!string.IsNullOrEmpty(context.Item.ResourceRegion))
@@ -96,6 +102,7 @@ else if (!_loading)
     private string? _region = null;
     private string? _searchString;
 
+    [Parameter] public RenderFragment? TitleContent { get; set; } = null;
     [Parameter] public string? Title { get; set; }
     [Parameter] public ResourceKind? Kind { get; set; }
     [Parameter] public EventCallback AddClicked { get; set; }
@@ -128,7 +135,7 @@ else if (!_loading)
 
         if (_regions is null)
         {
-            _regions = ["Global", .. resources.Where(x => x.ResourceRegion != null).Select(x => x.ResourceRegion!).OrderBy(x => x).Distinct().ToArray()];
+            _regions = ["Global", .. resources.Where(x => !string.IsNullOrEmpty(x.ResourceRegion)).Select(x => x.ResourceRegion!).OrderBy(x => x).Distinct().ToArray()];
         }
 
         if (_region is not null)

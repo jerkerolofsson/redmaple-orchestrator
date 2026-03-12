@@ -25,8 +25,8 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics.Model
 
     public class Pidsstats
     {
-        public long?  Current { get; set; }
-        public long?  Limit { get; set; }
+        public ulong?  Current { get; set; }
+        public ulong?  Limit { get; set; }
     }
 
     public class Blkiostats

@@ -7,6 +7,14 @@ using System.Threading.Tasks;
 
 namespace RedMaple.Orchestrator.DockerCompose.Models
 {
+    /// <summary>
+    /// Represents a Docker Compose plan, including services, networks, volumes, and associated metadata.
+    /// </summary>
+    /// 
+    /// <remarks>This class encapsulates the configuration for a Docker Compose setup, allowing for the
+    /// definition of services, networks, and volumes. It also supports global labels and retains the original YAML
+    /// configuration for transformation with environment variables. The ProjectName property retrieves the project name
+    /// from the labels, throwing an exception if the label is missing.</remarks>
     public class DockerComposePlan
     {
         public string? name { get; set; }

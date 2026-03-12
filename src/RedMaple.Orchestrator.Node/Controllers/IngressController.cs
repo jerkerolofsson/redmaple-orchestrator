@@ -1,7 +1,6 @@
 
 using RedMaple.Orchestrator.Contracts.Ingress;
 using RedMaple.Orchestrator.Ingress;
-using static Grpc.Core.Metadata;
 
 namespace RedMaple.Orchestrator.Node.Controllers
 {

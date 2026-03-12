@@ -66,10 +66,31 @@ namespace RedMaple.Orchestrator.Containers
             {
                 await TryDeleteContainerByNameAsync(parameters.Name);
 
+                if(parameters.Cmd is not null && parameters.Cmd.Count == 0)
+                {
+                    parameters.Cmd = null;
+                }
+                if(parameters.Entrypoint is not null && parameters.Entrypoint.Count == 0)
+                {
+                    parameters.Entrypoint = null;
+                }
+                if (parameters.Volumes is not null && parameters.Volumes.Count == 0)
+                {
+                    parameters.Volumes = null;
+                }
+                var diffParams = new CreateContainerParameters()
+                {
+                    Image = "cturra/ntp",
+                    HostConfig = new HostConfig()
+                    {
+                        DNS = new[] { "8.8.8.8", "8.8.4.4" }
+                    }
+                };
+
                 var response = await client.Containers.CreateContainerAsync(parameters);
                 return response;
             }
-            catch (Docker.DotNet.DockerImageNotFoundException)
+            catch (DockerImageNotFoundException)
             {
                 string imageName = parameters.Image;
                 await PullImageAsync(imageName, new Progress<JSONMessage>(), null,cancellationToken);

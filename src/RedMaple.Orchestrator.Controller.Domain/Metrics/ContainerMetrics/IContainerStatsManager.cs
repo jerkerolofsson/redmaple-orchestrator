@@ -7,5 +7,6 @@ namespace RedMaple.Orchestrator.Controller.Domain.Metrics.ContainerMetrics
         ContainerStats? GetContainerStats(string containerId);
         void ReportCpuUsage(string containerId, double cpuUsage);
         void ReportMemoryUsage(string containerId, long usage, long? limit);
+        void ReportNetworkUsage(string containerId, long rxBytes, long txBytes);
     }
 }

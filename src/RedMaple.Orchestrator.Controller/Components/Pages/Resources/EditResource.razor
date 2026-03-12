@@ -10,83 +10,81 @@
 
 @if(model is not null)
 {
+
+    <MudText Typo="Typo.h6">@model.Name</MudText>
+
     <EditForm Model="@model" OnValidSubmit="async () => await OnValidSubmitAsync()">
         <DataAnnotationsValidator />
         <MudCard Class="pa-5 mt-5">
-            <MudItem>
-                <MudStack Spacing="1">
-                    <MudText Typo="Typo.h6">Resource Name</MudText>
-                    <MudTextField @bind-Value="model.Name"
-                                  For="@(() => model.Name)" />
-                </MudStack>
+            <MudStack Spacing="1">
 
-                <MudStack Spacing="1" Class="mt-3">
-                    <MudText Typo="Typo.h6">Kind</MudText>
+                <Setting Title="Name">
+                    <MudTextField @bind-Value="model.Name" For="@(() => model.Name)" />
+                </Setting>
+
+                <Setting Title="Kind">
                     <MudSelectExtended @bind-Value="model.Kind" T="ResourceKind" ItemCollection="@_resourceKinds"></MudSelectExtended>
-                </MudStack>
+                </Setting>
 
-                <MudStack Spacing="1" Class="mt-3">
-                    <MudText Typo="Typo.h6">Region</MudText>
-                    <MudStack Row="true">
+                <Setting Title="Region">
                     <SelectRegion @bind-Region="model.ResourceRegion" />
-                    </MudStack>
-                </MudStack>
+                </Setting>
 
-                <MudStack Spacing="1" Class="mt-3">
-                    <MudText Typo="Typo.h6">Icon</MudText>
-                    <MudTextField Label="Icon"
-                                  @bind-Value="model.IconUrl"
+                <Setting Title="Icon">
+                    <MudTextField @bind-Value="model.IconUrl"
                                   For="@(() => model.IconUrl)" />
-                </MudStack>
-            </MudItem>
+                </Setting>
+
+            </MudStack>
         </MudCard>
 
         @if(model.Volume is not null)
         {
             <MudCard Class="pa-5 mt-5">
-                <MudItem>
+                <MudStack Spacing="1">
                     <MudText Typo="Typo.h6">Volume</MudText>
-                    <MudTextField Label="Driver"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.Driver"
-                                  For="@(() => model.Volume.Driver)" />
 
-                    <MudTextField Label="Type"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.Type"
-                                  For="@(() => model.Volume.Type)" />
+                    <Setting Title="Driver Type" SubTitle="e.g. 'cifs'">
+                        <MudTextField @bind-Value="model.Volume.Driver"
+                                      For="@(() => model.Volume.Driver)" />
+                    </Setting>
 
-                    <MudTextField Label="Directory mode"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.DirMode"
-                                  For="@(() => model.Volume.DirMode)" />
+                    <Setting Title="Type">
+                        <MudTextField @bind-Value="model.Volume.Type"
+                                      For="@(() => model.Volume.Type)" />
+                    </Setting>
 
-                    <MudTextField Label="File mode"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.FileMode"
-                                  For="@(() => model.Volume.FileMode)" />
+                    <Setting Title="Directory mode">
+                        <MudTextField @bind-Value="model.Volume.DirMode"
+                                      For="@(() => model.Volume.DirMode)" />
+                    </Setting>
+                    <Setting Title="File mode">
+                        <MudTextField @bind-Value="model.Volume.FileMode"
+                                      For="@(() => model.Volume.FileMode)" />
+                    </Setting>
 
-                    <MudTextField Label="Location"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.Location"
-                                  For="@(() => model.Volume.Location)" />
+                    <Setting Title="Device">
+                        <MudTextField @bind-Value="model.Volume.Location"
+                                      For="@(() => model.Volume.Location)" />
+                    </Setting>
 
-                    <MudTextField Label="Username"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.Username"
-                                  For="@(() => model.Volume.Username)" />
 
-                    <MudTextField Label="Password"
-                                  Class="mt-3"
-                                  @bind-Value="model.Volume.Password"
-                                  For="@(() => model.Volume.Password)" />
-                </MudItem>
+                    <Setting Title="Username">
+                        <MudTextField @bind-Value="model.Volume.Username"
+                                      For="@(() => model.Volume.Username)" />
+                    </Setting>
+
+                    <Setting Title="Password">
+                        <MudTextField @bind-Value="model.Volume.Password"
+                                      For="@(() => model.Volume.Password)" />
+                    </Setting>
+                </MudStack>
             </MudCard>
         }
 
         <MudCard Class="pa-5 mt-5">
              <MudItem>
-                <MudText Typo="Typo.h6">Environment Variables</MudText>
+                <MudText Typo="Typo.h6">Environment variables provided by resource</MudText>
                 @{
                     bool readOnly = !model.Persist;
                 }
@@ -111,7 +109,7 @@
                     ButtonType="ButtonType.Button" Color="Color.Error" Variant="Variant.Filled" Class="ml-auto">Delete</MudButton>
             </MudStack>
 
-            <MudAlert class="mt-5" Variant="Variant.Text">This resource is read-only</MudAlert>
+            <MudAlert Severity="Severity.Info"  Variant="Variant.Text">This resource is read-only</MudAlert>
         }
     </EditForm>
 }
@@ -161,7 +159,7 @@
         {
             return;
         }
-        bool? result = await dialogService.ShowMessageBox(
+        bool? result = await dialogService.ShowMessageBoxAsync(
            "Confirm",
            "Do you really want to delete the resource",
            yesText: "Yeah", cancelText: "Cancel");

@@ -139,14 +139,28 @@
 
                         <MudText Typo="Typo.h6" Color="Color.Secondary">App Server</MudText>
 
-                        <Setting Title="Application Server" SubTitle="Containers will be deployed here">
+                        <Setting Title="Application Server" SubTitle="Containers will be deployed on this server">
                             <SelectNode Label="" Region="@model.Region" MustBeApplicationHost="true" @bind-Value="model.ApplicationNode"/>
                         </Setting>
 
-                        <Setting Title="Application Port">
-                            <MudTextField @bind-Value="model.ApplicationPort" />
-                        </Setting>
-                </MudStack>
+                        @if (model.EnableDynamicPorts)
+                        {
+                            <Setting Title="Application Port" SubTitle="Generated application port for the deployment">
+                                <MudTextField Value="model.ApplicationPort" ValueChanged="OnApplicationPortChangedAsync" T="int"/>
+                            </Setting>
+
+                            <Setting Title="API Port" SubTitle="Generated API port for the deployment">
+                                <MudText Class="pr-3" Color="Color.Tertiary">@model.ApplicationApiPort</MudText>
+                            </Setting>
+                        }
+                        else
+                        {
+                            <Setting Title="Application Port" SubTitle="Exposed application port">
+                                <MudText Class="pr-3" Color="Color.Tertiary">@model.ApplicationPort</MudText>
+                            </Setting>
+                        }
+
+                    </MudStack>
                 </MudCardContent>
             </MudCard>
         }
@@ -268,6 +282,13 @@
         ValidateAndConfirm = 6
     }
 
+    private async Task OnApplicationPortChangedAsync(int port)
+    {
+        model.ApplicationPort = port;
+        model.EnvironmentVariables ??= new();
+        model.EnvironmentVariables["REDMAPLE_APP_PORT"] = port.ToString();
+    }
+
     public class CreateDeploymentModel
     {
         [Required]
@@ -306,6 +327,11 @@
 
         [Required]
         public string? Plan { get; set; }
+
+        /// <summary>
+        /// If dynamic ports are supported by the template, then an application port will be generated and assigned to the deployment
+        /// </summary>
+        public bool EnableDynamicPorts { get; set; } = true;
 
         /// <summary>
         /// All environment variables
@@ -402,33 +428,38 @@
         model.EnvironmentVariables ??= new();
 
         var plan = new DeploymentPlan
-            {
-                Id = "0",
-                Name = model.Name,
-                Slug = deploymentManager.CreateSlug(model.Name),
-                IconUrl = model.IconUrl,
-                Plan = model.Plan ?? "",
-                DomainName = model.DomainName,
-                Kind = model.Kind,
+        {
+            Id = "0",
+            Name = model.Name,
+            Slug = deploymentManager.CreateSlug(model.Name),
+            IconUrl = model.IconUrl,
+            Plan = model.Plan ?? "",
+            DomainName = model.DomainName,
+            Kind = model.Kind,
+            EnableDynamicPorts = model.EnableDynamicPorts,
 
-                CreateIngress = model.CreateIngress,
-                ReverseProxy = model.ReverseProxy ?? new(),
+            CreateIngress = model.CreateIngress,
+            ReverseProxy = model.ReverseProxy ?? new(),
 
-                CreateDnsEntry = true,
-                OnlyRegionDnsEntry = model.IsRegional,
-                Region = model.IsRegional ? model.Region : null,
-                IngressServerIp = model.IngressNode?.IpAddress,
-                ApplicationServerIps = [model.ApplicationNode?.IpAddress],
-                ApplicationServerPort = model.ApplicationPort,
-                ApplicationServerApiPort = model.ApplicationApiPort,
-                UseApiPort = model.UseApiPort,
-                ApplicationProtocol = model.ApplicationProtocol,
-                EnvironmentVariables = model.EnvironmentVariables,
-                HealthChecks = model.HealthChecks,
-                Resource = model.Resource,
-                Category = model.Category ?? "Apps",
-                VolumeBinds = model.VolumeBinds,
-            };
+            CreateDnsEntry = true,
+            OnlyRegionDnsEntry = model.IsRegional,
+            Region = model.IsRegional ? model.Region : null,
+            IngressServerIp = model.IngressNode?.IpAddress,
+            ApplicationServerIps = [model.ApplicationNode?.IpAddress ?? ""],
+            ApplicationServerPort = model.ApplicationPort,
+            ApplicationServerApiPort = model.ApplicationApiPort,
+            UseApiPort = model.UseApiPort,
+            ApplicationProtocol = model.ApplicationProtocol,
+            EnvironmentVariables = model.EnvironmentVariables,
+            HealthChecks = model.HealthChecks,
+            Resource = model.Resource,
+            Category = model.Category ?? "Apps",
+            VolumeBinds = model.VolumeBinds,
+        };
+
+        // This will map an exposed port to the app port if not using dynamic ports
+        var _ = await deploymentManager.ValidatePlanAsync(plan, false);
+        model.ApplicationPort = plan.ApplicationServerPort ?? model.ApplicationApiPort;
 
         // Missing volumes
         foreach(var volumeBind in deploymentManager.GetMissingVolumeNames(plan))
@@ -534,6 +565,7 @@
 
     private async Task ApplyTemplateAsync(DeploymentPlanTemplate template)
     {
+        model.EnableDynamicPorts = template.EnableDynamicPorts;
         model.Plan = template.Plan;
         model.Resource = template.Resource;
         model.Description = template.Description;

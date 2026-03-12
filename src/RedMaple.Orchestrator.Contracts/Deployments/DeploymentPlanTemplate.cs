@@ -17,6 +17,11 @@ namespace RedMaple.Orchestrator.Contracts.Deployments
         public required string IconUrl { get; set; }
 
         /// <summary>
+        /// If dynamic ports are supported by the template, then an application port will be generated and assigned to the deployment
+        /// </summary>
+        public bool EnableDynamicPorts { get; set; } = true;
+
+        /// <summary>
         /// Default domain name prefix
         /// </summary>
         public string? DomainNamePrefix { get; set; }
