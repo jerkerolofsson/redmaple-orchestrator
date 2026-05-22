@@ -58,5 +58,8 @@ namespace RedMaple.Orchestrator.Contracts.Containers
             CancellationToken cancellationToken);
         Task RestartAsync(string id, CancellationToken cancellationToken);
         Task ExecAsync(string containerId, IList<string> commands, CancellationToken cancellationToken);
+        Task RemoveVolumeAsync(string name, bool force, CancellationToken cancellationToken);
+        Task<bool> HasImageAsync(string image, CancellationToken cancellationToken);
+        Task<string?> GetImageIdAsync(string image, CancellationToken cancellationToken);
     }
 }

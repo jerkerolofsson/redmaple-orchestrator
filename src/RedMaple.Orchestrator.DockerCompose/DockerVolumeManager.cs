@@ -71,11 +71,28 @@ namespace RedMaple.Orchestrator.DockerCompose
                         DriverOpts = opts,
                     };
 
-                    await TryCreateVolumeAsync(parameters, cancellationToken);
+                    var result = await TryCreateVolumeAsync(parameters, cancellationToken);
+                    if(result == CreateVolumeResult.VolumeAlreadyExists)
+                    {
+                        // Todo: Diff to see if we need to recreate the volume or not
+                        //await RemoveVolumeAsync(volumeBind.Name, cancellationToken);
+                        //await TryCreateVolumeAsync(parameters, cancellationToken);
+                    }
                 }
             }
         }
 
+        public async Task<bool> RemoveVolumeAsync(string name, CancellationToken cancellationToken)
+        {
+            var existingVolumes = await _docker.ListVolumesAsync(cancellationToken);
+            var existingVolume = existingVolumes.Volumes.Where(x => x.Name == name).FirstOrDefault();
+            if (existingVolume is not null)
+            {
+                await _docker.RemoveVolumeAsync(name, false, cancellationToken);
+            }
+
+            return false;
+        }
         public async Task<CreateVolumeResult> TryCreateVolumeAsync(VolumesCreateParameters volumesCreateParameters, CancellationToken cancellationToken)
         {
             var name = volumesCreateParameters.Name;

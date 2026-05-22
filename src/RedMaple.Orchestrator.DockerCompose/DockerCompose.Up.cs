@@ -271,7 +271,16 @@ namespace RedMaple.Orchestrator.DockerCompose
             Dictionary<string, EmptyStruct> volumes = new();
             foreach (var volume in service.volumes)
             {
-                volumes[volume.ToShortFormat(includeAccessMode:false)] = new EmptyStruct();
+                if(volume.Source is not null)
+                {
+                    if (IsNamedVolume(volume.Source))
+                    {
+                        // Handle named volume
+                        string name = $"{volume.Target}";
+                        //var name2 = volume.ToShortFormat(includeAccessMode: false);
+                        volumes[name] = new EmptyStruct();
+                    }
+                }
             }
             return volumes;
         }
@@ -333,9 +342,11 @@ namespace RedMaple.Orchestrator.DockerCompose
                     _ => new RestartPolicy() { Name = RestartPolicyKind.No },
                 },
                 PortBindings = CreatePortBindings(service),
-                Binds = CreateBinds(service)
+                //Binds = CreateBinds(service),
+                Mounts = CreateMounts(service)
             };
         }
+
 
         private IList<DeviceRequest> CreateDevicesRequest(DockerComposeService service)
         {
@@ -453,15 +464,57 @@ namespace RedMaple.Orchestrator.DockerCompose
             });
         }
 
+
+        private IList<Mount> CreateMounts(DockerComposeService service)
+        {
+            var mounts = new List<Mount>();
+            foreach (var volume in service.volumes)
+            {
+                if (volume.Source is not null)
+                {
+                    if (IsNamedVolume(volume.Source))
+                    {
+                        mounts.Add(new Mount
+                        {
+                            Target = volume.Target,
+                            Source = volume.Source,
+                            Type = "volume"
+                        });
+                    }
+                    else
+                    {
+                        mounts.Add(new Mount
+                        {
+                            Target = volume.Target,
+                            Source = volume.Source,
+                            Type = "bind"
+                        });
+                    }
+                }
+            }
+            return mounts;
+        }
+
         // Volume binds
         private IList<string> CreateBinds(DockerComposeService service)
         {
             var binds = new List<string>();
             foreach(var bind in service.volumes)
             {
-                binds.Add(bind.ToShortFormat());
+                if (bind.Source is not null)
+                {
+                    if (!IsNamedVolume(bind.Source))
+                    {
+                        binds.Add(bind.ToShortFormat());
+                    }
+                }
             }
             return binds;
+        }
+
+        public static bool IsNamedVolume(string value)
+        {
+            return !value.Contains('/') && !value.Contains('\\');
         }
     }
 }

@@ -78,15 +78,7 @@ namespace RedMaple.Orchestrator.Containers
                 {
                     parameters.Volumes = null;
                 }
-                var diffParams = new CreateContainerParameters()
-                {
-                    Image = "cturra/ntp",
-                    HostConfig = new HostConfig()
-                    {
-                        DNS = new[] { "8.8.8.8", "8.8.4.4" }
-                    }
-                };
-
+               
                 var response = await client.Containers.CreateContainerAsync(parameters);
                 return response;
             }
@@ -269,6 +261,12 @@ namespace RedMaple.Orchestrator.Containers
         }
 
 
+        public async Task RemoveVolumeAsync(string name, bool force, CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            await client.Volumes.RemoveAsync(name, force, cancellationToken);
+        }
+
         public async Task<VolumeResponse> CreateVolumeAsync(VolumesCreateParameters parameters, CancellationToken cancellationToken)
         {
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
@@ -287,7 +285,33 @@ namespace RedMaple.Orchestrator.Containers
             return await client.Volumes.ListAsync(new VolumesListParameters { }, cancellationToken);
         }
 
+        public async Task<IList<ImagesListResponse>> ListImagesAsync(CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            return await client.Images.ListImagesAsync(new ImagesListParameters { }, cancellationToken);
+        }
 
+        public async Task<string?> GetImageIdAsync(string image, CancellationToken cancellationToken)
+        {
+            using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
+            try
+            {
+                var response = await client.Images.InspectImageAsync(image);
+                if (response?.ID is null)
+                {
+                    return null;
+                }
+                return response.ID;
+            }
+            catch { }
+            return null;
+        }
+
+        public async Task<bool> HasImageAsync(string image, CancellationToken cancellationToken)
+        {
+            string? id = await GetImageIdAsync(image, cancellationToken);
+            return !string.IsNullOrEmpty(id);
+        }
 
         public async Task PullImageAsync(string imageName, IProgress<JSONMessage> progress,
             CancellationTokenSource? cts,
