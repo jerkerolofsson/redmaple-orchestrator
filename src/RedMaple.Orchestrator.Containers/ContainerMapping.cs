@@ -24,15 +24,17 @@ namespace RedMaple.Orchestrator.Containers
                 Status = container.Status,
                 State = container.State,
                 IsRunning = container.State == "running",
-                Labels = new Dictionary<string,string>(container.Labels),
+                Labels = container.Labels == null ? [] : 
+                    new Dictionary<string, string>(container.Labels),
                 Image = container.Image,
-                Ports = new List<ContainerPort>(container.Ports.Select(x => new ContainerPort
-                {
-                    PrivatePort = x.PrivatePort,
-                    PublicPort = x.PublicPort,
-                    Ip = x.IP,
-                    Type = x.Type
-                }))
+                Ports = container.Ports == null ? [] :
+                    new List<ContainerPort>(container.Ports.Select(x => new ContainerPort
+                    {
+                        PrivatePort = x.PrivatePort,
+                        PublicPort = x.PublicPort,
+                        Ip = x.IP,
+                        Type = x.Type
+                    }))
             };
         }
     }
