@@ -1,12 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using System.Xml.Linq;
-
-using Docker.DotNet.Models;
+﻿using Docker.DotNet.Models;
 
 using Microsoft.Extensions.Logging;
 
@@ -25,6 +17,11 @@ namespace RedMaple.Orchestrator.DockerCompose
         {
             _docker = localContainersClientFactory.Create();
             _logger = logger;
+        }
+
+        public string GetDefaultDriver()
+        {
+            return _docker.GetDefaultVolumeDriver();
         }
 
         public async Task CreateVolumesAsync(List<VolumeBind> volumeBinds, IProgress<string> progress, CancellationToken cancellationToken)
@@ -71,7 +68,7 @@ namespace RedMaple.Orchestrator.DockerCompose
                     var parameters = new VolumesCreateParameters
                     {
                         Name = volumeBind.Name,
-                        Driver = "local",
+                        Driver = volumeBind?.Volume?.Driver ?? _docker.GetDefaultVolumeDriver(),
                         DriverOpts = opts,
                     };
 

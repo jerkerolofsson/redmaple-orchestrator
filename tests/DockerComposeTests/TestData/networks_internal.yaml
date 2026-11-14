@@ -1,0 +1,9 @@
+services:
+  app:
+    image: example/app
+    networks:
+      - internal-net
+
+networks:
+  internal-net:
+    internal: true

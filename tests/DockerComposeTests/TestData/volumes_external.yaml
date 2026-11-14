@@ -1,0 +1,9 @@
+services:
+  backend:
+    image: example/database
+    volumes:
+      - db-data:/etc/data
+
+volumes:
+  db-data:
+    external: true

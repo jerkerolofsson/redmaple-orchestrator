@@ -1,0 +1,13 @@
+services:
+  backend:
+    image: example/database
+    volumes:
+      - db-data:/etc/data
+
+  backup:
+    image: backup-service
+    volumes:
+      - db-data:/var/lib/backup/data
+
+volumes:
+  db-data:

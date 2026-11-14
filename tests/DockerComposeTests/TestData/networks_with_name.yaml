@@ -1,0 +1,9 @@
+services:
+  app:
+    image: example/app
+    networks:
+      - network1
+
+networks:
+  network1:
+    name: my-app-net

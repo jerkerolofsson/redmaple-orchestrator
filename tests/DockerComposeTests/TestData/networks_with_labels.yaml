@@ -1,0 +1,12 @@
+services:
+  app:
+    image: example/app
+    networks:
+      - mynet1
+
+networks:
+  mynet1:
+    labels:
+      com.example.description: "Financial transaction network"
+      com.example.department: "Finance"
+      com.example.label-with-empty-value: ""

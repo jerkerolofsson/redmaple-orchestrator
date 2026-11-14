@@ -1,0 +1,12 @@
+services:
+  app:
+    image: example/app
+    volumes:
+      - db-data:/data
+
+volumes:
+  db-data:
+    labels:
+      - "com.example.description=Database volume"
+      - "com.example.department=IT/Ops"
+      - "com.example.label-with-empty-value"

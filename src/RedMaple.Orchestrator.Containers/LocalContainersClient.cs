@@ -500,5 +500,7 @@ namespace RedMaple.Orchestrator.Containers
 
             return arg;
         }
+
+        public string GetDefaultVolumeDriver() => "local";
     }
 }

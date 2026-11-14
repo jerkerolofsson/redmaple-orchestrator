@@ -229,5 +229,6 @@ namespace RedMaple.Orchestrator.Contracts.Containers
         /// <param name="cancellationToken">The cancellation token.</param>
         /// <returns>A list of images.</returns>
         Task<IList<ImagesListResponse>> ListImagesAsync(CancellationToken cancellationToken);
+        string GetDefaultVolumeDriver();
     }
 }

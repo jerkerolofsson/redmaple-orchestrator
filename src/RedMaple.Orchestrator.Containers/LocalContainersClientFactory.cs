@@ -21,7 +21,7 @@ namespace RedMaple.Orchestrator.Containers
         /// <summary>
         /// Backend to use
         /// </summary>
-        private ContainerBackend _backend = ContainerBackend.Podman;
+        private ContainerBackend _backend = ContainerBackend.Docker;
 
         /// <summary>
         /// Creates a container client based on the configured backend
@@ -61,6 +61,11 @@ namespace RedMaple.Orchestrator.Containers
         public void SetBackend(ContainerBackend backend)
         {
             _backend = backend;
+        }
+
+        public ContainerBackend GetBackend()
+        {
+            return _backend;
         }
     }
 }

@@ -1,0 +1,23 @@
+services:
+  proxy:
+    image: example/proxy
+    networks:
+      - frontend
+  app:
+    image: example/app
+    networks:
+      - frontend
+      - backend
+  db:
+    image: postgres
+    networks:
+      - backend
+
+networks:
+  frontend:
+    driver: custom-driver-1
+  backend:
+    driver: custom-driver-2
+    driver_opts:
+      foo: "1"
+      bar: "2"

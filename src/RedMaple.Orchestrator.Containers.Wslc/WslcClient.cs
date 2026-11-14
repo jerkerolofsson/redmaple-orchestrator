@@ -24,6 +24,7 @@ namespace RedMaple.Orchestrator.Containers.Wslc
             _wslcExePath = "wslc";
         }
 
+        public string GetDefaultVolumeDriver() => "guest";
         public void Dispose()
         {
         }

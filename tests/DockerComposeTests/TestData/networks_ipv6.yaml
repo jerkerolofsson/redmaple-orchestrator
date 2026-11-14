@@ -1,0 +1,10 @@
+services:
+  app:
+    image: example/app
+    networks:
+      - ip6net
+
+networks:
+  ip6net:
+    enable_ipv4: false
+    enable_ipv6: true

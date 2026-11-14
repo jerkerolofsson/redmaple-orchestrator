@@ -1,0 +1,14 @@
+services:
+  proxy:
+    image: example/proxy
+    networks:
+      - outside
+      - default
+  app:
+    image: example/app
+    networks:
+      - default
+
+networks:
+  outside:
+    external: true

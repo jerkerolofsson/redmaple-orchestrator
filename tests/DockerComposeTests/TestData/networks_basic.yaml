@@ -1,0 +1,10 @@
+services:
+  frontend:
+    image: example/webapp
+    networks:
+      - front-tier
+      - back-tier
+
+networks:
+  front-tier:
+  back-tier:

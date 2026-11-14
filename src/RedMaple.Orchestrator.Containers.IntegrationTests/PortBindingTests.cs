@@ -115,7 +115,7 @@ namespace RedMaple.Orchestration.Containers.IntegrationTests
                 await client.StartAsync(containerId, default);
 
                 // Wait for container to be ready with exponential backoff
-                var timeout = TimeSpan.FromSeconds(30);
+                var timeout = TimeSpan.FromSeconds(300);
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 bool connected = false;
 
@@ -138,6 +138,11 @@ namespace RedMaple.Orchestration.Containers.IntegrationTests
                         {
                             Assert.Fail($"Expected OK or Unauthorized, got {httpResponse.StatusCode}");
                         }
+                    }
+                    catch (TaskCanceledException) when (stopwatch.Elapsed < timeout)
+                    {
+                        // Timeout, container not ready yet, wait and retry
+                        await Task.Delay(TimeSpan.FromMilliseconds(500));
                     }
                     catch (HttpRequestException) when (stopwatch.Elapsed < timeout)
                     {

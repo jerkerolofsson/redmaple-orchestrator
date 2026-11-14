@@ -69,23 +69,55 @@ namespace RedMaple.Orchestrator.DockerCompose
                 var name = pair.Key;
                 DockerComposeVolume composeVolume = pair.Value;
 
-                var volumeCreateParameters = new VolumesCreateParameters
+                // Handle external volumes - they should already exist on the platform
+                if (composeVolume?.external == true)
                 {
-                    Name = name,
-                    Driver = composeVolume?.driver ?? "local",
-                    DriverOpts = composeVolume?.driver_opts,
-                    Labels = new Dictionary<string, string>
+                    var volumeName = composeVolume.name ?? name;
+                    _logger.LogInformation("Volume {VolumeName} marked as external, validating it exists..", volumeName);
+                    var externalVolumeExists = await VolumeExistsAsync(volumeName, cancellationToken);
+                    if (!externalVolumeExists)
+                    {
+                        throw new Exception($"External volume '{volumeName}' does not exist");
+                    }
+                    _logger.LogInformation("External volume {VolumeName} found..", volumeName);
+                    continue;
+                }
+
+                // Use custom name if provided, otherwise use the dictionary key
+                var finalVolumeName = composeVolume?.name ?? name;
+
+                // Merge user-defined labels with the project label
+                var labels = MergeLabels(
+                    ConvertVolumeLabelsToDict(composeVolume?.labels),
+                    new Dictionary<string, string>
                     {
                         [DockerComposeConstants.LABEL_PROJECT] = plan.ProjectName
                     }
+                );
+
+                var volumeCreateParameters = new VolumesCreateParameters
+                {
+                    Name = finalVolumeName,
+                    Driver = composeVolume?.driver ?? _docker.GetDefaultVolumeDriver(),
+                    DriverOpts = composeVolume?.driver_opts,
+                    Labels = labels
                 };
 
                 var createVolumeResult = await _volumes.TryCreateVolumeAsync(volumeCreateParameters, cancellationToken);
                 if(createVolumeResult == CreateVolumeResult.Error)
                 {
-                    throw new Exception("Failed to create volume!");
+                    throw new Exception($"Failed to create volume '{finalVolumeName}'!");
                 }
             }
+        }
+
+        /// <summary>
+        /// Checks if a volume exists by name
+        /// </summary>
+        private async Task<bool> VolumeExistsAsync(string volumeName, CancellationToken cancellationToken)
+        {
+            var volumes = await _docker.ListVolumesAsync(cancellationToken);
+            return volumes.Volumes?.Any(v => v.Name == volumeName) ?? false;
         }
 
         private async Task ConnectContainersAsync(DockerComposePlan plan, List<NetworkResponse> networks, CancellationToken cancellationToken)
@@ -504,6 +536,38 @@ namespace RedMaple.Orchestrator.DockerCompose
         public static bool IsNamedVolume(string value)
         {
             return !value.Contains('/') && !value.Contains('\\');
+        }
+
+        /// <summary>
+        /// Converts volume labels from list format (key=value) to dictionary format
+        /// </summary>
+        private Dictionary<string, string>? ConvertVolumeLabelsToDict(List<string>? labels)
+        {
+            if (labels is null || labels.Count == 0)
+            {
+                return null;
+            }
+
+            var result = new Dictionary<string, string>();
+            foreach (var label in labels)
+            {
+                if (string.IsNullOrEmpty(label))
+                {
+                    continue;
+                }
+
+                var parts = label.Split('=', 2);
+                if (parts.Length == 2)
+                {
+                    result[parts[0]] = parts[1];
+                }
+                else
+                {
+                    result[label] = "";
+                }
+            }
+
+            return result.Count > 0 ? result : null;
         }
     }
 }

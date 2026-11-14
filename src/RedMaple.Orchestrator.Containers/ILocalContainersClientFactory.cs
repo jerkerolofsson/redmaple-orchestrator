@@ -23,5 +23,6 @@ namespace RedMaple.Orchestrator.Containers
         /// <returns></returns>
         /// <exception cref="NotSupportedException"></exception>
         ILocalContainersClient Create(ContainerBackend backend);
+        ContainerBackend GetBackend();
     }
 }

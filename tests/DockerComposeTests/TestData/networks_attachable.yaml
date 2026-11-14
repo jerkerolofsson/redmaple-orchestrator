@@ -1,0 +1,10 @@
+services:
+  app:
+    image: example/app
+    networks:
+      - mynet1
+
+networks:
+  mynet1:
+    driver: overlay
+    attachable: true

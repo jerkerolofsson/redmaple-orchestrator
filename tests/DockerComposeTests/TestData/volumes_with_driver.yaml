@@ -1,0 +1,9 @@
+services:
+  app:
+    image: example/app
+    volumes:
+      - db-data:/data
+
+volumes:
+  example-vol:
+    driver: foobar

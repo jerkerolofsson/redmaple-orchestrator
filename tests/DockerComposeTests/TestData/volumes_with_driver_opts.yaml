@@ -1,0 +1,12 @@
+services:
+  app:
+    image: example/app
+    volumes:
+      - example-vol:/data
+
+volumes:
+  example-vol:
+    driver_opts:
+      type: "nfs"
+      o: "addr=10.40.0.199,nolock,soft,rw"
+      device: ":/docker/example"
