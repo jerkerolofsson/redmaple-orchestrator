@@ -1,4 +1,4 @@
-$version="1.2.3"
+$version="1.2.4"
 
 $package="RedMaple.Orchestrator.Contracts"
 cd src/${package}
@@ -7,6 +7,12 @@ nuget push bin/Release/${package}.${version}.nupkg -Source https://api.nuget.org
 cd ../..
 
 $package="RedMaple.Orchestrator.Containers"
+cd src/${package}
+dotnet pack -p:PackageVersion=$version
+nuget push bin/Release/${package}.${version}.nupkg -Source https://api.nuget.org/v3/index.json
+cd ../..
+
+$package="RedMaple.Orchestrator.Containers.Wslc"
 cd src/${package}
 dotnet pack -p:PackageVersion=$version
 nuget push bin/Release/${package}.${version}.nupkg -Source https://api.nuget.org/v3/index.json

@@ -1,14 +1,18 @@
-﻿using Docker.DotNet.Models;
-using Microsoft.Extensions.Logging;
-using RedMaple.Orchestrator.Contracts.Containers;
-using RedMaple.Orchestrator.Contracts.Deployments;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+
+using Docker.DotNet.Models;
+
+using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Containers;
+using RedMaple.Orchestrator.Contracts.Containers;
+using RedMaple.Orchestrator.Contracts.Deployments;
 
 namespace RedMaple.Orchestrator.DockerCompose
 {
@@ -17,9 +21,9 @@ namespace RedMaple.Orchestrator.DockerCompose
         private readonly ILocalContainersClient _docker;
         private readonly ILogger<DockerVolumeManager> _logger;
 
-        public DockerVolumeManager(ILocalContainersClient docker, ILogger<DockerVolumeManager> logger)
+        public DockerVolumeManager(ILocalContainersClientFactory localContainersClientFactory, ILogger<DockerVolumeManager> logger)
         {
-            _docker = docker;
+            _docker = localContainersClientFactory.Create();
             _logger = logger;
         }
 

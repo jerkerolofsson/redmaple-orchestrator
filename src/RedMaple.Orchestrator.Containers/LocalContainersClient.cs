@@ -1,20 +1,25 @@
-﻿using Docker.DotNet;
-using Docker.DotNet.Models;
-using Microsoft.Extensions.Logging;
-using RedMaple.Orchestrator.Contracts.Containers;
-using System.Numerics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
-using System.Threading;
+
+using Docker.DotNet;
+using Docker.DotNet.Models;
+
+using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Contracts.Containers;
 
 namespace RedMaple.Orchestrator.Containers
 {
+    /// <summary>
+    /// Container implementation for docker
+    /// </summary>
     public class LocalContainersClient : ILocalContainersClient
     {
         private const string LABEL_PROJECT = "com.docker.compose.project";
 
-        private readonly ILogger<LocalContainersClient> _logger;
+        protected readonly ILogger<LocalContainersClient> _logger;
 
         public LocalContainersClient(ILogger<LocalContainersClient> logger)
         {
@@ -132,14 +137,16 @@ namespace RedMaple.Orchestrator.Containers
             var execParams = new ContainerExecCreateParameters
             {
                 Cmd = commands,
+                AttachStdout = true,
+                AttachStderr = true
             };
 
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             var exec = await client.Exec.ExecCreateContainerAsync(containerId, execParams);
             using var stream = await client.Exec.StartAndAttachContainerExecAsync(exec.ID, false);
 
-            var stdout = new MemoryStream();
-            var stderr = new MemoryStream();
+            using var stdout = new MemoryStream();
+            using var stderr = new MemoryStream();
             await stream.CopyOutputToAsync(
                 null,
                 stdout,
@@ -179,20 +186,26 @@ namespace RedMaple.Orchestrator.Containers
 
             return response;
         }
-        private string GetDockerApiUri()
+
+        /// <summary>
+        /// Returns the docker API endpoint
+        /// </summary>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        protected virtual string GetDockerApiUri()
         {
             var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             if (isWindows)
             {
                 return "npipe://./pipe/docker_engine";
             }
-            var isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             if (isLinux)
             {
                 return "unix:///var/run/docker.sock";
             }
 
-            throw new Exception("Default socket location was not found. Please review your docker socket location");
+            throw new Exception("Default socket location was not found. Set DOCKER_HOST environment variable to configure it!");
         }
 
         public async Task<bool> IsRunningAsync(string containerId, CancellationToken cancellationToken = default)
@@ -291,20 +304,23 @@ namespace RedMaple.Orchestrator.Containers
             return await client.Images.ListImagesAsync(new ImagesListParameters { }, cancellationToken);
         }
 
-        public async Task<string?> GetImageIdAsync(string image, CancellationToken cancellationToken)
+        public async Task<ImageInspectResponse?> InspectImageAsync(string image, CancellationToken cancellationToken)
         {
             using var client = new DockerClientConfiguration(new Uri(GetDockerApiUri())).CreateClient();
             try
             {
-                var response = await client.Images.InspectImageAsync(image);
-                if (response?.ID is null)
-                {
-                    return null;
-                }
-                return response.ID;
+                return await client.Images.InspectImageAsync(image, cancellationToken);
             }
-            catch { }
-            return null;
+            catch(DockerImageNotFoundException) 
+            {
+                return null;
+            }
+        }
+
+        public async Task<string?> GetImageIdAsync(string image, CancellationToken cancellationToken)
+        {
+            var response  = await InspectImageAsync(image, cancellationToken);
+            return response?.ID;
         }
 
         public async Task<bool> HasImageAsync(string image, CancellationToken cancellationToken)
@@ -436,6 +452,53 @@ namespace RedMaple.Orchestrator.Containers
             {
                 Force = true
             }, cancellationToken);
+        }
+
+        public virtual async Task LoginAsync(string registry, string username, string password, CancellationToken cancellationToken = default)
+        {
+            _logger.LogInformation("Logging in to registry {Registry}", registry);
+
+            var psi = new ProcessStartInfo
+            {
+                FileName = "docker",
+                Arguments = $"login -u {EscapeArgument(username)} -p {EscapeArgument(password)} {EscapeArgument(registry)}",
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+
+            using var process = Process.Start(psi);
+            if (process == null)
+            {
+                throw new InvalidOperationException("Failed to start docker login process");
+            }
+
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            var stderr = await process.StandardError.ReadToEndAsync();
+
+            await process.WaitForExitAsync(cancellationToken);
+
+            if (process.ExitCode != 0)
+            {
+                _logger.LogError("Docker login failed: {Error}", stderr);
+                throw new InvalidOperationException($"Docker login failed: {stderr}");
+            }
+
+            _logger.LogInformation("Successfully logged in to registry {Registry}", registry);
+        }
+
+        protected static string EscapeArgument(string arg)
+        {
+            if (string.IsNullOrEmpty(arg))
+                return "\"\"";
+
+            if (arg.Contains(' ') || arg.Contains('"'))
+            {
+                return "\"" + arg.Replace("\"", "\\\"") + "\"";
+            }
+
+            return arg;
         }
     }
 }

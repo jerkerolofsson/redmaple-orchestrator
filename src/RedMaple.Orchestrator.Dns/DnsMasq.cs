@@ -22,10 +22,10 @@ namespace RedMaple.Orchestrator.Dns
 
         public DnsMasq(
             ILogger<DnsMasq> logger,
-            ILocalContainersClient localContainersClient)
+            ILocalContainersClientFactory localContainersClientFactory)
         {
             _logger = logger;
-            _localContainersClient = localContainersClient;
+            _localContainersClient = localContainersClientFactory.Create();
         }
 
         public async Task AddEntryAsync(DnsEntry entry)

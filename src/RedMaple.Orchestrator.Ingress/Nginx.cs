@@ -1,11 +1,14 @@
-﻿using Docker.DotNet.Models;
-using Microsoft.Extensions.Logging;
-using RedMaple.Orchestrator.Contracts.Containers;
-using RedMaple.Orchestrator.Contracts.Ingress;
-
-using System.ComponentModel;
+﻿using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
+
+using Docker.DotNet.Models;
+
+using Microsoft.Extensions.Logging;
+
+using RedMaple.Orchestrator.Containers;
+using RedMaple.Orchestrator.Contracts.Containers;
+using RedMaple.Orchestrator.Contracts.Ingress;
 
 namespace RedMaple.Orchestrator.Ingress
 {
@@ -17,10 +20,10 @@ namespace RedMaple.Orchestrator.Ingress
 
         public Nginx(
             ILogger<Nginx> logger,
-            ILocalContainersClient localContainersClient)
+            ILocalContainersClientFactory localContainersClientFactory)
         {
             _logger = logger;
-            _localContainersClient = localContainersClient;
+            _localContainersClient = localContainersClientFactory.Create();
         }
 
         private async Task CreateCommonConfIfNotExistsAsync()

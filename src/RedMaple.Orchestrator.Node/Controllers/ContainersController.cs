@@ -11,11 +11,12 @@ namespace RedMaple.Orchestrator.Node.Controllers
         private readonly ILogger<ContainersController> _logger;
         private readonly ILocalContainersClient _containersClient;
 
-        public ContainersController(ILogger<ContainersController> logger, ILocalContainersClient containersClient)
+        public ContainersController(ILogger<ContainersController> logger, ILocalContainersClientFactory localContainersClientFactory)
         {
             _logger = logger;
-            _containersClient = containersClient;
+            _containersClient = localContainersClientFactory.Create();
         }
+
         [HttpPost("/api/containers/{id}/restart")]
         public async Task RestartContainerByIdAsync([FromRoute] string id, CancellationToken cancellationToken)
         {

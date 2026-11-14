@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 17
-VisualStudioVersion = 17.10.35013.160
+# Visual Studio Version 18
+VisualStudioVersion = 18.12.12405.243 stable
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Controller", "RedMaple.Orchestrator.Controller\RedMaple.Orchestrator.Controller.csproj", "{2CFB3B09-315C-4571-9356-18209D1F5438}"
 EndProject
@@ -56,6 +56,10 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RedMaple.Orchestrator.Utilities", "RedMaple.Orchestrator.Utilities\RedMaple.Orchestrator.Utilities.csproj", "{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Cli", "RedMaple.Orchestrator.Cli\RedMaple.Orchestrator.Cli.csproj", "{44530528-75DD-49F7-964E-CC7BE3B2942A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Containers.IntegrationTests", "RedMaple.Orchestrator.Containers.IntegrationTests\RedMaple.Orchestrator.Containers.IntegrationTests.csproj", "{585F3F28-8EA8-415E-A164-8FD918541EAE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RedMaple.Orchestrator.Containers.Wslc", "RedMaple.Orchestrator.Containers.Wslc\RedMaple.Orchestrator.Containers.Wslc.csproj", "{A7420DE8-C4B0-496A-9F54-DBED886C1FA9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -147,6 +151,14 @@ Global
 		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{44530528-75DD-49F7-964E-CC7BE3B2942A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{585F3F28-8EA8-415E-A164-8FD918541EAE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{585F3F28-8EA8-415E-A164-8FD918541EAE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{585F3F28-8EA8-415E-A164-8FD918541EAE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{585F3F28-8EA8-415E-A164-8FD918541EAE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7420DE8-C4B0-496A-9F54-DBED886C1FA9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7420DE8-C4B0-496A-9F54-DBED886C1FA9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7420DE8-C4B0-496A-9F54-DBED886C1FA9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7420DE8-C4B0-496A-9F54-DBED886C1FA9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -174,6 +186,8 @@ Global
 		{97F2376F-CE06-4ECE-B6FD-7604366B3EC3} = {CDA02E31-8892-4ED3-A50B-39C30D43FB1E}
 		{A4014F0C-8D0E-4A81-9928-C9E3A31A2B75} = {CDA02E31-8892-4ED3-A50B-39C30D43FB1E}
 		{44530528-75DD-49F7-964E-CC7BE3B2942A} = {9D47399A-AF2F-4835-925B-5E54718DF316}
+		{585F3F28-8EA8-415E-A164-8FD918541EAE} = {C57EA872-83E2-4D31-B848-49E8384344F7}
+		{A7420DE8-C4B0-496A-9F54-DBED886C1FA9} = {BF3CA9CF-C40A-4604-8EB9-A06D739D5079}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B0435B4F-ED5B-4352-8B77-B7BF67875B9C}

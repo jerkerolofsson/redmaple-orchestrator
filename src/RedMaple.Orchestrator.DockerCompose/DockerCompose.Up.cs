@@ -1,17 +1,6 @@
 ﻿using Docker.DotNet.Models;
-using Microsoft.Extensions.Logging;
 
-using RedMaple.Orchestrator.Contracts.Containers;
-using RedMaple.Orchestrator.Contracts.Deployments;
-using RedMaple.Orchestrator.Contracts.Resources;
-using RedMaple.Orchestrator.DockerCompose.Models;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Xml.Linq;
+using Microsoft.Extensions.Logging;
 
 namespace RedMaple.Orchestrator.DockerCompose
 {

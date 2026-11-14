@@ -9,10 +9,11 @@
     <UserSecretsId>704594f7-75bc-41c7-a485-19fadccea5a1</UserSecretsId>
   </PropertyGroup>
 
-    <Sdk Name="Aspire.AppHost.Sdk" Version="13.0.0" />
+    <Sdk Name="Aspire.AppHost.Sdk" Version="13.6.5" />
     
     <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.1.2" />
+    <PackageReference Include="Aspire.Hosting.AppHost" Version="13.6.5" />
+    <PackageReference Include="Microsoft.OpenApi" Version="3.11.0" />
 	<PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.5" />
   </ItemGroup>
 
